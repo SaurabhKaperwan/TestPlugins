@@ -1,0 +1,22 @@
+[
+    {
+        "iconUrl": "https://moviesmod.band/wp-content/uploads/2022/12/moviesmodnew-Custom.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 10993,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 1,
+        "internalName": "Moviesmod",
+        "description": "Includes Topmovies",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/Moviesmod.cs3",
+        "name": "Moviesmod"
+    }
+]
