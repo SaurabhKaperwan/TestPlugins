@@ -1,0 +1,24 @@
+[
+    {
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/VegaMovies/icon.jpg",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 32186,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "version": 65,
+        "internalName": "VegaMovies",
+        "description": "Includes LuxMovies, Rogmovies",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/VegaMovies.cs3",
+        "name": "VegaMovies"
+    }
+]
