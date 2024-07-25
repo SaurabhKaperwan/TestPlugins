@@ -1,0 +1,21 @@
+[
+    {
+        "iconUrl": "",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 9985,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "NSFW"
+        ],
+        "version": 1,
+        "internalName": "WIMP",
+        "description": "",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/WIMP.cs3",
+        "name": "WIMP"
+    }
+]
