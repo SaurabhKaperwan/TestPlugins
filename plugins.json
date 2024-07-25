@@ -1,0 +1,21 @@
+[
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=sxyprn.com&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 12123,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "Coxju, megix"
+        ],
+        "tvTypes": [
+            "NSFW"
+        ],
+        "version": 2,
+        "internalName": "SxyPrn",
+        "description": "sxyprn",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/SxyPrn.cs3",
+        "name": "SxyPrn"
+    }
+]
