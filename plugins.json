@@ -1,0 +1,21 @@
+[
+    {
+        "iconUrl": "https://xmoviesforyou.com/wp-content/uploads/2018/08/logo.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 9979,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "NSFW"
+        ],
+        "version": 1,
+        "internalName": "Xmovies4u",
+        "description": "",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/Xmovies4u.cs3",
+        "name": "Xmovies4u"
+    }
+]
