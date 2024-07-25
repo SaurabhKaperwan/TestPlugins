@@ -1,0 +1,66 @@
+[
+    {
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/Cinemaluxe/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 21126,
+        "status": 1,
+        "language": "hi",
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 32,
+        "internalName": "Cinemaluxe",
+        "description": "Movies and Series upto 4K",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/Cinemaluxe.cs3",
+        "name": "Cinemaluxe"
+    },
+    {
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/CineStream/icon.jpg",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 297706,
+        "status": 1,
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime",
+            "Torrent",
+            "Live"
+        ],
+        "version": 167,
+        "internalName": "CineStream",
+        "description": "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/CineStream.cs3",
+        "name": "CineStream"
+    },
+    {
+        "iconUrl": "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/Extractors/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 38781,
+        "status": 1,
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime"
+        ],
+        "version": 58,
+        "internalName": "Extractors",
+        "description": "Must Install(For other extensions to work properly)",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/Extractors.cs3",
+        "name": "Extractors"
+    }
+]
