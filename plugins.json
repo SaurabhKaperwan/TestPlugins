@@ -1,0 +1,25 @@
+[
+    {
+        "iconUrl": "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 166781,
+        "status": 1,
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime",
+            "Torrent",
+            "Live"
+        ],
+        "version": 94,
+        "internalName": "CineStream",
+        "description": "One stop solution for Movies, Series, Anime, Livetv, AsianDrama and Torrents",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/CineStream.cs3",
+        "name": "CineStream"
+    }
+]
