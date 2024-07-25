@@ -1,0 +1,22 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/LikDev-256/likdev256-tamil-providers/master/UHDmoviesProvider/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 43502,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "Phisher98"
+        ],
+        "tvTypes": [
+            "Movie",
+            "TvSeries"
+        ],
+        "version": 29,
+        "internalName": "UHDmoviesProvider",
+        "description": "Indian Multi-language 4K Provider",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/UHDmoviesProvider.cs3",
+        "name": "UHDmoviesProvider"
+    }
+]
