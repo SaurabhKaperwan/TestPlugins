@@ -1,0 +1,24 @@
+[
+    {
+        "iconUrl": "https://us.123rf.com/450wm/mrshamsjaman/mrshamsjaman2008/mrshamsjaman200800943/154338064-initial-letter-cs-logo-or-sc-logo-vector-design-template.jpg",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 122106,
+        "status": 1,
+        "authors": [
+            "megix"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime",
+            "Torrent"
+        ],
+        "version": 43,
+        "internalName": "CineStream",
+        "description": "Multi API Extension",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/CineStream.cs3",
+        "name": "CineStream"
+    }
+]
