@@ -1,0 +1,21 @@
+[
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=tube.perverzija.com&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/SaurabhKaperwan/TestPlugins",
+        "fileSize": 13481,
+        "status": 1,
+        "language": "en",
+        "authors": [
+            "coxju, megix"
+        ],
+        "tvTypes": [
+            "NSFW"
+        ],
+        "version": 3,
+        "internalName": "Perverzija",
+        "description": "Contains all the videos from Perverzija",
+        "url": "https://raw.githubusercontent.com/SaurabhKaperwan/TestPlugins/builds/Perverzija.cs3",
+        "name": "Perverzija"
+    }
+]
