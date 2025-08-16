@@ -29,6 +29,33 @@ import com.google.gson.Gson
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    suspend fun invokeWebStreamr(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$webStreamrAPI/stream/movie/$imdbId.json"
+        } else {
+            "$webStreamrAPI/stream/series/$imdbId:$season:$episode.json"
+        }
+        val json = app.get(url).text
+        val data = tryParseJson<StreamifyResponse>(json) ?: return
+        data.streams.forEach {
+            callback.invoke(
+                newExtractorLink(
+                    it.name ?: "WebStreamr",
+                    "[${it.name}] ${it.title}",
+                    it.url,
+                ) {
+                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                }
+            )
+        }
+    }
+
     suspend fun invokeDramadrip(
         imdbId: String? = null,
         season: Int? = null,
@@ -1619,7 +1646,7 @@ object CineStreamExtractors : CineStreamProvider() {
         data.streams.forEach {
             callback.invoke(
                 newExtractorLink(
-                    it.name,
+                    it.name ?: "Streamify",
                     "[${it.name}] ${it.title}",
                     it.url,
                 )
