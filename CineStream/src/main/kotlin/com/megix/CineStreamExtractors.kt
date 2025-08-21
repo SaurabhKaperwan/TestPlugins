@@ -51,6 +51,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     it.url,
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.quality = getIndexQuality(it.name ?: "")
                 }
             )
         }
@@ -74,6 +75,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 sibling?.select("a")?.mapNotNull { it.attr("href") } ?: emptyList()
             }
 
+            callback.invoke(
+                newExtractorLink(
+                    "seasonLink",
+                    "seasonLink",
+                    seasonLink.toString(),
+                )
+            )
+
             seasonLink.amap {
                 val doc = app.get(it).document
                 var sourceUrl= doc.select("div.series_btn > a")
@@ -86,6 +95,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 } else {
                     sourceUrl
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "sourceUrl",
+                        "sourceUrl",
+                        sourceUrl,
+                    )
+                )
 
                 loadSourceNameExtractor("Dramadrip", sourceUrl, "", subtitleCallback, callback)
             }
@@ -101,6 +118,15 @@ object CineStreamExtractors : CineStreamProvider() {
                     } else {
                         sourceUrl
                     }
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "sourceUrl",
+                            "sourceUrl",
+                            sourceUrl,
+                        )
+                    )
+
                     loadSourceNameExtractor(
                         "Dramadrip",
                         sourceUrl,
@@ -2674,11 +2700,15 @@ object CineStreamExtractors : CineStreamProvider() {
         val userData = doc.select("#user-data")
         var decryptedLinks = decryptLinks(userData.attr("v"))
         for (link in decryptedLinks) {
-            val url = "$Primewire/links/go/$link"
-            val oUrl = app.get(url,timeout = 10)
+            val href = "$Primewire/links/gos/$link"
+            // Thanks to @phisher98
+            val token= app.get("https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/Primetoken.txt").text
+            val oUrl = app.get(href, timeout = 10)
+            val iframeurl= app.get("${oUrl.url.replace("/gos/","/go/")}?token=$token").parsedSafe<PrimewireClass>()?.link
+            if(iframeurl == null) continue
             loadSourceNameExtractor(
                 "Primewire",
-                oUrl.url,
+                iframeurl,
                 "",
                 subtitleCallback,
                 callback

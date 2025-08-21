@@ -716,12 +716,12 @@ suspend fun getProtonEmbed(
     if (match != null) {
         val url = match.groupValues[1]
         val headers = mapOf(
-            "User-Agent" to USER_AGENT,
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Referer" to protonmoviesAPI
         )
         val json = app.get(protonmoviesAPI + url, headers = headers).text
         JSONObject(json).getJSONObject("ppd")?.getJSONObject("mixdrop.ag")?.optString("link")?.let {
-            val source = it.replace("/f/", "/e/").replace("mxdrop.to", "mixdrop.ps")
+            val source = it.replace("mxdrop.to", "mixdrop.ps")
             loadSourceNameExtractor("Protonmovies", source, "", subtitleCallback, callback)
         }
     }
