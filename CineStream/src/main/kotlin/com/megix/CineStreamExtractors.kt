@@ -75,14 +75,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 sibling?.select("a")?.mapNotNull { it.attr("href") } ?: emptyList()
             }
 
-            callback.invoke(
-                newExtractorLink(
-                    "seasonLink",
-                    "seasonLink",
-                    seasonLink.toString(),
-                )
-            )
-
             seasonLink.amap {
                 val doc = app.get(it).document
                 var sourceUrl= doc.select("div.series_btn > a")
@@ -95,14 +87,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 } else {
                     sourceUrl
                 }
-
-                callback.invoke(
-                    newExtractorLink(
-                        "sourceUrl",
-                        "sourceUrl",
-                        sourceUrl,
-                    )
-                )
 
                 loadSourceNameExtractor("Dramadrip", sourceUrl, "", subtitleCallback, callback)
             }
@@ -118,14 +102,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     } else {
                         sourceUrl
                     }
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "sourceUrl",
-                            "sourceUrl",
-                            sourceUrl,
-                        )
-                    )
 
                     loadSourceNameExtractor(
                         "Dramadrip",
