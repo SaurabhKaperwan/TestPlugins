@@ -84,7 +84,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
         data.streams.forEach {
             val title = it.title ?: ""
-            if(title.contains("Primebox")) continue
+            if(title.contains("Primebox")) return@forEach
             val type = if(title.contains("hls") || title.contains("m3u8") || title.contains("DoodStream")) {
                 ExtractorLinkType.M3U8
             } else if(title.contains("mp4")) {
