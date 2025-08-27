@@ -84,7 +84,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
         data.streams.forEach {
             val title = it.title ?: ""
-            if(title.contains("Primebox")) return@forEach
+            val referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
             val type = if(title.contains("hls") || title.contains("m3u8") || title.contains("DoodStream")) {
                 ExtractorLinkType.M3U8
             } else if(title.contains("mp4")) {
@@ -96,11 +96,11 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     it.name ?: "WebStreamr",
-                    "[${it.name}] ${title}",
+                    "[${it.name}] ${title} (${referer})",
                     it.url,
                     type = type
                 ) {
-                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.referer = referer
                     this.quality = getIndexQuality(it.name ?: "")
                     this.headers = headers
                 }
