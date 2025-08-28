@@ -4,7 +4,6 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import kotlinx.coroutines.runBlocking
-import com.lagradost.cloudstream3.network.CloudflareKiller
 import org.json.JSONObject
 
 class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
@@ -60,7 +59,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         val document = app.get(
             request.data.format(page),
             referer = mainUrl,
-            interceptor = CloudflareKiller()
+            headers = headers
         ).document
         val home = document.select("a.blog-img").mapNotNull {
             it.toSearchResult()
@@ -82,7 +81,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
             val document = app.get(
                 "$mainUrl/page/$i/?s=$query",
                 referer = mainUrl,
-                interceptor = CloudflareKiller()
+                headers = headers
             ).document
             val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
             if (results.isEmpty()) {

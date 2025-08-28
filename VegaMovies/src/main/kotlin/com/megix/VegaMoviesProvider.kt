@@ -9,7 +9,6 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.cloudstream3.network.CloudflareKiller
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
@@ -51,6 +50,21 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
     }
 
+    open val headers = mapOf(
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "cookie" to "xla=s4t",
+        "Accept-Language" to "en-US,en;q=0.9",
+        "sec-ch-ua" to "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"",
+        "sec-ch-ua-mobile" to "?0",
+        "sec-ch-ua-platform" to "\"Linux\"",
+        "Sec-Fetch-Dest" to "document",
+        "Sec-Fetch-Mode" to "navigate",
+        "Sec-Fetch-Site" to "none",
+        "Sec-Fetch-User" to "?1",
+        "Upgrade-Insecure-Requests" to "1",
+        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+    )
+
     override val mainPage = mainPageOf(
         "$mainUrl/page/%d/" to "Home",
         "$mainUrl/web-series/netflix/page/%d/" to "Netflix",
@@ -68,7 +82,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val document = app.get(
             request.data.format(page),
             referer = mainUrl,
-            interceptor = CloudflareKiller()
+            headers = headers
         ).document
         val home = document.select(".post-inner.post-hover").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(request.name, home)
@@ -96,7 +110,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 val document = app.get(
                     "$mainUrl/page/$i/?s=$query",
                     referer = mainUrl,
-                    interceptor = CloudflareKiller()
+                    headers = headers
                 ).document ?: continue
 
                 val results = document.select(".post-inner.post-hover")
@@ -117,7 +131,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val document = app.get(
             url,
             referer = mainUrl,
-            interceptor = CloudflareKiller()
+            headers = headers
         ).document
         var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         val ogTitle = title
