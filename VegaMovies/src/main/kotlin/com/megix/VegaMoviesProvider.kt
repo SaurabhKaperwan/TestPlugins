@@ -210,7 +210,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val Eurl = unilink?.attr("href")
                 Eurl?.let { eurl ->
-                    val document2 = app.get(eurl).document
+                    val document2 = app.get(eurl, headers = headers).document
                     val vcloudRegex = Regex("""https:\/\/vcloud\.lol\/[^\s"]+""")
                     var vcloudLinks = vcloudRegex.findAll(document2.html()).mapNotNull { it.value }.toList()
 
@@ -265,7 +265,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
             val buttons = document.select("p > a:has(button)")
             val data = buttons.mapNotNull { button ->
                 val link = fixUrl(button.attr("href"))
-                val doc = app.get(link).document
+                val doc = app.get(link, headers = headers).document
                 val source = doc.selectFirst("a:contains(V-Cloud)")?.attr("href").toString()
                 EpisodeLink(source)
             }
