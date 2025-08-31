@@ -1,12 +1,12 @@
 // use an integer for version numbers
-version = 6
+version = 30
 
 cloudstream {
-    language = "en"
+    //language = "en"
     // All of these properties are optional, you can safely remove them
 
-//    description = "Lorem Ipsum"
-    authors = listOf("Horis")
+    description = "Netflix, PrimeVideo, JioHotstar(Hotstar, Disney, Paramount, HBO, Peacock) Content in Multiple Languages"
+    authors = listOf("megix")
 
     /**
      * Status int as the following:
@@ -19,8 +19,9 @@ cloudstream {
     tvTypes = listOf(
         "Movie",
         "TvSeries",
+        "AsianDrama",
+        "Anime"
     )
 
-    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/GDIndex/icon.ico"
-
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/NetflixMirrorProvider/icon.png"
 }
