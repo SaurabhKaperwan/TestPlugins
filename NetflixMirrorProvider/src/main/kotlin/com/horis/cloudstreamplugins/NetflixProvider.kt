@@ -40,6 +40,7 @@ class NetflixProvider : MainAPI() {
         cookie_value = if(cookie_value.isEmpty()) bypass(mainUrl) else cookie_value
         val cookies = mapOf(
             "t_hash_t" to cookie_value,
+            "user_token" to "233123f803cf02184bf6c67e149cdd50",
             "ott" to "nf",
             "hd" to "on"
         )
