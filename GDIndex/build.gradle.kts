@@ -1,11 +1,12 @@
-version = 65
+// use an integer for version numbers
+version = 5
 
 cloudstream {
-    language = "hi"
+    language = "en"
     // All of these properties are optional, you can safely remove them
 
-    description = "Includes LuxMovies, Rogmovies"
-     authors = listOf("megix")
+//    description = "Lorem Ipsum"
+    authors = listOf("Horis")
 
     /**
      * Status int as the following:
@@ -16,11 +17,10 @@ cloudstream {
      * */
     status = 1 // will be 3 if unspecified
     tvTypes = listOf(
-        "TvSeries",
         "Movie",
-        "AsianDrama",
-        "Anime"
+        "TvSeries",
     )
 
-    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/VegaMovies/icon.jpg"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/GDIndex/icon.ico"
+
 }
