@@ -9,6 +9,8 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.net.URL
+import java.net.URI
 
 class GDIndexProvider : MainAPI() {
     override val supportedTypes = setOf(
@@ -149,6 +151,12 @@ class GDIndexProvider : MainAPI() {
 
     private fun error(msg: String = "加载数据失败"): Nothing {
         throw ErrorLoadingException(msg)
+    }
+
+    private fun String.encodeUrl(): String {
+        val url = URL(this)
+        val uri = URI(url.protocol, url.userInfo, url.host, url.port, url.path, url.query, url.ref)
+        return uri.toURL().toString()
     }
 
     data class GDFile(
