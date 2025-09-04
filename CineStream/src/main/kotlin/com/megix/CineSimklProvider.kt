@@ -222,7 +222,7 @@ class CineSimklProvider: MainAPI() {
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
-    override suspend fun search(query: String, page: Int): List<SearchResponse> = coroutineScope {
+    override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
             val result = runCatching {
@@ -248,13 +248,15 @@ class CineSimklProvider: MainAPI() {
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
 
-        buildList {
+        val combinedList: List<SearchResponse> = buildList {
             for (i in 0 until maxSize) {
                 for (list in resultsLists) {
                     if (i < list.size) add(list[i])
                 }
             }
         }
+
+        return newSearchResponseList(combinedList)
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
