@@ -222,11 +222,11 @@ class CineSimklProvider: MainAPI() {
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
-    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
+    override suspend fun search(query: String, page: Int): List<SearchResponse> = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
             val result = runCatching {
-                val json = app.get("$apiUrl/search/$type?q=$query&page=1&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
+                val json = app.get("$apiUrl/search/$type?q=$query&page=$page&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
