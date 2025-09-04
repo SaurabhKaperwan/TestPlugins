@@ -93,6 +93,6 @@ class LuxMoviesProvider : VegaMoviesProvider() { // all providers must be an ins
             hasNext = false
         }
         searchResponse.addAll(results)
-        return newSearchResponseList(searchResults, hasNext)
+        return newSearchResponseList(searchResponse, hasNext)
     }
 }
