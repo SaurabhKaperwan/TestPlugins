@@ -256,7 +256,7 @@ class CineSimklProvider: MainAPI() {
             }
         }
 
-        return newSearchResponseList(combinedList)
+        return newSearchResponseList(combinedList, true)
     }
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
