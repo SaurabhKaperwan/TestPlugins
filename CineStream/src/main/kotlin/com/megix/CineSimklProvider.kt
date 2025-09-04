@@ -87,7 +87,7 @@ class CineSimklProvider: MainAPI() {
     override val hasQuickSearch = false
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
-    private final val mediaLimit = 20
+    private final val mediaLimit = 10
     private val auth = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val api = AccountManager.simklApi
