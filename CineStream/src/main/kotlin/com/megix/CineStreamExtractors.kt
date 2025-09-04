@@ -11,6 +11,7 @@ import org.json.JSONArray
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.FormBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
@@ -1940,7 +1941,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeRar(
-        title: String,
+        title: String? = null,
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
