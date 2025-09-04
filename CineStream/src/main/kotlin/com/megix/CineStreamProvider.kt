@@ -76,6 +76,7 @@ import com.megix.CineStreamExtractors.invokeFilm1k
 import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
+import com.megix.CineStreamExtractors.invokeRar
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -95,7 +96,7 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        // const val RarAPI = "https://nepu.to"
+        const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -674,6 +675,7 @@ open class CineStreamProvider : MainAPI() {
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if(!isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
+            { invokeRar(res.title, year, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, year, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
