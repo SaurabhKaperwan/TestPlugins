@@ -15,6 +15,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
@@ -71,7 +73,9 @@ import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
 import com.megix.CineStreamExtractors.invokeCinemaOS
-import com.megix.CineStreamExtractors.invokeRar
+import com.megix.CineStreamExtractors.invokeTripleOneMovies
+import com.megix.CineStreamExtractors.invokeVidFastPro
+import com.megix.CineStreamExtractors.invokeVidPlus
 
 class CineSimklProvider: MainAPI() {
     override var name = "CineSimkl"
@@ -95,6 +99,7 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
+    private val tmdbAPI = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
@@ -223,6 +228,33 @@ class CineSimklProvider: MainAPI() {
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
+    fun parseTmdbCastData(tvType: String, tmdbID: Int? = null): List<ActorData>? {
+        return if (tvType != "anime") {
+            try {
+                val tmdbJson = app.get("$tmdbAPI/meta/series/tmdb:${json.ids?.tmdb}.json").text
+                val gson = Gson()
+                val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
+                tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
+                    if (castMember.name != null && castMember.character != null) {
+                        ActorData(
+                            Actor(
+                                castMember.name,
+                                castMember.photo,
+                                roleString = castMember.character
+                            )
+                        )
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
@@ -295,7 +327,7 @@ class CineSimklProvider: MainAPI() {
                     name = request.name,
                     list = data,
                 ),
-                hasNext = true
+                hasNext = if(request.data.contains("limit=") true else false)
             )
         }
     }
@@ -336,6 +368,9 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
+        val tmdbType = if(tvType == "tv") "series" else tvType
+        val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb)
+
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
                 json.title,
@@ -365,6 +400,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
+                this.actors = cast
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -414,6 +450,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
+                this.actors = cast
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -474,7 +511,6 @@ class CineSimklProvider: MainAPI() {
             { invokePrimeWire(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invoke2embed(res.imdbId, res.season, res.episode, callback) },
             { invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
-            { invokeRar(res.title, res.year, res.season, res.episode, callback) },
             { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.imdbId, res.tmdbId, res.year, res.season, res.episode, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
@@ -484,6 +520,9 @@ class CineSimklProvider: MainAPI() {
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year,callback,subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            { invokeTripleOneMovies( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
+            { invokeVidPlus( res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { if (!res.isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -677,5 +716,23 @@ class CineSimklProvider: MainAPI() {
 
     data class ExtenalIds(
         val imdb     : String? = null,
+    )
+
+    data class TmdbResponse(
+        @SerializedName("meta") val meta: TmdbMeta?
+    )
+
+    data class TmdbMeta(
+        @SerializedName("app_extras") val appExtras: TmdbAppExtras?
+    )
+
+    data class TmdbAppExtras(
+        @SerializedName("cast") val cast: List<TmdbCastMember>?
+    )
+
+    data class TmdbCastMember(
+        @SerializedName("name") val name: String?,
+        @SerializedName("character") val character: String?,
+        @SerializedName("photo") val photo: String?
     )
 }

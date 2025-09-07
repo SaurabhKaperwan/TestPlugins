@@ -5,15 +5,12 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.runAllAsync
-import kotlin.math.roundToInt
 import org.json.JSONObject
 import com.lagradost.api.Log
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -76,7 +73,9 @@ import com.megix.CineStreamExtractors.invokeFilm1k
 import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
-import com.megix.CineStreamExtractors.invokeRar
+import com.megix.CineStreamExtractors.invokeTripleOneMovies
+import com.megix.CineStreamExtractors.invokeVidFastPro
+import com.megix.CineStreamExtractors.invokeVidPlus
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -96,7 +95,7 @@ open class CineStreamProvider : MainAPI() {
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
-        const val RarAPI = "https://nepu.to"
+        // const val RarAPI = "https://nepu.to"
         const val animepaheAPI = "https://animepahe.ru"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -125,6 +124,9 @@ open class CineStreamProvider : MainAPI() {
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
+        const val tripleOneMoviesApi = "https://111movies.com"
+        const val vidfastProApi = "https://vidfast.pro"
+        const val vidPlusApi = "https://player.vidplus.to"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -234,19 +236,15 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home,
             ),
-            hasNext = true
+            hasNext = movies.hasMore
         )
     }
 
-    override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
-        val normalizedQuery = query.trim()
+    override suspend fun search(query: String): List<SearchResponse> = coroutineScope {
 
         suspend fun fetchResults(url: String): List<SearchResponse> {
-            if(page == 1) skipMap.clear()
-            val skip = skipMap[url] ?: 0
-            val newUrl = url.replace("###", skip.toString())
             val result = runCatching {
-                val json = app.get(newUrl).text
+                val json = app.get(url).text
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: it.description ?: ""
                     val score = it.imdbRating?.toDoubleOrNull()
@@ -262,9 +260,9 @@ open class CineStreamProvider : MainAPI() {
         }
 
         val endpoints = listOf(
-            "$cinemeta_url/catalog/movie/top/skip=###&search=$normalizedQuery.json",
-            "$cinemeta_url/catalog/series/top/skip=###&search=$normalizedQuery.json",
-            "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###&search=$normalizedQuery.json"
+            "$cinemeta_url/catalog/movie/top/search=$query.json",
+            "$cinemeta_url/catalog/series/top/search=$query.json",
+            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$queryjson"
         )
 
         val resultsLists = endpoints.map {
@@ -273,7 +271,7 @@ open class CineStreamProvider : MainAPI() {
 
         val maxSize = resultsLists.maxOfOrNull { it.size } ?: 0
 
-        val combinedList: List<SearchResponse> = buildList {
+        buildList {
             for (i in 0 until maxSize) {
                 for (list in resultsLists) {
                     if (i < list.size) add(list[i])
@@ -281,7 +279,6 @@ open class CineStreamProvider : MainAPI() {
             }
         }
 
-        newSearchResponseList(combinedList, true)
     }
 
     override suspend fun load(url: String): LoadResponse? {
@@ -534,7 +531,8 @@ open class CineStreamProvider : MainAPI() {
     )
 
     data class Home(
-        val metas: List<Media>
+        val metas: List<Media>,
+        val hasMore: Boolean = false,
     )
 
     data class ExtenalIds(
@@ -675,13 +673,15 @@ open class CineStreamProvider : MainAPI() {
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },
             { invokeTom(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if(!isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
-            { invokeRar(res.title, year, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, year, callback) },
             { invokeThepiratebay(res.id, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, year, subtitleCallback, callback) },
             { invokeCinemaOS(res.id, res.tmdbId, res.title, res.season, res.episode, year, callback, subtitleCallback) },
+            { invokeTripleOneMovies( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidFastPro( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            { invokeVidPlus( res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.id, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.id, res.season, res.episode, subtitleCallback, callback) },

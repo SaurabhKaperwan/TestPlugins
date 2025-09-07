@@ -436,19 +436,18 @@ data class MALSyncResponses(
     @JsonProperty("Sites") val sites: MALSyncSites? = null,
 )
 
-//Rar
-data class RarResponseData(
-    val data: List<RarItem>?
-)
+// data class RarResponseData(
+//     val data: List<RarItem>?
+// )
 
-data class RarItem(
-    val id: Int,
-    val name: String,
-    val second_name: String,
-    val image: String,
-    val url: String,
-    val type: String
-)
+// data class RarItem(
+//     val id: Int,
+//     val name: String,
+//     val second_name: String,
+//     val image: String,
+//     val url: String,
+//     val type: String
+// )
 
 //Subtitles
 data class WYZIESubtitle(
@@ -570,6 +569,21 @@ data class CinemaOsAuthResponse(
     val token: String,
     val expiresIn: Long,
 )
+
+typealias TripleOneMoviesServerList = List<TripleOneMoviesServer>;
+
+data class TripleOneMoviesServer(
+    val name: String,
+    val description: String,
+    val image: String,
+    val data: String,
+)
+
+data class TripleOneMoviesStream(
+    val noReferrer: Boolean,
+    val url: String,
+)
+
 
 
 
