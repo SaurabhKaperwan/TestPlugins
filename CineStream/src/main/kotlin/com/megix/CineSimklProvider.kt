@@ -228,10 +228,10 @@ class CineSimklProvider: MainAPI() {
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
     }
 
-    fun parseTmdbCastData(tvType: String, tmdbID: Int? = null): List<ActorData>? {
+    private suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
         return if (tvType != "anime") {
             try {
-                val tmdbJson = app.get("$tmdbAPI/meta/series/tmdb:${json.ids?.tmdb}.json").text
+                val tmdbJson = app.get("$tmdbAPI/meta/series/tmdb:$tmdbId.json").text
                 val gson = Gson()
                 val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
                 tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
@@ -240,7 +240,7 @@ class CineSimklProvider: MainAPI() {
                             Actor(
                                 castMember.name,
                                 castMember.photo,
-                                roleString = castMember.character
+                                castMember.character
                             )
                         )
                     } else {
@@ -327,7 +327,7 @@ class CineSimklProvider: MainAPI() {
                     name = request.name,
                     list = data,
                 ),
-                hasNext = if(request.data.contains("limit=") true else false)
+                hasNext = if(request.data.contains("limit=")) true else false
             )
         }
     }
@@ -369,7 +369,7 @@ class CineSimklProvider: MainAPI() {
         val recommendations = relations + users_recommendations
 
         val tmdbType = if(tvType == "tv") "series" else tvType
-        val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb)
+        val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb?.toIntOrNull())
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(

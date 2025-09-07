@@ -262,7 +262,7 @@ open class CineStreamProvider : MainAPI() {
         val endpoints = listOf(
             "$cinemeta_url/catalog/movie/top/search=$query.json",
             "$cinemeta_url/catalog/series/top/search=$query.json",
-            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$queryjson"
+            "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json"
         )
 
         val resultsLists = endpoints.map {
