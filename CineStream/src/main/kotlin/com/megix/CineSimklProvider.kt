@@ -235,13 +235,13 @@ class CineSimklProvider: MainAPI() {
                 val gson = Gson()
                 val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
                 tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
-                    if (castMember.name != null && castMember.character != null) {
+                    if (castMember.name != null) {
                         ActorData(
                             Actor(
-                                castMember.name,
-                                castMember.photo,
-                                castMember.character
-                            )
+                                name = castMember.name,
+                                image = castMember.photo
+                            ),
+                            roleString = castMember.character
                         )
                     } else {
                         null
