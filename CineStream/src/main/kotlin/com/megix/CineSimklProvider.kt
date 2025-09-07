@@ -16,7 +16,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.json.JSONObject
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
@@ -99,7 +98,6 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
-    private val tmdbAPI = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club"
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-types/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
@@ -226,33 +224,6 @@ class CineSimklProvider: MainAPI() {
 
         return input.replace(seasonRegex, normalizedSeason)
             .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
-    }
-
-    private suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
-        return if (tvType != "anime") {
-            try {
-                val tmdbJson = app.get("$tmdbAPI/meta/series/tmdb:$tmdbId.json").text
-                val gson = Gson()
-                val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
-                tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
-                    if (castMember.name != null) {
-                        ActorData(
-                            Actor(
-                                name = castMember.name,
-                                image = castMember.photo
-                            ),
-                            roleString = castMember.character
-                        )
-                    } else {
-                        null
-                    }
-                }
-            } catch (e: Exception) {
-                null
-            }
-        } else {
-            null
-        }
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
@@ -716,23 +687,5 @@ class CineSimklProvider: MainAPI() {
 
     data class ExtenalIds(
         val imdb     : String? = null,
-    )
-
-    data class TmdbResponse(
-        @SerializedName("meta") val meta: TmdbMeta?
-    )
-
-    data class TmdbMeta(
-        @SerializedName("app_extras") val appExtras: TmdbAppExtras?
-    )
-
-    data class TmdbAppExtras(
-        @SerializedName("cast") val cast: List<TmdbCastMember>?
-    )
-
-    data class TmdbCastMember(
-        @SerializedName("name") val name: String?,
-        @SerializedName("character") val character: String?,
-        @SerializedName("photo") val photo: String?
     )
 }
