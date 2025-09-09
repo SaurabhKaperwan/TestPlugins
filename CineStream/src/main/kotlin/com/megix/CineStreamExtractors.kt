@@ -559,6 +559,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val sourceUrl = JSONObject(json).getString("url")
 
+        if(sourceUrl == "null") {
+            return
+        }
+
         callback.invoke(
             newExtractorLink(
                 "Phoenix",
@@ -1945,36 +1949,40 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    // suspend fun invokeRar(
-    //     title: String,
-    //     year: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val json = app.get("$RarAPI/ajax/posts?q=$title ($year)").text
-    //     val responseData = parseJson<RarResponseData>(json)
-    //     val id = responseData.data?.firstOrNull {
-    //         it.second_name == title
-    //     }?.id ?: return
-    //     val slug = "$title $year $id".createSlug()
-    //     val url = if(season != null) "$RarAPI/show/$slug/season/$season/episode/$episode" else "$RarAPI/movie/$slug"
-    //     val embedId = app.get(url).document.selectFirst("a.btn-service")?.attr("data-embed") ?: return
-    //     val body = FormBody.Builder().add("id", embedId).build()
-    //     val document = app.post("$RarAPI/ajax/embed", requestBody = body).document
-    //     val regex = Regex("""(https?:\/\/[^\"']+\.m3u8)""")
-    //     val link = regex.find(document.toString())?.groupValues?.get(1) ?: return
-    //     callback.invoke(
-    //         ExtractorLink(
-    //             "Rar",
-    //             "Rar",
-    //             link,
-    //             referer = "",
-    //             Qualities.P1080.value,
-    //             true
-    //         )
-    //     )
-    // }
+    suspend fun invokeRar(
+        title: String,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Referer" to RarAPI
+        )
+        val json = app.get("$RarAPI/ajax/posts?q=$title ($year)", headers = headers).text
+        val responseData = parseJson<RarResponseData>(json)
+        val id = responseData.data?.firstOrNull {
+            it.second_name == title
+        }?.id ?: return
+        val slug = "$title $year $id".createSlug()
+        val url = if(season != null) "$RarAPI/show/$slug/season/$season/episode/$episode" else "$RarAPI/movie/$slug"
+        val embedId = app.get(url, headers = headers).document.selectFirst("a.btn-service")?.attr("data-embed") ?: return
+        val body = FormBody.Builder().add("id", embedId).build()
+        val document = app.post("$RarAPI/ajax/embed", requestBody = body, headers = headers).text
+        val regex = Regex("""(\/public\/[^\"']+\.m3u8)""")
+        val link = regex.find(document)?.groupValues?.get(1) ?: return
+        callback.invoke(
+            newExtractorLink(
+                "Rar",
+                "Rar",
+                RarAPI + link,
+                ExtractorLinkType.M3U8
+            ) {
+                this.headers = headers
+            }
+        )
+    }
 
     suspend fun invoke4khdhub(
         title: String? = null,
