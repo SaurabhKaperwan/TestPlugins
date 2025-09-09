@@ -11,6 +11,7 @@ import org.json.JSONArray
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.FormBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
@@ -2671,8 +2672,16 @@ object CineStreamExtractors : CineStreamProvider() {
             try {
                 var document = app.get(url, timeout = 20).document
                 allLinks.addAll(
-                    document.select(".playbtnx").map {
-                        Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                    document.select(".playbtnx").mapNotNull {
+                        if (season == null && episode == null) {
+                            if (it.text().contains("$title $year", true) || it.text().contains("$title ($year)", true)) {
+                                Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                            } else null
+                        } else {
+                            if (it.text().contains("$title S${"%02d".format(season)}E${"%02d".format(episode)}", true)) {
+                                Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                            } else null
+                        }
                     }
                 )
 
