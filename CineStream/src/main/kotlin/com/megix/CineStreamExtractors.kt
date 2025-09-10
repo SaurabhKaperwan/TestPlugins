@@ -2709,7 +2709,7 @@ object CineStreamExtractors : CineStreamProvider() {
         allLinks.distinctBy { it.name }.forEach { link ->
             try {
 
-                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{$link.name}" }}"
+                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{${link.name}}" }}"
 
                 val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
                     .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"

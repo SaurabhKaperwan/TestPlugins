@@ -86,16 +86,16 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "SDR", "label" to "SDR")
     ),
     "language" to listOf(
-        mapOf("value" to "HIN", "label" to "Hindi"),
-        mapOf("value" to "Hindi", "label" to "Hindi"),
-        mapOf("value" to "Tamil", "label" to "Tamil"),
-        mapOf("value" to "ENG", "label" to "English"),
-        mapOf("value" to "English", "label" to "English"),
-        mapOf("value" to "Korean", "label" to "Korean"),
-        mapOf("value" to "KOR", "label" to "Korean"),
-        mapOf("value" to "Japanese", "label" to "Japanese"),
-        mapOf("value" to "Chinese", "label" to "Chinese"),
-        mapOf("value" to "Telugu", "label" to "Telugu"),
+        mapOf("value" to "HIN", "label" to "🇮🇳 Hindi"),
+        mapOf("value" to "Hindi", "label" to "🇮🇳 Hindi"),
+        mapOf("value" to "Tamil", "label" to "🇮🇳 Tamil"),
+        mapOf("value" to "ENG", "label" to "🇺🇸 English"),
+        mapOf("value" to "English", "label" to "🇺🇸 English"),
+        mapOf("value" to "Korean", "label" to "🇰🇷 Korean"),
+        mapOf("value" to "KOR", "label" to "🇰🇷 Korean"),
+        mapOf("value" to "Japanese", "label" to "🇯🇵 Japanese"),
+        mapOf("value" to "Chinese", "label" to "🇨🇳 Chinese"),
+        mapOf("value" to "Telugu", "label" to "🇮🇳 Telugu"),
     )
 )
 
