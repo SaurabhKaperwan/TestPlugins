@@ -1302,6 +1302,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
         app.get(url).document.select("div.L a").amap {
+            if(!it.text().trim().startsWith("$title ($year)")) return@amap
             val regex = Regex("""S\d{2}E\d{2}""", RegexOption.IGNORE_CASE)
             var singleEpEntry = false
 
@@ -2708,7 +2709,7 @@ object CineStreamExtractors : CineStreamProvider() {
         allLinks.distinctBy { it.name }.forEach { link ->
             try {
 
-                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{$firstPart}" }}"
+                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{$link.name}" }}"
 
                 val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
                     .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"
