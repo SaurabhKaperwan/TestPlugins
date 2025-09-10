@@ -1959,7 +1959,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Referer" to RarAPI
+            "Referer" to "$RarAPI/"
         )
         val json = app.get("$RarAPI/ajax/posts?q=$title ($year)", headers = headers).text
         val responseData = parseJson<RarResponseData>(json)
@@ -2672,14 +2672,18 @@ object CineStreamExtractors : CineStreamProvider() {
             try {
                 var document = app.get(url, timeout = 20).document
                 allLinks.addAll(
-                    document.select(".playbtnx").mapNotNull {
+                    document.select(".playbtnx").mapNotNull { element ->
+                        val titleText = element.text()?.split(" | ")?.lastOrNull() ?: return@mapNotNull null
+
                         if (season == null && episode == null) {
-                            if (it.text().contains("$title $year", true) || it.text().contains("$title ($year)", true)) {
-                                Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                            if (year != null && (titleText.startsWith("$title $year", ignoreCase = true) ||
+                                 titleText.startsWith("$title ($year)", ignoreCase = true))) {
+                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
                             } else null
                         } else {
-                            if (it.text().contains("$title S${"%02d".format(season)}E${"%02d".format(episode)}", true)) {
-                                Player4uLinkData(name = it.text(), url = it.attr("onclick"))
+                            if (season != null && episode != null &&
+                                titleText.startsWith("$title S${"%02d".format(season)}E${"%02d".format(episode)}", ignoreCase = true)) {
+                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
                             } else null
                         }
                     }
@@ -2704,9 +2708,7 @@ object CineStreamExtractors : CineStreamProvider() {
         allLinks.distinctBy { it.name }.forEach { link ->
             try {
 
-                val splitName = link.name.split("|").reversed()
-                val firstPart = splitName.getOrNull(0)?.trim().orEmpty()
-                val nameFormatted = "Player4U ${if(firstPart.isNullOrEmpty()) { "" } else { "{$firstPart}" }}"
+                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{$firstPart}" }}"
 
                 val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
                     .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"
