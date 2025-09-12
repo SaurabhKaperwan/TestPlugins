@@ -24,7 +24,7 @@ import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
 /**
  * A simple [Fragment] subclass.
  */
-class BlankFragment(private val plugin: ExamplePlugin) : BottomSheetDialogFragment() {
+class BlankFragment(private val plugin: CineStream) : BottomSheetDialogFragment() {
     companion object {
         private const val PREFS_NAME = "ExamplePluginPrefs"
         private const val KEY_TORRENT_ENABLED = "torrent_enabled"
