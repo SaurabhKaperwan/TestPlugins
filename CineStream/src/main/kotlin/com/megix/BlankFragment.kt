@@ -1,4 +1,4 @@
-package com.example
+package com.megix
 
 import android.annotation.SuppressLint
 import android.content.Context
