@@ -3,10 +3,13 @@ package com.megix
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
+import androidx.appcompat.app.AppCompatActivity
 
 @CloudstreamPlugin
 open class CineStream: Plugin() {
+    private var activity: AppCompatActivity? = null
     override fun load(context: Context) {
+        activity = context as? AppCompatActivity
         CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
@@ -32,5 +35,12 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Multimoviesshg())
         registerExtractorAPI(Akamaicdn())
         registerExtractorAPI(VidHideHub())
+
+        openSettings = {
+            val frag = BlankFragment(this)
+            activity?.let {
+                frag.show(it.supportFragmentManager, "Frag")
+            }
+        }
     }
 }
