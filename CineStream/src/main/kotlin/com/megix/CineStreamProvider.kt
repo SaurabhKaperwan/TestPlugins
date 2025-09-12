@@ -90,9 +90,19 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
+    private lateinit var appContext: Context
+
+    // Initialize context (called by the Plugin class)
+    fun init(context: Context) {
+        this.appContext = context
+    }
+
+    // Helper to check if torrent is enabled
+    private val isTorrentEnabled: Boolean
+        get() = appContext.getSharedPreferences("ExamplePluginPrefs", Context.MODE_PRIVATE)
+            .getBoolean("torrent_enabled", false)
+
     companion object {
-        val sharedPrefs = context.getSharedPreferences("ExamplePluginPrefs", Context.MODE_PRIVATE)
-        val isTorrentEnabled = sharedPrefs.getBoolean("torrent_enabled", false)
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
