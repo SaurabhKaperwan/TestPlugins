@@ -151,7 +151,7 @@ fun String.getHost(): String {
 suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
     return if (tvType != "anime") {
         try {
-            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 2L).text
+            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 1L).text
             val gson = Gson()
             val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
             tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
@@ -1365,7 +1365,7 @@ fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
 
  fun customEncode(input: ByteArray): String {
     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val targetChars = "19aQPL7DwphTK_xe0W8OUdRfE4lA-coSGjuzbN5q3BHtvrmXVMFkCsiIgy6Yn2JZ"
+    val targetChars = "ZYm5_ScNtbX3IgzV-7xk82BDR1aprAvWOhMwelUQ4iHdGuECTyF6os90fqPjLJnK"
 
     val translationMap = sourceChars.zip(targetChars).toMap()
     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
