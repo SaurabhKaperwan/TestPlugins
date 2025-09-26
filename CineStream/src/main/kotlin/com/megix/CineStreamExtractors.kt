@@ -2487,9 +2487,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
         callback.invoke(
             newExtractorLink(
-                "Hianime id",
-                "Hianime id",
-                id,
+                "Hianime epid",
+                "Hianime epid",
+                epId,
             )
         )
 
