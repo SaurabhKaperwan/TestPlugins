@@ -410,7 +410,7 @@ class CineSimklProvider: MainAPI() {
                     this.episode = it.episode
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://simkl.in/update_m_alert.jpg"
-                    addDate(it.date)
+                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ssXXX")
                 }
             }
 
