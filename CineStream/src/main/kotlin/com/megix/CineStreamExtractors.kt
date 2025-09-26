@@ -2466,7 +2466,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val id = url?.substringAfterLast("/") ?: return
+        val hiId = url?.substringAfterLast("/") ?: return
+        val id = hiId.substringAfterLast("-") ?: return
 
         callback.invoke(
             newExtractorLink(
@@ -2503,7 +2504,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         types.forEach { t ->
             servers.forEach { server ->
-                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$epId&type=$t&server=$server").parsedSafe<HianimeStreamResponse>() ?: return@forEach
+                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$hiId-$epId&type=$t&server=$server").parsedSafe<HianimeStreamResponse>() ?: return@forEach
                 val streamUrl = epData.sources.firstOrNull()?.url
                 if(streamUrl != null) {
                     M3u8Helper.generateM3u8(
