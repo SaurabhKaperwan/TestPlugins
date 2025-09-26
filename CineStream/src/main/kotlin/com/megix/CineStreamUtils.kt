@@ -86,16 +86,16 @@ val SPEC_OPTIONS = mapOf(
         mapOf("value" to "SDR", "label" to "SDR")
     ),
     "language" to listOf(
-        mapOf("value" to "HIN", "label" to "🇮🇳 Hindi"),
-        mapOf("value" to "Hindi", "label" to "🇮🇳 Hindi"),
-        mapOf("value" to "Tamil", "label" to "🇮🇳 Tamil"),
-        mapOf("value" to "ENG", "label" to "🇺🇸 English"),
-        mapOf("value" to "English", "label" to "🇺🇸 English"),
-        mapOf("value" to "Korean", "label" to "🇰🇷 Korean"),
-        mapOf("value" to "KOR", "label" to "🇰🇷 Korean"),
-        mapOf("value" to "Japanese", "label" to "🇯🇵 Japanese"),
-        mapOf("value" to "Chinese", "label" to "🇨🇳 Chinese"),
-        mapOf("value" to "Telugu", "label" to "🇮🇳 Telugu"),
+        mapOf("value" to "HIN", "label" to "Hindi🇮🇳"),
+        mapOf("value" to "Hindi", "label" to "Hindi🇮🇳"),
+        mapOf("value" to "Tamil", "label" to "Tamil🇮🇳"),
+        mapOf("value" to "ENG", "label" to "English🇺🇸"),
+        mapOf("value" to "English", "label" to "English🇺🇸"),
+        mapOf("value" to "Korean", "label" to "Korean🇰🇷"),
+        mapOf("value" to "KOR", "label" to "Korean🇰🇷"),
+        mapOf("value" to "Japanese", "label" to "Japanese🇯🇵"),
+        mapOf("value" to "Chinese", "label" to "Chinese🇨🇳"),
+        mapOf("value" to "Telugu", "label" to "Telugu🇮🇳"),
     )
 )
 
@@ -151,7 +151,7 @@ fun String.getHost(): String {
 suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorData>? {
     return if (tvType != "anime") {
         try {
-            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 1L).text
+            val tmdbJson = app.get("https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json", timeout = 3L).text
             val gson = Gson()
             val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
             tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
@@ -373,6 +373,7 @@ suspend fun loadSourceNameExtractor(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
+    size: String = "",
 ) {
     val scope = CoroutineScope(Dispatchers.Default + Job())
 
@@ -382,9 +383,10 @@ suspend fun loadSourceNameExtractor(
             val extractedSpecs = buildExtractedTitle(extracted)
             val isDownload = if(link.source.contains("Download")) true else false
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
+            val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source[${link.source}] $extractedSpecs",
+                "$source[${link.source}$fixSize] $extractedSpecs",
                 link.url,
                 type = link.type
             ) {
@@ -1189,7 +1191,7 @@ fun getVideoQuality(string: String?): Int {
 
 
 fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest, s: String): String {
-    val data = "tmdb:${t.tmdbId}|season:${t.seasonId}|episode:${t.episodeId}"
+    val data = "media|episodeId:${t.episodeId}|seasonId:${t.seasonId}|tmdbId:${t.tmdbId}"
     val secretKey = SecretKeySpec(s.toByteArray(Charsets.UTF_8), "HmacSHA256")
     val mac = Mac.getInstance("HmacSHA256")
     mac.init(secretKey)
@@ -1213,24 +1215,28 @@ fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
     val encrypted = e?.encrypted
     val cin = e?.cin
     val mao = e?.mao
+    val salt = e?.salt
 
-    val keyBytes = hexStringToByteArray("a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456")
+    val keyBytes =  "a1b2c3d4e4f6588658455678901477567890abcdef1234567890abcdef123456".toByteArray()
     val ivBytes = hexStringToByteArray(cin.toString())
     val authTagBytes = hexStringToByteArray(mao.toString())
-    val encryptedBytes = hexStringToByteArray(encrypted.toString())
+    val encryptedBytes =hexStringToByteArray(encrypted.toString())
+    val saltBytes = hexStringToByteArray(salt.toString())
 
+    // Derive key with PBKDF2-HMAC-SHA256
+    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+    val spec = PBEKeySpec(keyBytes.map { it.toInt().toChar() }.toCharArray(), saltBytes, 100000, 256)
+    val tmp = factory.generateSecret(spec)
+    val key = SecretKeySpec(tmp.encoded, "AES")
+
+    // AES-256-GCM decrypt
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-    val keySpec = SecretKeySpec(keyBytes, "AES")
     val gcmSpec = GCMParameterSpec(128, ivBytes)
+    cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec)
+    val decryptedBytes = cipher.doFinal(encryptedBytes + authTagBytes)
+    val decryptedData = String(decryptedBytes)
 
-    cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
-
-    // Combine encrypted data with auth tag
-    val combinedData = encryptedBytes + authTagBytes
-    val decryptedBytes = cipher.doFinal(combinedData)
-    val decryptedText = String(decryptedBytes, Charsets.UTF_8)
-
-    return decryptedText // Use your JSON parser
+    return decryptedData // Use your JSON parser
 }
 
 
@@ -1365,7 +1371,7 @@ fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
 
  fun customEncode(input: ByteArray): String {
     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val targetChars = "ZYm5_ScNtbX3IgzV-7xk82BDR1aprAvWOhMwelUQ4iHdGuECTyF6os90fqPjLJnK"
+    val targetChars = "SCHkQ7-ni29AJs3VKw4XxjZE5WNL6zTBbY0G1ReurtmDMyqgIl8cvoOUPfFdhap_"
 
     val translationMap = sourceChars.zip(targetChars).toMap()
     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

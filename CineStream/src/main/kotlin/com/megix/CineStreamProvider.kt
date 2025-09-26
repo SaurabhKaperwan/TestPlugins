@@ -17,7 +17,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import com.lagradost.cloudstream3.network.CloudflareKiller
-import android.content.Context
 import com.megix.CineStreamExtractors.invokeVegamovies
 import com.megix.CineStreamExtractors.invokeMoviesmod
 import com.megix.CineStreamExtractors.invokeTopMovies
@@ -47,10 +46,8 @@ import com.megix.CineStreamExtractors.invokeHdmovie2
 import com.megix.CineStreamExtractors.invokeHindmoviez
 import com.megix.CineStreamExtractors.invokeMostraguarda
 import com.megix.CineStreamExtractors.invokePlayer4U
-import com.megix.CineStreamExtractors.invokePrimeWire
 import com.megix.CineStreamExtractors.invokeProtonmovies
 import com.megix.CineStreamExtractors.invokeThepiratebay
-import com.megix.CineStreamExtractors.invokeTom
 import com.megix.CineStreamExtractors.invokeAllmovieland
 import com.megix.CineStreamExtractors.invoke4khdhub
 // import com.megix.CineStreamExtractors.invokeVidJoy
@@ -75,6 +72,7 @@ import com.megix.CineStreamExtractors.invokeMp4Moviez
 import com.megix.CineStreamExtractors.invokeMultiEmbeded
 import com.megix.CineStreamExtractors.invokeWebStreamr
 import com.megix.CineStreamExtractors.invokeNuvioStreams
+import com.megix.CineStreamExtractors.invokePrimeSrc
 import com.megix.CineStreamExtractors.invokeTripleOneMovies
 import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
@@ -90,28 +88,15 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
-    private lateinit var appContext: Context
-
-    // Initialize context (called by the Plugin class)
-    fun init(context: Context) {
-        this.appContext = context
-    }
-
-    // Helper to check if torrent is enabled
-    private val isTorrentEnabled: Boolean
-        get() = appContext.getSharedPreferences("ExamplePluginPrefs", Context.MODE_PRIVATE)
-            .getBoolean("torrent_enabled", false)
-
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val stremifyAPI = "https://stremify.hayd.uk/YnVpbHQtaW4sZnJlbWJlZCxmcmVuY2hjbG91ZCxtZWluZWNsb3VkLGtpbm9raXN0ZSxjaW5laGRwbHVzLHZlcmhkbGluayxndWFyZGFoZCx2aXNpb25jaW5lLHdlY2ltYSxha3dhbSxkcmFtYWNvb2wsZHJhbWFjb29sX2NhdGFsb2csZ29nb2FuaW1lLGdvZ29hbmltZV9jYXRhbG9n/stream"
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
-        const val TomAPI = "https://tom.autoembed.cc"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
         const val RarAPI = "https://nepu.to"
-        const val animepaheAPI = "https://animepahe.ru"
+        const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.ac"
         const val torrentioAPI = "https://torrentio.strem.fun"
         const val anizoneAPI = "https://anizone.to"
@@ -120,7 +105,7 @@ open class CineStreamProvider : MainAPI() {
         const val TRACKER_LIST_URL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ip.txt"
         const val torrentioCONFIG = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=seeders|qualityfilter=threed,480p,other,scr,cam,unknown|limit=10"
         const val Player4uApi = "https://player4u.xyz"
-        const val Primewire = "https://www.primewire.tf"
+        const val PrimeSrcApi = "https://primesrc.me"
         const val ThePirateBayApi = "https://thepiratebay-plus.strem.fun"
         //const val VidJoyApi = "https://vidjoy.pro"
         const val soaperAPI = "https://soaper.live"
@@ -131,11 +116,9 @@ open class CineStreamProvider : MainAPI() {
         const val animeparadiseBaseAPI = "https://www.animeparadise.moe"
         const val animeparadiseAPI = "https://api.animeparadise.moe"
         const val sudatchiAPI = "https://sudatchi.com"
-        const val miruroAPI = "https://www.miruro.to"
+        const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
-        const val proxyAPI = "https://thingproxy.freeboard.io/fetch"
-        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":""}"""
-        const val nuvioStreamsAPI = "https://nuviostreams.hayd.uk/providers=vidzee,vidsrc,mp4hydra,uhdmovies,4khdhub,dramadrip,animepahe"
+        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
         const val mp4MoviezAPI = "https://www.mp4moviez.moe"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.live"
@@ -183,6 +166,7 @@ open class CineStreamProvider : MainAPI() {
         val toonStreamAPI get() = api("toonstream")
         val hianimeAPI get() = api("hianime")
         val dramadripAPI get() = api("dramadrip")
+        val nuvioStreamsAPI get() = api("nuvio")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -636,7 +620,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeMoviesdrive(imdbTitle, res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeToonstream(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeWire(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokePrimeSrc(res.imdb_id, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePlayer4U(imdbTitle, res.imdbSeason, res.imdbEpisode, year, callback) },
             { invokeCinemaluxe(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             { invokePrimebox(imdbTitle, imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
@@ -692,7 +676,7 @@ open class CineStreamProvider : MainAPI() {
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeWire(res.id, res.season, res.episode, subtitleCallback, callback) },
+            { invokePrimeSrc(res.id, res.season, res.episode, subtitleCallback, callback) },
             { if (!isAnime) invoke2embed(res.id, res.season, res.episode, callback) },
             { invokeSoaper(res.id, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokePhoenix(res.title, res.id, res.tmdbId, year, res.season, res.episode, callback) },

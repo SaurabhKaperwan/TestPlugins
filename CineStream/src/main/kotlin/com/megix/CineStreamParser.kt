@@ -37,16 +37,16 @@ data class HianimeResponses(
 )
 
 data class HianimeStreamResponse(
-    val streams: List<HianimeStream>,
-    val tracks: List<HianimeTrack>,
+    val sources: List<HianimeSources>,
+    val tracks: List<HianimeTracks>,
 )
 
-data class HianimeStream(
+data class HianimeSources(
     val url: String,
     val type: String,
 )
 
-data class HianimeTrack(
+data class HianimeTracks(
     val file: String,
     val label: String?,
     val kind: String,
@@ -582,6 +582,7 @@ data class CinemaOSReponseData(
     val encrypted: String,
     val cin: String,
     val mao: String,
+    val salt: String,
 )
 
 data class CinemaOsAuthResponse(
@@ -602,6 +603,21 @@ data class TripleOneMoviesStream(
     val noReferrer: Boolean,
     val url: String,
 )
+
+
+data class PrimeSrcServerList(
+    val servers: List<PrimeSrcServer>,
+)
+
+data class PrimeSrcServer(
+    val name: String,
+    val key: String,
+    @JsonProperty("file_size")
+    val fileSize: String?,
+    @JsonProperty("file_name")
+    val fileName: String?,
+)
+
 
 
 
