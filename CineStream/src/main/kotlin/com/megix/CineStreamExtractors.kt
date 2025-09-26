@@ -2469,14 +2469,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val hiId = url?.substringAfterLast("/") ?: return
         val id = hiId.substringAfterLast("-") ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "Hianime id",
-                "Hianime id",
-                id,
-            )
-        )
-
         val epId = app.get(
             "$hianimeAPI/ajax/v2/episode/list/$id",
             headers = headers
@@ -2486,25 +2478,17 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.find { it.attr("data-number") == "${episode ?: 1}" }
             ?.attr("data-id") ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "Hianime epid",
-                "Hianime epid",
-                epId,
-            )
-        )
-
         val videoHeaders = mapOf(
             "Referer" to "https://megacloud.blog/",
             "Origin" to "https://megacloud.blog/"
         )
 
         val types = listOf("sub", "dub")
-        val servers = listOf("HD-1", "HD-2", "HD-3")
+        val servers = listOf("HD-1", "HD-2")
 
         types.forEach { t ->
             servers.forEach { server ->
-                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$hiId-$epId&type=$t&server=$server").parsedSafe<HianimeStreamResponse>() ?: return@forEach
+                val epData = app.get("$aniversehdAPI/api/v2/zoro/watch/$hiId?ep=$epId&type=$t&server=$server", referer = aniversehdAPI).parsedSafe<HianimeStreamResponse>() ?: return@forEach
                 val streamUrl = epData.sources.firstOrNull()?.url
                 if(streamUrl != null) {
                     M3u8Helper.generateM3u8(
