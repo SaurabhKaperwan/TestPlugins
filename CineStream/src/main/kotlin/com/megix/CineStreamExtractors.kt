@@ -2466,7 +2466,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val id = url?.substringAfterLast("/")?.substringAfterLast("-") ?: return
+        val id = url?.substringAfterLast("/") ?: return
 
         callback.invoke(
             newExtractorLink(
