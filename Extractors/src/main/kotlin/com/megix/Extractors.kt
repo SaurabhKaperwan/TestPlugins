@@ -318,7 +318,7 @@ class VCloudLol : VCloud() {
     override val mainUrl: String = "https://vcloud.lol"
 }
 
-class VCloud : ExtractorApi() {
+open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud.zip"
     override val requiresReferer = false
