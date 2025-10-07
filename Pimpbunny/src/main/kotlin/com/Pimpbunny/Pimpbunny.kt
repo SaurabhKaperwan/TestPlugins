@@ -97,6 +97,7 @@ class Pimpbunny : MainAPI() {
 
         if (jsonString != null) {
 
+            val jsonObject = JSONObject(jsonString)
             val urlKeys = listOf(
                 "video_url" to "video_url_text",
                 "video_alt_url" to "video_alt_url_text",
@@ -124,7 +125,7 @@ class Pimpbunny : MainAPI() {
                                 this.quality = quality ?: Qualities.Unknown.value
                             }
                         )
-                    )
+                    }
                 }
             }
         }
