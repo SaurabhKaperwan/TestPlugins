@@ -108,24 +108,23 @@ class Pimpbunny : MainAPI() {
 
             urlKeys.mapNotNull { (urlKey, textKey) ->
                 if (jsonObject.has(urlKey) && jsonObject.has(textKey)) {
-                        val url = jsonObject.getString(urlKey).replace("function/0/", "")
-                        val quality = jsonObject.getString(textKey)
-                            .replace("2K", "1440p")
-                            .replace("p", "")
-                            .toIntOrNull()
+                    val url = jsonObject.getString(urlKey).replace("function/0/", "")
+                    val quality = jsonObject.getString(textKey)
+                        .replace("2K", "1440p")
+                        .replace("p", "")
+                        .toIntOrNull()
 
-                        callback.invoke(
-                            newExtractorLink(
-                               "Pimpbunny",
-                               "Pimpbunny",
-                                url,
-                                ExtractorLinkType.VIDEO
-                            ) {
-                                this.referer = "$mainUrl/"
-                                this.quality = quality ?: Qualities.Unknown.value
-                            }
-                        )
-                    }
+                    callback.invoke(
+                        newExtractorLink(
+                            "Pimpbunny",
+                            "Pimpbunny",
+                            url,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.referer = "$mainUrl/"
+                            this.quality = quality ?: Qualities.Unknown.value
+                        }
+                    )
                 }
             }
         }
