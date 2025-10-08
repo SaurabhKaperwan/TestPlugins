@@ -23,6 +23,7 @@ class JAVHDProvider : MainAPI() {
             "/popular/today/" to "Most View Today",
             "/popular/week/" to "Most View Week",
             "/jav-sub/" to "Jav Subbed",
+            "/jav-sub/popular/year/" to "Most Viewed Jav Subbed",
             "/uncensored-jav/" to "Uncensored",
             "/reducing-mosaic/" to "Reduced Mosaic",
             "/amateur/" to "Amateur"
@@ -58,15 +59,10 @@ class JAVHDProvider : MainAPI() {
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-
-        val searchResponse = mutableListOf<SearchResponse>()
-
         val document = app.get("$mainUrl/search/video/?s=$query&page=$page").document
-
         val results = document.select("div.video").mapNotNull { it.toSearchResult() }
-
-        return SearchResponseList(results, true)
-
+        val hasNext = if (results.isEmpty()) false else true
+        return SearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse {
@@ -88,20 +84,20 @@ class JAVHDProvider : MainAPI() {
         runAllAsync(
             {
                 val episodeList = doc.select(".button_style .button_choice_server")
-                    episodeList.forEach { item->
+                    episodeList.forEach { item ->
                     var link = item.attr("data-embed")
                     loadExtractor(base64Decode(link),subtitleCallback,callback)
                 }
             },
             {
-                getExternalSubtitile(doc ,subtitleCallback)
+                getExternalSubtitile(doc, subtitleCallback)
             }
         )
 
         return true
     }
 
-    suspend fun getExternalSubtitile(doc: document ,subtitleCallback: (SubtitleFile) -> Unit) {
+    suspend fun getExternalSubtitile(doc: Document, subtitleCallback: (SubtitleFile) -> Unit) {
         try {
             val title = doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim().toString()
             val javCode = "([a-zA-Z]+-\\d+)".toRegex().find(title)?.groups?.get(1)?.value
