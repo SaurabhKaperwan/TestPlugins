@@ -31,6 +31,7 @@ data class PostMain(
     val slug: String,
 )
 
+
 data class Load(
     val post: Post,
     val urls: List<Url>,
@@ -64,7 +65,7 @@ data class Post(
 )
 
 data class VideoUrls(
-    val link: List<Any>,
+    val link: List<List<String>>,
     val iframe: List<Iframe>,
 )
 
@@ -115,3 +116,4 @@ data class RelatedPost(
     val dislike: Long,
     val slug: String,
 )
+

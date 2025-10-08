@@ -117,6 +117,7 @@ class AllPornStream : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val searchResponse = mutableListOf<SearchResponse>()
+        for (i in 1..3) {
             val res = app.get("$mainUrl/api/posts?search=$query&page=$i").parsedSafe<Posts>()?.posts.orEmpty()
             val results = res.map { it.toSearchResult() }
             val newResults = results.filterNot { it in searchResponse }
@@ -136,7 +137,7 @@ class AllPornStream : MainAPI() {
         val tags = loaddata?.categories?.map { it }
         val description = loaddata?.videoDescription ?: ""
         val recommendations= res?.relatedPosts?.map { it.toSearchResult() }
-        val hrefs = res?.urls?.map { it.url }?.toJson()
+        val hrefs=res?.urls?.map { it.url }?.toJson()
         return newMovieLoadResponse(title, url, TvType.NSFW, hrefs) {
             this.posterUrl = poster
             this.plot = description
