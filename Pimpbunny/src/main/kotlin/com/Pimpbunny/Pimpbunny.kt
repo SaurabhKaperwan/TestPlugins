@@ -3,7 +3,6 @@ package com.megix
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import org.json.JSONObject
 
 class Pimpbunny : MainAPI() {
     override var mainUrl              = "https://pimpbunny.com"
@@ -21,7 +20,7 @@ class Pimpbunny : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get("$mainUrl${request.data}/page/?videos_per_page=30").document
+        val document = app.get("$mainUrl${request.data}/$page/?videos_per_page=30").document
         val home     = document.select("div.item").mapNotNull { it.toSearchResult() }
 
         return newHomePageResponse(
@@ -78,56 +77,30 @@ class Pimpbunny : MainAPI() {
     }
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
-        val doc = app.get(data).document
-        val scriptElements = doc.select("script")
+        val text = app.get(data).text
+        val urlPattern = Regex("""video(?:_alt)?_url\d*:\s*'([^']+)'""")
 
-        var jsonString: String? = null
-
-        for (script in scriptElements) {
-            val scriptContent = script.html()
-            if (scriptContent.contains("video_url")) {
-                val start = scriptContent.indexOf("{")
-                val end = scriptContent.lastIndexOf("}")
-                if (start != -1 && end != -1 && end > start) {
-                    jsonString = scriptContent.substring(start, end + 1)
-                    break
+        val videoLinks = urlPattern.findAll(text).map {
+            val url = it.groupValues[1].removePrefix("function/0/")
+            val quality = getIndexQuality(url)
+            callback.invoke(
+                newExtractorLink(
+                    "Pimpbunny",
+                    "Pimpbunny",
+                    url,
+                    ExtractorLinkType.VIDEO
+                ) {
+                    this.referer = "$mainUrl/"
+                    this.quality = quality
                 }
-            }
-        }
-
-        if (jsonString != null) {
-
-            val jsonObject = JSONObject(jsonString)
-            val urlKeys = listOf(
-                "video_url" to "video_url_text",
-                "video_alt_url" to "video_alt_url_text",
-                "video_alt_url2" to "video_alt_url2_text",
-                "video_alt_url3" to "video_alt_url3_text",
-                "video_alt_url4" to "video_alt_url4_text"
             )
 
-            urlKeys.mapNotNull { (urlKey, textKey) ->
-                if (jsonObject.has(urlKey) && jsonObject.has(textKey)) {
-                    val url = jsonObject.getString(urlKey).replace("function/0/", "")
-                    val quality = jsonObject.getString(textKey)
-                        .replace("2K", "1440p")
-                        .replace("p", "")
-                        .toIntOrNull()
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "Pimpbunny",
-                            "Pimpbunny",
-                            url,
-                            ExtractorLinkType.VIDEO
-                        ) {
-                            this.referer = "$mainUrl/"
-                            this.quality = quality ?: Qualities.Unknown.value
-                        }
-                    )
-                }
-            }
         }
         return true
+    }
+
+    fun getIndexQuality(str: String?): Int {
+        return Regex("""(\d{3,4})[pP]""").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
+            ?: Qualities.Unknown.value
     }
 }
