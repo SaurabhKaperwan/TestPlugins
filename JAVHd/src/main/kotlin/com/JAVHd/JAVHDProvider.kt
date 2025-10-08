@@ -5,6 +5,7 @@ import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
+import com.lagradost.cloudstream3.runAllAsync
 
 class JAVHDProvider : MainAPI() {
     override var mainUrl              = "https://javhd.today"
@@ -64,7 +65,7 @@ class JAVHDProvider : MainAPI() {
 
         val results = document.select("div.video").mapNotNull { it.toSearchResult() }
 
-        return SearchResponseList(results)
+        return SearchResponseList(results, true)
 
     }
 
@@ -84,12 +85,23 @@ class JAVHDProvider : MainAPI() {
 
     override suspend fun loadLinks(data: String, isCasting: Boolean, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
         val doc = app.get(data).document
-        val episodeList = doc.select(".button_style .button_choice_server")
-        episodeList.forEach { item->
-            var link = item.attr("data-embed")
-            loadExtractor(base64Decode(link),subtitleCallback,callback)
-        }
+        runAllAsync(
+            {
+                val episodeList = doc.select(".button_style .button_choice_server")
+                    episodeList.forEach { item->
+                    var link = item.attr("data-embed")
+                    loadExtractor(base64Decode(link),subtitleCallback,callback)
+                }
+            },
+            {
+                getExternalSubtitile(doc ,subtitleCallback)
+            }
+        )
 
+        return true
+    }
+
+    suspend fun getExternalSubtitile(doc: document ,subtitleCallback: (SubtitleFile) -> Unit) {
         try {
             val title = doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim().toString()
             val javCode = "([a-zA-Z]+-\\d+)".toRegex().find(title)?.groups?.get(1)?.value
@@ -128,9 +140,5 @@ class JAVHDProvider : MainAPI() {
 
             }
         } catch (e: Exception) { }
-
-
-
-        return true
     }
 }
