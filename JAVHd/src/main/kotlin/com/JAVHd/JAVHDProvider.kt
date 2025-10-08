@@ -56,26 +56,15 @@ class JAVHDProvider : MainAPI() {
         }
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
+    override suspend fun search(query: String, page: Int): SearchResponseList? {
 
         val searchResponse = mutableListOf<SearchResponse>()
 
-        for (i in 1..7) {
-            val document = app.get("$mainUrl/search/video/?s=$query&page=$i").document
-            //val document = app.get("${mainUrl}/page/$i/?s=$query").document
+        val document = app.get("$mainUrl/search/video/?s=$query&page=$page").document
 
-            val results = document.select("div.video").mapNotNull { it.toSearchResult() }
+        val results = document.select("div.video").mapNotNull { it.toSearchResult() }
 
-            if (!searchResponse.containsAll(results)) {
-                searchResponse.addAll(results)
-            } else {
-                break
-            }
-
-            if (results.isEmpty()) break
-        }
-
-        return searchResponse
+        return SearchResponseList(results)
 
     }
 
