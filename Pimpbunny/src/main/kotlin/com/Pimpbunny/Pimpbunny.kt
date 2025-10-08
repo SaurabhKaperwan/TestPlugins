@@ -80,7 +80,7 @@ class Pimpbunny : MainAPI() {
         val text = app.get(data).text
         val urlPattern = Regex("""video(?:_alt)?_url\d*:\s*'([^']+)'""")
 
-        val videoLinks = urlPattern.findAll(text).amap {
+        val videoLinks = urlPattern.findAll(text).forEach {
             val url = it.groupValues[1].removePrefix("function/0/")
             val quality = getIndexQuality(url)
             callback.invoke(
@@ -96,6 +96,7 @@ class Pimpbunny : MainAPI() {
             )
 
         }
+
         return true
     }
 
