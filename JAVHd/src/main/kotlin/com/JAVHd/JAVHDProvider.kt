@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import okhttp3.FormBody
 import com.lagradost.cloudstream3.runAllAsync
+import org.jsoup.nodes.Document
 
 class JAVHDProvider : MainAPI() {
     override var mainUrl              = "https://javhd.today"
