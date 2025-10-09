@@ -592,27 +592,21 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
+    val wt = "4fd6sg89d7s6"
     val headers = mapOf(
         "User-Agent" to USER_AGENT,
         "Origin" to mainUrl,
         "Referer" to mainUrl,
     )
 
-    callback.invoke(
-        newExtractorLink(
-            "gofile",
-            "gofile",
-            url,
-        )
-    )
     //val res = app.get(url)
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
     callback.invoke(
         newExtractorLink(
-            "id",
-            "id",
-            id,
+            "url + id",
+            "url + id",
+            url + id,
         )
     )
 
@@ -628,16 +622,16 @@ suspend fun gofileExtractor(
         )
     )
 
-    val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
-    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+    // val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
+    // val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
-    callback.invoke(
-        newExtractorLink(
-            "wt",
-            "wt",
-            wt,
-        )
-    )
+    // callback.invoke(
+    //     newExtractorLink(
+    //         "wt",
+    //         "wt",
+    //         wt,
+    //     )
+    // )
 
     val response = app.get("$mainApi/contents/$id?wt=$wt",
         headers = mapOf(
