@@ -597,14 +597,47 @@ suspend fun gofileExtractor(
         "Origin" to mainUrl,
         "Referer" to mainUrl,
     )
+
+    callback.invoke(
+        newExtractorLink(
+            "gofile",
+            "gofile",
+            url,
+        )
+    )
     //val res = app.get(url)
     val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
+
+    callback.invoke(
+        newExtractorLink(
+            "id",
+            "id",
+            id,
+        )
+    )
+
     val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
     val jsonResp = JSONObject(genAccountRes)
     val token = jsonResp.getJSONObject("data").getString("token") ?: return
 
+    callback.invoke(
+        newExtractorLink(
+            "token",
+            "token",
+            token,
+        )
+    )
+
     val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
     val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+    callback.invoke(
+        newExtractorLink(
+            "wt",
+            "wt",
+            wt,
+        )
+    )
 
     val response = app.get("$mainApi/contents/$id?wt=$wt",
         headers = mapOf(

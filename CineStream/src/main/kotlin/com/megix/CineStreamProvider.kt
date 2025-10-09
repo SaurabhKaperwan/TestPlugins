@@ -76,6 +76,7 @@ import com.megix.CineStreamExtractors.invokeVidFastPro
 import com.megix.CineStreamExtractors.invokeVidPlus
 import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeVicSrcWtf
+import com.megix.CineStreamExtractors.invokeXDmovies
 
 open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
@@ -654,6 +655,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeMoviesdrive(res.title, res.id ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!isAnime) invokeAsiaflix(res.title, res.season, res.episode, seasonYear, subtitleCallback, callback) },
+            { if(res.season == null) invokeXDmovies(res.tmdbId, subtitleCallback, callback) },
             { invokeCinemaluxe(res.title, year, res.season, res.episode, callback, subtitleCallback) },
             { invokeRar(res.title, year, res.season, res.episode, callback) },
             { if (!isAnime) invokeSkymovies(res.title, seasonYear, res.episode, subtitleCallback, callback) },

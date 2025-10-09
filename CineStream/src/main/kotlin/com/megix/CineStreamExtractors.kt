@@ -173,8 +173,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeXDmovies(
         tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
@@ -185,32 +183,12 @@ object CineStreamExtractors : CineStreamProvider() {
             "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
         )
 
-        val url = if(season == null) {
-            "$XDmoviesAPI/api/xyz123?tmdb_id=$tmdbId"
-        } else {
-            "$XDmoviesAPI/api/abc456??tmdb_id=$tmdbId"
-        }
+        val url = "$XDmoviesAPI/api/xyz123?tmdb_id=$tmdbId"
         val text = app.get(url, headers = headers).text
         val gson = Gson()
-
-        if(season != null && episode != null) {
-            val response = gson.fromJson(text, XDmoviesShow::class.java)
-
-            val links = response.download_data.seasons
-                .find { it.season_num == season }
-                ?.episodes
-                ?.find { it.episode_number == episode }
-                ?.versions
-                ?.map { it.download_link } ?: emptyList()
-
-            links.amap { source ->
-                loadSourceNameExtractor("XDmovies", source, "", subtitleCallback, callback)
-            }
-        } else {
-            val response = gson.fromJson(text, XDmoviesMovie::class.java)
-            val links = response.download_links.amap { source ->
-                loadSourceNameExtractor("XDmovies", source.download_link, "", subtitleCallback, callback)
-            }
+        val response = gson.fromJson(text, XDmoviesMovie::class.java)
+        val links = response.download_links.amap { source ->
+            loadSourceNameExtractor("XDmovies", source.download_link, "", subtitleCallback, callback)
         }
     }
 
