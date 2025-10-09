@@ -197,6 +197,13 @@ object CineStreamExtractors : CineStreamProvider() {
             seasonDiv.select("div.episode-card").amap {
                 if(it.select("div.episode-title").text().contains(episodeText)) {
                     var source = it.select("a.movie-download-btn").attr("href")
+                    callback.invoke(
+                        newExtractorLink(
+                            "XDmovies",
+                            "XDmovies",
+                            source,
+                        )
+                    )
                     if(source.contains("xdmovies")) {
                         source = app.get(source, allowRedirects = false, headers = headers).headers["location"] ?: return@amap
                     }
@@ -212,16 +219,23 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             doc.select("a.movie-download-btn").amap {
                 var source = it.attr("href")
-                if(source.contains("xdmovies")) {
-                    source = app.get(source, allowRedirects = false, headers = headers).headers["location"] ?: return@amap
-                    loadSourceNameExtractor(
+                callback.invoke(
+                    newExtractorLink(
+                        "XDmovies",
                         "XDmovies",
                         source,
-                        "",
-                        subtitleCallback,
-                        callback
                     )
+                )
+                if(source.contains("xdmovies")) {
+                    source = app.get(source, allowRedirects = false, headers = headers).headers["location"] ?: return@amap
                 }
+                loadSourceNameExtractor(
+                    "XDmovies",
+                    source,
+                    "",
+                    subtitleCallback,
+                    callback
+                )
             }
         }
     }
