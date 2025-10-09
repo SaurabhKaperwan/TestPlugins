@@ -166,6 +166,7 @@ open class CineStreamProvider : MainAPI() {
         val hianimeAPI get() = api("hianime")
         val dramadripAPI get() = api("dramadrip")
         val nuvioStreamsAPI get() = api("nuvio")
+        val XDmoviesAPI get() = api("xdmovies")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
