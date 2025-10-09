@@ -180,62 +180,36 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Cookie" to "cf_clearance=yEtBR4TIQ_V3Q1hyD2FMhq0UJPMs4XOAe6v8O.I9EY8-1759986179-1.2.1.1-CNUCht.URQQXp_zDSEx6nJA1CkaZaKoikQyj3PZy6AYrmzNAHPK17YUAn5x4bNI4YX0Y3kIVxRxZOPeEi5e27MhO8DyTVtwbAyWfwP4Z3eg8cKjsfPRo_MrAhXLQui.qBvfQQdfvC65EAz9IUWMC8AvvsHx.j8KmIUAn7w86lyjIPIEfJfdCj7qGUMe5PnJ8hzKtkJerXDtDKGfEO7pqCYON.liBegz51q5t.2wei_jJqxNj2yRGZv7IH7QsuW.E"
+            "Referer" to "$XDmoviesAPI/",
+            "x-requested-with" to "XMLHttpRequest",
+            "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
         )
 
         val url = if(season == null) {
-            "$XDmoviesAPI/details.html?id=$tmdbId&type=movie"
+            "$XDmoviesAPI/api/xyz123?tmdb_id=$tmdbId"
         } else {
-            "$XDmoviesAPI/details.html?id=$tmdbId&type=tv"
+            "$XDmoviesAPI/api/abc456??tmdb_id=$tmdbId"
         }
-
-        val doc = app.get(url).document
+        val text = app.get(url, headers = headers).text
+        val gson = Gson()
 
         if(season != null && episode != null) {
-            val seasonDiv = doc.selectFirst("div#season-episodes-$season") ?: return
-            val episodeText = "E" + episode.toString().padStart(2, '0')
-            seasonDiv.select("div.episode-card").amap {
-                if(it.select("div.episode-title").text().contains(episodeText)) {
-                    var source = it.select("a.movie-download-btn").attr("href")
-                    callback.invoke(
-                        newExtractorLink(
-                            "XDmovies",
-                            "XDmovies",
-                            source,
-                        )
-                    )
-                    if(source.contains("xdmovies")) {
-                        source = app.get(source, allowRedirects = false, headers = headers).headers["location"] ?: return@amap
-                    }
-                    loadSourceNameExtractor(
-                        "XDmovies",
-                        source,
-                        "",
-                        subtitleCallback,
-                        callback
-                    )
-                }
+            val response = gson.fromJson(text, XDmoviesShow::class.java)
+
+            val links = response.download_data.seasons
+                .find { it.season_num == season }
+                ?.episodes
+                ?.find { it.episode_number == episode }
+                ?.versions
+                ?.map { it.download_link } ?: emptyList()
+
+            links.amap { source ->
+                loadSourceNameExtractor("XDmovies", source, "", subtitleCallback, callback)
             }
         } else {
-            doc.select("a.movie-download-btn").amap {
-                var source = it.attr("href")
-                callback.invoke(
-                    newExtractorLink(
-                        "XDmovies",
-                        "XDmovies",
-                        source,
-                    )
-                )
-                if(source.contains("xdmovies")) {
-                    source = app.get(source, allowRedirects = false, headers = headers).headers["location"] ?: return@amap
-                }
-                loadSourceNameExtractor(
-                    "XDmovies",
-                    source,
-                    "",
-                    subtitleCallback,
-                    callback
-                )
+            val response = gson.fromJson(text, XDmoviesMovie::class.java)
+            val links = response.download_links.amap { source ->
+                loadSourceNameExtractor("XDmovies", source.download_link, "", subtitleCallback, callback)
             }
         }
     }
