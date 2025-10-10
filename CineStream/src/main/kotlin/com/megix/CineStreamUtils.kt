@@ -592,7 +592,7 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    val wt = "4fd6sg89d7s6"
+    // val wt = "4fd6sg89d7s6"
     val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
         "Origin" to mainUrl,
@@ -620,8 +620,8 @@ suspend fun gofileExtractor(
         )
     )
 
-    // val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
-    // val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+    val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
+    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
     callback.invoke(
         newExtractorLink(
@@ -802,7 +802,7 @@ suspend fun getProtonStream(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
 ) {
-    doc.select("tr.infotr").amap { tr ->
+    doc.select("tr.infotr").map { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
         if(id != null) {
             val uid = "uid_${System.currentTimeMillis()}_${
