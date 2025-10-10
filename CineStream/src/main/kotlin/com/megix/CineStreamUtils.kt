@@ -615,6 +615,14 @@ suspend fun gofileExtractor(
         )
     ).text
 
+    callback.invoke(
+        newExtractorLink(
+            "Gofile",
+            "Gofile",
+            response,
+        )
+    )
+
     val jsonResponse = JSONObject(response)
     val data = jsonResponse.getJSONObject("data")
     val children = data.getJSONObject("children")
