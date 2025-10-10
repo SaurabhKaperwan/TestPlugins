@@ -592,7 +592,6 @@ suspend fun gofileExtractor(
 ) {
     val mainUrl = "https://gofile.io"
     val mainApi = "https://api.gofile.io"
-    val wt = "4fd6sg89d7s6"
     val headers = mapOf(
         "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
         "Origin" to mainUrl,
@@ -600,13 +599,38 @@ suspend fun gofileExtractor(
     )
     val id = url.substringAfter("d/").substringBefore("/")
 
+    callback.invoke(
+        newExtractorLink(
+            "url + id",
+            "url + id",
+            url + " " + id,
+        )
+    )
+
     val genAccountRes = app.post("$mainApi/accounts", headers = headers).text
     val jsonResp = JSONObject(genAccountRes)
     val token = jsonResp.getJSONObject("data").getString("token") ?: return
-    // val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
-    // val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
 
-    val response = app.get("$mainApi/contents/$id?wt=$wt",
+    callback.invoke(
+        newExtractorLink(
+            "token",
+            "token",
+            token,
+        )
+    )
+
+    val globalRes = app.get("$mainUrl/dist/js/global.js", headers = headers).text
+    val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
+
+    callback.invoke(
+        newExtractorLink(
+            "wt",
+            "wt",
+            wt,
+        )
+    )
+
+    val response = app.get("$mainApi/contents/$id?wt=$wt&cache=true",
         headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Origin" to mainUrl,
@@ -617,8 +641,8 @@ suspend fun gofileExtractor(
 
     callback.invoke(
         newExtractorLink(
-            "Gofile",
-            "Gofile",
+            "response",
+            "response",
             response,
         )
     )
