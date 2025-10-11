@@ -506,7 +506,9 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val json = app.get(url, headers = headers).text
-        val sourceUrl = JSONObject(json).getString("url")
+        val decryptJson = decryptXprime(json) ?: return
+
+        val sourceUrl = JSONObject(decryptJson).getString("url")
         if(sourceUrl == "null") {
             return
         }
@@ -545,7 +547,8 @@ object CineStreamExtractors : CineStreamProvider() {
             "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
         }
         val json = app.get(url, headers = headers).text
-        val data = tryParseJson<Primebox>(json) ?: return
+        val decryptJson = decryptXprime(json) ?: return
+        val data = tryParseJson<Primebox>(decryptJson) ?: return
 
         data.streams?.let { streams ->
             listOf(

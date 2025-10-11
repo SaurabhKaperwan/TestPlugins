@@ -322,6 +322,24 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+suspend fun decryptXprime(
+    encData: String
+): String? {
+    val body = mapOf("text" to encData)
+    val decApi = "https://enc-dec.app/api/dec-xprime"
+    val headers = mapOf(
+        "Content-Type" to "application/json",
+        "User-Agent" to "Mangayomi"
+    )
+    val response = app.post(decApi, body = body, headers = headers)
+    if(response.status != 200) {
+        return null
+    } else {
+        val data = response.text
+        return JSONObject(data).getString("result")
+    }
+}
+
 suspend fun getHindMoviezLinks(
     source: String,
     url: String,
@@ -381,9 +399,14 @@ suspend fun loadSourceNameExtractor(
 
     loadExtractor(url, referer, subtitleCallback) { link ->
         scope.launch {
+            val isDownload = if(link.source.contains("Download")
+                || link.url.contains("video-downloads.googleusercontent")
+            ){ true } else { false }
+
+            if(isDownload) return@launch
+
             val extracted = extractSpecs(link.name)
             val extractedSpecs = buildExtractedTitle(extracted)
-            val isDownload = if(link.source.contains("Download")) true else false
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
