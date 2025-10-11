@@ -325,7 +325,9 @@ fun getIndexQuality(str: String?): Int {
 suspend fun decryptXprime(
     encData: String
 ): String? {
-    val requestBody = mapOf("text" to encData)
+    val requestBody = FormBody.Builder()
+        .add("text", encData)
+        .build()
     val decApi = "https://enc-dec.app/api/dec-xprime"
     val headers = mapOf(
         "Content-Type" to "application/json",
