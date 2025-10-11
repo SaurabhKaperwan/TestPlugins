@@ -325,18 +325,18 @@ fun getIndexQuality(str: String?): Int {
 suspend fun decryptXprime(
     encData: String
 ): String? {
-    val body = mapOf("text" to encData)
+    val requestBody = mapOf("text" to encData)
     val decApi = "https://enc-dec.app/api/dec-xprime"
     val headers = mapOf(
         "Content-Type" to "application/json",
         "User-Agent" to "Mangayomi"
     )
-    val response = app.post(decApi, body = body, headers = headers)
-    if(response.status != 200) {
-        return null
-    } else {
+    val response = app.post(decApi, requestBody = requestBody, headers = headers)
+    if(response.isSuccessful) {
         val data = response.text
         return JSONObject(data).getString("result")
+    } else {
+        return null
     }
 }
 
