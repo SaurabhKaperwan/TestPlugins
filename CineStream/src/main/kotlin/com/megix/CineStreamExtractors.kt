@@ -260,7 +260,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val gson = Gson()
         val subsUrls = listOf(
-            // "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
+            "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
             "https://subsource.strem.bar/ZW5nbGlzaCxoaW5kaSxzcGFuaXNoLGFyYWJpYyxtYW5kYXJpbixiZW5nYWxpLHBvcnR1Z3Vlc2UscnVzc2lhbixqYXBhbmVzZSxsYWhuZGEsdGhhaSx0dXJraXNoLGZyZW5jaCxnZXJtYW4sa29yZWFuLHRlbHVndSxtYXJhdGhpLHRhbWlsLHVyZHUsaXRhbGlhbi9oaUluY2x1ZGUv",
             "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true"
         )
@@ -281,8 +281,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     val fileUrl = it.url
                     if(lang != null && fileUrl != null) {
                         subtitleCallback.invoke(
-                            SubtitleFile(
-                                lang,
+                            newSubtitleFile(
+                                lang + " " + url,
                                 fileUrl,
                             )
                         )
@@ -415,7 +415,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val file = "https://sudatchi.com/api/proxy$subUrl"
             val label = sub.getJSONObject("SubtitlesName").getString("name")
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     label,
                     file
                 )
@@ -506,9 +506,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val json = app.get(url, headers = headers).text
-        val decryptJson = decryptXprime(json) ?: return
-
-        val sourceUrl = JSONObject(decryptJson).getString("url")
+        val sourceUrl = JSONObject(json).getString("url")
         if(sourceUrl == "null") {
             return
         }
@@ -547,8 +545,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
         }
         val json = app.get(url, headers = headers).text
-        val decryptJson = decryptXprime(json) ?: return
-        val data = tryParseJson<Primebox>(decryptJson) ?: return
+        val data = tryParseJson<Primebox>(json) ?: return
 
         data.streams?.let { streams ->
             listOf(
@@ -578,7 +575,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val label = sub.label
                 if (!file.isNullOrBlank() && !label.isNullOrBlank()) {
                     subtitleCallback.invoke(
-                        SubtitleFile(
+                        newSubtitleFile(
                             label,
                             file
                         )
@@ -869,7 +866,7 @@ object CineStreamExtractors : CineStreamProvider() {
             subtitleData.subtitles.forEach {
                 val lang = it.lang ?: "und"
                 subtitleCallback.invoke(
-                    SubtitleFile(
+                    newSubtitleFile(
                         lang.replace("(OpenSubs) ", ""),
                         it.url ?: return@forEach,
                     )
@@ -1678,7 +1675,7 @@ object CineStreamExtractors : CineStreamProvider() {
         .map { match ->
             val (language, subUrl) = match.destructured
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     language,
                     subUrl
                 )
@@ -1935,9 +1932,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = parseJson<ArrayList<WYZIESubtitle>>(json)
 
         data.forEach {
+            val lang = it.display ?: it.language ?: "Unknown"
             subtitleCallback.invoke(
-                SubtitleFile(
-                    it.display ?: it.language ?: "Unknown",
+                newSubtitleFile(
+                    lang + " " + url,
                     it.url
                 )
             )
@@ -2289,7 +2287,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val subtitles = document.select("track").map {
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     it.attr("label"),
                     it.attr("src")
                 )
@@ -2359,7 +2357,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 epData.tracks.forEach { track ->
                     if(track.kind == "captions") {
                         subtitleCallback.invoke(
-                            SubtitleFile(
+                            newSubtitleFile(
                                 track.label ?: "und",
                                 track.file
                             )
@@ -2470,7 +2468,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                         server.subtitles?.forEach { sub ->
                                             val lang = SubtitleHelper.fromTwoLettersToLanguage(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
-                                            subtitleCallback(SubtitleFile(lang, httpsify(src)))
+                                            subtitleCallback(newSubtitleFile(lang, httpsify(src)))
                                         }
                                     }
                                 }

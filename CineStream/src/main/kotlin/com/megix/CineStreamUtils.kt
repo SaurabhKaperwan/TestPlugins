@@ -322,26 +322,6 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
-suspend fun decryptXprime(
-    encData: String
-): String? {
-    val requestBody = FormBody.Builder()
-        .add("text", encData)
-        .build()
-    val decApi = "https://enc-dec.app/api/dec-xprime"
-    val headers = mapOf(
-        "Content-Type" to "application/json",
-        "User-Agent" to "Mangayomi"
-    )
-    val response = app.post(decApi, requestBody = requestBody, headers = headers)
-    if(response.isSuccessful) {
-        val data = response.text
-        return JSONObject(data).getString("result")
-    } else {
-        return null
-    }
-}
-
 suspend fun getHindMoviezLinks(
     source: String,
     url: String,
@@ -1068,7 +1048,7 @@ suspend fun getGojoStreams(
             val url = item.optString("url", null) ?: continue
             val lang = item.optString("lang", null) ?: continue
             subtitleCallback.invoke(
-                SubtitleFile(
+                newSubtitleFile(
                     lang,
                     url
                 )
@@ -1128,7 +1108,7 @@ suspend fun getSoaperLinks(
         val path = sub.getString("path").replace("\\/", "/")
         val subUrl = soaperAPI + path
         subtitleCallback.invoke(
-            SubtitleFile(
+            newSubtitleFile(
                 name,
                 subUrl
             )
