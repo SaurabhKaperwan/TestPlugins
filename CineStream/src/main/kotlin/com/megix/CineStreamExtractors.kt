@@ -195,24 +195,22 @@ object CineStreamExtractors : CineStreamProvider() {
         val jsonObject = JSONObject(jsonString)
 
         if(season != null && episode != null) {
-            val jsonObject = JSONObject(jsonString)
-
             val downloadData = jsonObject.getJSONObject("download_data")
             val seasonsArray = downloadData.getJSONArray("seasons")
 
             for (i in 0 until seasonsArray.length()) {
-                val season = seasonsArray.getJSONObject(i)
-                val seasonNum = season.getInt("season_num")
+                val seasonObj = seasonsArray.getJSONObject(i)
+                val seasonNum = seasonObj.getInt("season_num")
 
                 if (seasonNum == season) {
-                    val episodesArray = season.getJSONArray("episodes")
+                    val episodesArray = seasonObj.getJSONArray("episodes")
 
                     for (j in 0 until episodesArray.length()) {
-                        val episode = episodesArray.getJSONObject(j)
-                        val episodeNumber = episode.getInt("episode_number")
+                        val episodeObj = episodesArray.getJSONObject(j)
+                        val episodeNumber = episodeObj.getInt("episode_number")
 
                         if (episodeNumber == episode) {
-                            val versionsArray = episode.getJSONArray("versions")
+                            val versionsArray = episodeObj.getJSONArray("versions")
 
                             for (k in 0 until versionsArray.length()) {
                                 val version = versionsArray.getJSONObject(k)
