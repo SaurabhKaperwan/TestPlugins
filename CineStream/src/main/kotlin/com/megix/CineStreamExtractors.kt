@@ -192,6 +192,15 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val jsonString = app.get(url, headers = headers).text
+
+        callback.invoke(
+            newExtractorLink(
+                "jsonString",
+                "jsonString",
+                jsonString
+            )
+        )
+
         val jsonObject = JSONObject(jsonString)
 
         if(season != null && episode != null) {
@@ -214,6 +223,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
                             for (k in 0 until versionsArray.length()) {
                                 val version = versionsArray.getJSONObject(k)
+
+                                callback.invoke(
+                                    newExtractorLink(
+                                        "source",
+                                        "source",
+                                        version.getString("download_link")
+                                    )
+                                )
+
                                 loadSourceNameExtractor("XDmovies", version.getString("download_link"), "", subtitleCallback, callback)
                             }
                         }
@@ -224,6 +242,16 @@ object CineStreamExtractors : CineStreamProvider() {
             val downloadLinksArray = jsonObject.getJSONArray("download_links")
             for (i in 0 until downloadLinksArray.length()) {
                 val linkObject = downloadLinksArray.getJSONObject(i)
+
+                callback.invoke(
+                    newExtractorLink(
+                        "source",
+                        "source",
+                        linkObject.getString("download_link")
+                    )
+
+                )
+
                 loadSourceNameExtractor("XDmovies", linkObject.getString("download_link"), "", subtitleCallback, callback)
             }
         }
