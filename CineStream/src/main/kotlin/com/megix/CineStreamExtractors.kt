@@ -191,6 +191,14 @@ object CineStreamExtractors : CineStreamProvider() {
             "$XDmoviesAPI/api/abc456?tmdb_id=$tmdbId"
         }
 
+        callback.invoke(
+            newExtractorLink(
+                "url",
+                "url",
+                url
+            )
+        )
+
         val jsonString = app.get(url, headers = headers).text
 
         callback.invoke(
