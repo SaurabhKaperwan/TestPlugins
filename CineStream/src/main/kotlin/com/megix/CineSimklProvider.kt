@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addSimklId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
@@ -130,6 +131,14 @@ class CineSimklProvider: MainAPI() {
         val url = "$haglund_url/ids?source=myanimelist&id=$id"
         val json = app.get(url).text
         return tryParseJson<ExtenalIds>(json)?.imdb
+    }
+
+    private fun getStatus(status: String?): ShowStatus? {
+        return when (status) {
+            "airing" -> ShowStatus.Ongoing
+            "ended" -> ShowStatus.Completed
+            else -> null
+        }
     }
 
    private suspend fun extractImdbInfo(
@@ -301,11 +310,11 @@ class CineSimklProvider: MainAPI() {
         val isCartoon = genres?.contains("Animation") ?: false
         val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
         val en_title = if (isAnime) {
-            val lastAltTitle = json?.alt_titles
+            val altTitle = json?.alt_titles
                 ?.filter { it.lang == 7 }
-                ?.lastOrNull()
+                ?.firstOrNull()
                 ?.name
-            lastAltTitle ?: json.en_title ?: json.title
+            altTitle ?: json.en_title ?: json.title
         } else {
             json.en_title ?: json.title
         }
@@ -315,6 +324,7 @@ class CineSimklProvider: MainAPI() {
         val anilistId = json.ids?.anilist?.toIntOrNull()
         val malId = json.ids?.mal?.toIntOrNull()
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
+        val trailerLink = if(firstTrailerId != null) "https://www.youtube.com/watch?v=${firstTrailerId}" else null
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
@@ -368,6 +378,7 @@ class CineSimklProvider: MainAPI() {
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addTrailer(trailerLink)
             }
         } else {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
@@ -414,10 +425,12 @@ class CineSimklProvider: MainAPI() {
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
+                this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
+                this.addTrailer(trailerLink)
             }
         }
     }
