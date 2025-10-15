@@ -212,20 +212,6 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private fun normalizeSeasonString(input: String?): String? {
-        if(input == null) return null
-        val seasonRegex = """(?i)(season\s+\d+)""".toRegex()
-        val matches = seasonRegex.findAll(input).toList()
-        if (matches.isEmpty()) return input
-
-        val firstSeason = matches.first().value
-        val seasonNumber = """\d+""".toRegex().find(firstSeason)?.value ?: return input
-        val normalizedSeason = "Season $seasonNumber"
-
-        return input.replace(seasonRegex, normalizedSeason)
-            .replace("$normalizedSeason(?:\\s+$normalizedSeason)+".toRegex(), normalizedSeason)
-    }
-
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
         suspend fun fetchResults(type: String): List<SearchResponse> {
@@ -315,7 +301,11 @@ class CineSimklProvider: MainAPI() {
         val isCartoon = genres?.contains("Animation") ?: false
         val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
         val en_title = if (isAnime) {
-            normalizeSeasonString(json.en_title ?: json.title)
+            val lastAltTitle = json?.alt_titles
+                ?.filter { it.lang == 7 }
+                ?.lastOrNull()
+                ?.name
+            lastAltTitle ?: json.en_title ?: json.title
         } else {
             json.en_title ?: json.title
         }
@@ -597,7 +587,14 @@ class CineSimklProvider: MainAPI() {
         var genres                : ArrayList<String>?               = null,
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
-        var trailers              : ArrayList<Trailers>?             = null
+        var trailers              : ArrayList<Trailers>?             = null,
+        var alt_titles            : ArrayList<AltTitle>?             = null
+    )
+
+    data class AltTitle(
+        var name: String,
+        var lang: Int,
+        var type: String
     )
 
     data class Trailers (
