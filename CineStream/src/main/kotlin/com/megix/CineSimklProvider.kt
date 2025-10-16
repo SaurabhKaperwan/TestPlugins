@@ -142,12 +142,11 @@ class CineSimklProvider: MainAPI() {
     }
 
     private fun normalizeSeasonString(input: String?): String? {
-        if (input == null) return null
+        val text = input ?: return null
 
-        // Normalize all "season X" and "part X" occurrences (case-insensitive)
         val patterns = listOf("season", "part")
+        var result = text
 
-        var result = input
         for (word in patterns) {
             val regex = Regex("(?i)($word\\s*\\d+)")
             val match = regex.find(result) ?: continue
@@ -155,17 +154,13 @@ class CineSimklProvider: MainAPI() {
             val number = Regex("\\d+").find(match.value)?.value ?: continue
             val normalized = "${word.replaceFirstChar { it.uppercase() }} $number"
 
-            // Replace inconsistent forms (extra spaces, lowercase, etc.)
             result = result.replace(regex, normalized)
-
-            // Remove repeated "Season X Season X" or "Part X Part X"
             val duplicateRegex = Regex("(?i)($normalized)(\\s+\\1)+")
             result = result.replace(duplicateRegex, normalized)
         }
 
         return result.trim()
     }
-
 
    private suspend fun extractImdbInfo(
         kitsuId: Int? = null,
