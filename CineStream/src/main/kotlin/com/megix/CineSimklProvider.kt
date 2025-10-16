@@ -99,12 +99,11 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
-    private val jikanAPI = "https://api.jikan.moe"
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
         "/tv/genres/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
-        "/anime/genres/all/this-year/popular-today?limit=$mediaLimit" to "Trending Anime",
+        "/anime/trending?extended=overview&limit=$mediaLimit" to "Trending Anime",
         "/anime/airing?date?sort=rank" to "Airing Anime Today",
         "/tv/genres/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all//all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
@@ -181,17 +180,6 @@ class CineSimklProvider: MainAPI() {
             null
         }
     }
-
-    private suspend fun getAnimeEngTitle(malId: Int?): String? {
-        if (malId == null) return null
-
-        return runCatching {
-            val response = app.get("$jikanAPI/v4/anime/$malId/full").text
-            val data = JSONObject(response).optJSONObject("data")
-            data?.optString("title_english")?.takeIf { it.isNotBlank() }
-        }.getOrNull()
-    }
-
 
     private suspend fun extractNameAndTMDBId(imdbId: String? = null): Pair<String?, Int?> {
         return try {
@@ -330,11 +318,7 @@ class CineSimklProvider: MainAPI() {
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
-
-          val enTitle = if (isAnime) {
-            getAnimeEngTitle(malId) ?: json.en_title ?: json.title
-        } else json.title
-
+        val enTitle = json.en_title ?: json.title
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
