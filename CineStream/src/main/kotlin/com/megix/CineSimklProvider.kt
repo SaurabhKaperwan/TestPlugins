@@ -99,6 +99,7 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
+    private val jikanAPI = "https://api.jikan.moe"
 
     override val mainPage = mainPageOf(
         "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
@@ -180,6 +181,17 @@ class CineSimklProvider: MainAPI() {
             null
         }
     }
+
+    private suspend fun getAnimeEngTitle(malId: Int?): String? {
+        if (malId == null) return null
+
+        return runCatching {
+            val response = app.get("$jikanAPI/v4/anime/$malId/full").text
+            val data = JSONObject(response).optJSONObject("data")
+            data?.optString("title_english")?.takeIf { it.isNotBlank() }
+        }.getOrNull()
+    }
+
 
     private suspend fun extractNameAndTMDBId(imdbId: String? = null): Pair<String?, Int?> {
         return try {
@@ -309,14 +321,6 @@ class CineSimklProvider: MainAPI() {
         val isBollywood = country == "IN"
         val isCartoon = genres?.contains("Animation") == true
         val isAsian = !isAnime && country in listOf("JP", "KR", "CN")
-
-        val enTitle = if (isAnime) {
-            json.alt_titles
-                ?.filter { it.lang == 7 }
-                ?.maxByOrNull { it.name?.length ?: 0 }
-                ?.name ?: json.en_title ?: json.title
-        } else json.en_title ?: json.title
-
         val ids = json.ids
         val allRatings = json.ratings
         val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
@@ -326,6 +330,10 @@ class CineSimklProvider: MainAPI() {
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
+
+          val enTitle = if (isAnime) {
+            getAnimeEngTitle(malId) ?: json.en_title ?: json.title
+        } else json.title
 
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
@@ -606,13 +614,6 @@ class CineSimklProvider: MainAPI() {
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
         var trailers              : ArrayList<Trailers>?             = null,
-        var alt_titles            : ArrayList<AltTitle>?             = null
-    )
-
-    data class AltTitle(
-        var name: String,
-        var lang: Int,
-        var type: String
     )
 
     data class Trailers (
