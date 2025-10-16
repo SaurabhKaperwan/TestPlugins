@@ -352,7 +352,7 @@ class CineSimklProvider: MainAPI() {
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
                 json.title,
-                en_title,
+                enTitle,
                 tvType,
                 simklId?.toIntOrNull(),
                 imdbId,
@@ -370,7 +370,7 @@ class CineSimklProvider: MainAPI() {
                 isAsian,
                 isCartoon
             ).toJson()
-            return newMovieLoadResponse("${en_title}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
+            return newMovieLoadResponse("${enTitle}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = json.overview
@@ -392,7 +392,7 @@ class CineSimklProvider: MainAPI() {
                 newEpisode(
                     LoadLinksData(
                         json.title,
-                        en_title,
+                        enTitle,
                         tvType,
                         simklId?.toIntOrNull(),
                         imdbId,
@@ -420,7 +420,7 @@ class CineSimklProvider: MainAPI() {
                 }
             }
 
-            return newAnimeLoadResponse("${en_title}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
+            return newAnimeLoadResponse("${enTitle}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
