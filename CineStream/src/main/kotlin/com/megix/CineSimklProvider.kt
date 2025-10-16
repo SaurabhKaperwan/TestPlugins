@@ -141,6 +141,32 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
+    private fun normalizeSeasonString(input: String?): String? {
+        if (input == null) return null
+
+        // Normalize all "season X" and "part X" occurrences (case-insensitive)
+        val patterns = listOf("season", "part")
+
+        var result = input
+        for (word in patterns) {
+            val regex = Regex("(?i)($word\\s*\\d+)")
+            val match = regex.find(result) ?: continue
+
+            val number = Regex("\\d+").find(match.value)?.value ?: continue
+            val normalized = "${word.replaceFirstChar { it.uppercase() }} $number"
+
+            // Replace inconsistent forms (extra spaces, lowercase, etc.)
+            result = result.replace(regex, normalized)
+
+            // Remove repeated "Season X Season X" or "Part X Part X"
+            val duplicateRegex = Regex("(?i)($normalized)(\\s+\\1)+")
+            result = result.replace(duplicateRegex, normalized)
+        }
+
+        return result.trim()
+    }
+
+
    private suspend fun extractImdbInfo(
         kitsuId: Int? = null,
         season: Int? = null,
@@ -313,12 +339,17 @@ class CineSimklProvider: MainAPI() {
         val allRatings = json.ratings
         val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
 
+        val enTitle = if (isAnime) {
+            normalizeSeasonString(json.en_title ?: json.title)
+        } else {
+            json.en_title ?: json.title
+        }
+
         val kitsuId = ids?.kitsu?.toIntOrNull()
         val anilistId = ids?.anilist?.toIntOrNull()
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
-        val enTitle = json.en_title ?: json.title
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
