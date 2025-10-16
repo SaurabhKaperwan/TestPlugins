@@ -298,34 +298,39 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    override suspend fun load(url: String): LoadResponse {
+     override suspend fun load(url: String): LoadResponse {
         val simklId = getSimklId(url)
         val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it.toString() }
-        val tvType = json.type ?: ""
-        val country = json.country ?: ""
-        val isAnime = if(tvType == "anime") true else false
-        val isBollywood = if(country == "IN") true else false
-        val isCartoon = genres?.contains("Animation") ?: false
-        val isAsian = if(!isAnime && (country == "JP" || country == "KR" || country == "CN")) true else false
-        val en_title = if (isAnime) {
-            val altTitle = json?.alt_titles
+        val tvType = json.type.orEmpty()
+        val country = json.country.orEmpty()
+        val isAnime = tvType == "anime"
+        val isBollywood = country == "IN"
+        val isCartoon = genres?.contains("Animation") == true
+        val isAsian = !isAnime && country in listOf("JP", "KR", "CN")
+
+        val enTitle = if (isAnime) {
+            json.alt_titles
                 ?.filter { it.lang == 7 }
-                ?.firstOrNull()
-                ?.name
-            altTitle ?: json.en_title ?: json.title
-        } else {
-            json.en_title ?: json.title
-        }
-        val allratings = json.ratings
-        val rating = allratings?.mal?.rating ?: allratings?.imdb?.rating
-        val kitsuId = json.ids?.kitsu?.toIntOrNull()
-        val anilistId = json.ids?.anilist?.toIntOrNull()
-        val malId = json.ids?.mal?.toIntOrNull()
+                ?.maxByOrNull { it.name?.length ?: 0 }
+                ?.name ?: json.en_title ?: json.title
+        } else json.en_title ?: json.title
+
+        val ids = json.ids
+        val allRatings = json.ratings
+        val rating = allRatings?.mal?.rating ?: allRatings?.imdb?.rating
+
+        val kitsuId = ids?.kitsu?.toIntOrNull()
+        val anilistId = ids?.anilist?.toIntOrNull()
+        val malId = ids?.mal?.toIntOrNull()
+        val tmdbId = ids?.tmdb?.toIntOrNull()
+        val imdbId = ids?.imdb
+
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
-        val trailerLink = if(firstTrailerId != null) "https://www.youtube.com/watch?v=${firstTrailerId}" else null
-        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart") ?: getPosterUrl(firstTrailerId, "youtube")
+        val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
+        val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
+            ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
             newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/${it.type}/${it.ids?.simkl}/${it.ids?.slug}") {
@@ -341,7 +346,7 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
-        val tmdbType = if(tvType == "tv") "series" else tvType
+        val tmdbType = if (tvType == "tv") "series" else tvType
         val cast = parseTmdbCastData(tmdbType, json.ids?.tmdb?.toIntOrNull())
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
@@ -350,8 +355,8 @@ class CineSimklProvider: MainAPI() {
                 en_title,
                 tvType,
                 simklId?.toIntOrNull(),
-                json.ids?.imdb,
-                json.ids?.tmdb?.toIntOrNull(),
+                imdbId,
+                tmdbId,
                 json.year,
                 anilistId,
                 malId,
@@ -390,8 +395,8 @@ class CineSimklProvider: MainAPI() {
                         en_title,
                         tvType,
                         simklId?.toIntOrNull(),
-                        json.ids?.imdb,
-                        json.ids?.tmdb?.toIntOrNull(),
+                        imdbId,
+                        tmdbId,
                         json.year,
                         anilistId,
                         malId,
