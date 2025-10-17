@@ -131,50 +131,35 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             seasonLink.amap {
-                val doc = app.get(it).document
+                val bypassUrl = cinematickitBypass(it) ?: return@amap
+                val doc = app.get(bypassUrl).document
                 var sourceUrl = doc.select("div.series_btn > a")
                     .getOrNull(episode-1)?.attr("href")
                     ?: return@amap
-                sourceUrl = if ("unblockedgames" in sourceUrl) {
-                    bypassHrefli(sourceUrl) ?: return@amap
-                } else if("safelink=" in sourceUrl) {
-                    cinematickitBypass(sourceUrl) ?: return@amap
-                } else {
-                    sourceUrl
-                }
+                sourceUrl = cinematickitBypass(sourceUrl) ?: return@amap
 
                 loadSourceNameExtractor("Dramadrip", sourceUrl, "", subtitleCallback, callback)
             }
         } else {
             document.select("div.file-spoiler a").amap {
-                val doc = app.get(it.attr("href")).document
+                val bypassUrl = cinematickitBypass(it.attr("href")) ?: return@amap
+                callback.invoke(
+                    newExtractorLink(
+                        "bypassUrl",
+                        "bypassUrl",
+                        bypassUrl
+                    )
+                )
+                val doc = app.get(bypassUrl).document
                 doc.select("a.wp-element-button").amap { source ->
-                    var sourceUrl = source.attr("href")
-
+                    val sourceUrl = cinematickitBypass(source.attr("href")) ?: return@amap
                     callback.invoke(
                         newExtractorLink(
-                            "Dramadrip",
-                            "Dramadrip",
-                            sourceUrl
+                            "sourceUrl",
+                            "sourceUrl",
+                            bypassUrl
                         )
                     )
-
-                    sourceUrl = if ("unblockedgames" in sourceUrl) {
-                        bypassHrefli(sourceUrl) ?: return@amap
-                    } else if("safelink=" in sourceUrl) {
-                        cinematickitBypass(sourceUrl) ?: return@amap
-                    } else {
-                        sourceUrl
-                    }
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "Dramadrip sourceUrl",
-                            "Dramadrip sourceUrl",
-                            sourceUrl
-                        )
-                    )
-
                     loadSourceNameExtractor(
                         "Dramadrip",
                         sourceUrl,
@@ -1930,21 +1915,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val doc = app.get("$fourkhdhubAPI$link").document
         if(season == null) {
             doc.select("div.download-item a").amap {
-                callback.invoke(
-                    newExtractorLink(
-                        "4Khdhub",
-                        "4Khdhub",
-                        it.attr("href"),
-                    )
-                )
                val source = getRedirectLinks(it.attr("href"))
-               callback.invoke(
-                    newExtractorLink(
-                        "4Khdhub source",
-                        "4Khdhub source",
-                        source,
-                    )
-                )
                loadSourceNameExtractor(
                     "4Khdhub",
                     source,
@@ -2203,15 +2174,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
         links.amap {
             if(!it.isNullOrEmpty()) {
-
-                callback.invoke(
-                    newExtractorLink(
-                        "UHDMovies",
-                        "UHDMovies",
-                        it,
-                    )
-                )
-
                 val driveLink = if(it.contains("driveleech") || it.contains("driveseed")) {
                     val baseUrl = getBaseUrl(it)
                     val text = app.get(it).text
@@ -2221,15 +2183,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 } else {
                     bypassHrefli(it) ?: return@amap
                 }
-
-                callback.invoke(
-                    newExtractorLink(
-                        "UHDMovies driveLink",
-                        "UHDMovies driveLink",
-                        driveLink,
-                    )
-                )
-
                 loadSourceNameExtractor(
                     "UHDMovies",
                     driveLink,
