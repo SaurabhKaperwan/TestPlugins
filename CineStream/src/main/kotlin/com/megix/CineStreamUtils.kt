@@ -485,7 +485,7 @@ fun fixUrl(url: String, domain: String): String {
 }
 
 //Xprime
-suspend fun multiDecrypt(text : String, source: String) : String {
+suspend fun multiDecrypt(text : String, source: String) : String? {
     val headers = mapOf(
         "Content-Type" to "application/json",
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -496,13 +496,17 @@ suspend fun multiDecrypt(text : String, source: String) : String {
     val jsonBody = """{"text":"$text"}"""
     val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
-    val json = app.post(
+    val response = app.post(
         "https://enc-dec.app/api/$source",
         headers = headers,
         requestBody = requestBody
-    ).text
+    )
 
-    return json
+    if(response.isSuccessful) {
+        val json = response.text
+        return JSONObject(json).getString("result")
+    }
+    return null
 }
 
 suspend fun bypassHrefli(url: String): String? {
