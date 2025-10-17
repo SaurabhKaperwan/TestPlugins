@@ -492,12 +492,14 @@ suspend fun multiDecrypt(text : String, source: String) : String {
         "Accept" to "application/json",
         "Accept-Language" to "en-US,en;q=0.9'",
     )
+
+    val jsonBody = """{"text":"$text"}"""
+    val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+
     val json = app.post(
         "https://enc-dec.app/api/$source",
         headers = headers,
-        data = mapOf(
-            "text" to text
-        )
+        requestBody = requestBody
     ).text
 
     return json
