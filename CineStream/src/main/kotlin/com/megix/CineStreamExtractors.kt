@@ -1,5 +1,7 @@
 package com.megix
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -1580,6 +1582,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeBollyflix(
         id: String? = null,
         season: Int? = null,
@@ -2269,6 +2272,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeModflix(
         id: String? = null,
         season: Int? = null,
