@@ -121,7 +121,23 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                "Dramadrip",
+                "Dramadrip",
+                "$dramadripAPI/?s=$imdbId",
+            )
+        )
         val link = app.get("$dramadripAPI/?s=$imdbId").document.selectFirst("article > a")?.attr("href") ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "link",
+                "link",
+                link
+            )
+        )
+
         val document = app.get(link).document
         if(season != null && episode != null) {
             val seasonLink = document.select("div.file-spoiler h2").filter { element ->
