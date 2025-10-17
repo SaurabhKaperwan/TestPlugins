@@ -150,6 +150,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 val doc = app.get(it.attr("href")).document
                 doc.select("a.wp-element-button").amap { source ->
                     var sourceUrl = source.attr("href")
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Dramadrip",
+                            "Dramadrip",
+                            sourceUrl
+                        )
+                    )
+
                     sourceUrl = if ("unblockedgames" in sourceUrl) {
                         bypassHrefli(sourceUrl) ?: return@amap
                     } else if("safelink=" in sourceUrl) {
@@ -157,6 +166,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     } else {
                         sourceUrl
                     }
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Dramadrip sourceUrl",
+                            "Dramadrip sourceUrl",
+                            sourceUrl
+                        )
+                    )
 
                     loadSourceNameExtractor(
                         "Dramadrip",
@@ -584,25 +601,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$xprimeAPI/primebox?name=$title&fallback_year=$year&season=$season&episode=$episode"
         }
         val text = app.get(url, headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "text",
-                "text",
-                text,
-            )
-        )
-
         val json = multiDecrypt(text, "dec-xprime") ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "json",
-                "json",
-                json,
-            )
-        )
-
         val data = tryParseJson<Primebox>(json) ?: return
 
         data.streams?.let { streams ->
@@ -1024,7 +1023,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "Hotstar",
                     "Hotstar",
-                    "$netflixAPI/${it.file}",
+                    "https://net51.cc/${it.file}",
                 ) {
                     this.referer = "$netflixAPI/"
                     this.quality = getQualityFromName(it.file?.substringAfter("q=")?.substringBefore("&in"))
@@ -1931,7 +1930,21 @@ object CineStreamExtractors : CineStreamProvider() {
         val doc = app.get("$fourkhdhubAPI$link").document
         if(season == null) {
             doc.select("div.download-item a").amap {
+                callback.invoke(
+                    newExtractorLink(
+                        "4Khdhub",
+                        "4Khdhub",
+                        it.attr("href"),
+                    )
+                )
                val source = getRedirectLinks(it.attr("href"))
+               callback.invoke(
+                    newExtractorLink(
+                        "4Khdhub source",
+                        "4Khdhub source",
+                        source,
+                    )
+                )
                loadSourceNameExtractor(
                     "4Khdhub",
                     source,
@@ -2190,6 +2203,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
         links.amap {
             if(!it.isNullOrEmpty()) {
+
+                callback.invoke(
+                    newExtractorLink(
+                        "UHDMovies",
+                        "UHDMovies",
+                        it,
+                    )
+                )
+
                 val driveLink = if(it.contains("driveleech") || it.contains("driveseed")) {
                     val baseUrl = getBaseUrl(it)
                     val text = app.get(it).text
@@ -2199,6 +2221,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 } else {
                     bypassHrefli(it) ?: return@amap
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "UHDMovies driveLink",
+                        "UHDMovies driveLink",
+                        driveLink,
+                    )
+                )
+
                 loadSourceNameExtractor(
                     "UHDMovies",
                     driveLink,
