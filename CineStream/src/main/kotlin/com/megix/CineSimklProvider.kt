@@ -581,7 +581,7 @@ class CineSimklProvider: MainAPI() {
             { invokeMoviesmod(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(imdbId, imdbSeason, imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(imdbId, imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
-            { invokeDahmerMovies(mdbTitle, res.year, imdbSeason, imdbEpisode, callback) },
+            { invokeDahmerMovies(imdbTitle, res.year, imdbSeason, imdbEpisode, callback) },
             { invokeWYZIESubs(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(imdbId, imdbSeason, imdbEpisode, subtitleCallback) },
             { invokePrimebox(imdbTitle, res.year, imdbSeason, imdbEpisode, subtitleCallback, callback) },
