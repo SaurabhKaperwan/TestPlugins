@@ -43,6 +43,10 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import kotlin.math.max
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -285,6 +289,31 @@ suspend fun extractMdrive(url: String): List<String> {
         .mapNotNull { it.attr("href").takeIf { href ->
             href.contains(Regex("hubcloud|gdflix|gdlink", RegexOption.IGNORE_CASE))
         }}
+}
+
+fun getDate(): TmdbDate {
+    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val calendar = Calendar.getInstance()
+
+    // Today
+    val today = formatter.format(calendar.time)
+
+    // Next week
+    calendar.add(Calendar.WEEK_OF_YEAR, 1)
+    val nextWeek = formatter.format(calendar.time)
+
+    // Last week's Monday
+    calendar.time = Date()
+    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+    calendar.add(Calendar.WEEK_OF_YEAR, -1)
+    val lastWeekStart = formatter.format(calendar.time)
+
+    // Start of current month
+    calendar.time = Date()
+    calendar.set(Calendar.DAY_OF_MONTH, 1)
+    val monthStart = formatter.format(calendar.time)
+
+    return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
 }
 
 suspend fun loadNameExtractor(
