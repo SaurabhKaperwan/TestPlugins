@@ -188,13 +188,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } else {
             document.select("div.file-spoiler a").amap {
-                callback.invoke(
-                    newExtractorLink(
-                        "Dramadrip",
-                        "Dramadrip",
-                        it.attr("href"),
-                    )
-                )
                 val bypassUrl = cinematickitloadBypass(it.attr("href")) ?: return@amap
                 val doc = app.get(bypassUrl).document
                 doc.select("a.wp-element-button").amap { source ->
@@ -206,7 +199,6 @@ object CineStreamExtractors : CineStreamProvider() {
                         subtitleCallback,
                         callback
                     )
-
                 }
             }
         }
