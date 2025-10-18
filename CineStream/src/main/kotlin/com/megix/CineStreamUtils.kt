@@ -324,6 +324,20 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
+    return if (fullTag) Regex("(?i)(.*)\\.(?:mkv|mp4|avi)").find(str ?: "")?.groupValues?.get(1)
+        ?.trim() ?: str ?: "" else Regex("(?i)\\d{3,4}[pP]\\.?(.*?)\\.(mkv|mp4|avi)").find(
+        str ?: ""
+    )?.groupValues?.getOrNull(1)
+        ?.replace(".", " ")?.trim() ?: str ?: ""
+}
+
+fun String.encodeUrl(): String {
+    val url = URL(this)
+    val uri = URI(url.protocol, url.userInfo, url.host, url.port, url.path, url.query, url.ref)
+    return uri.toURL().toString()
+}
+
 suspend fun getHindMoviezLinks(
     source: String,
     url: String,
