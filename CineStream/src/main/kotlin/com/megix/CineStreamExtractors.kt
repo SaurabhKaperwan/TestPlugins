@@ -177,7 +177,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             seasonLink.amap {
-                val bypassUrl = cinematickitBypass(it) ?: return@amap
+                val bypassUrl = cinematickitloadBypass(it) ?: return@amap
                 val doc = app.get(bypassUrl).document
                 var sourceUrl = doc.select("div.series_btn > a")
                     .getOrNull(episode-1)?.attr("href")
@@ -195,7 +195,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         it.attr("href"),
                     )
                 )
-                val bypassUrl = cinematickitBypass(it.attr("href")) ?: return@amap
+                val bypassUrl = cinematickitloadBypass(it.attr("href")) ?: return@amap
                 val doc = app.get(bypassUrl).document
                 doc.select("a.wp-element-button").amap { source ->
                     val sourceUrl = cinematickitBypass(source.attr("href")) ?: return@amap
