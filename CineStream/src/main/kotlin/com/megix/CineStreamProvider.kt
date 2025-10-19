@@ -675,7 +675,7 @@ open class CineStreamProvider : MainAPI() {
             { invokeWYZIESubs(res.id, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.id, res.season, res.episode, subtitleCallback) },
             { if (isAnime) {
-                val (aniId, malId) = convertTmdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
+                val (aniId, malId) = convertImdbToAnimeId(res.title, year, res.firstAired, if (res.tvtype == "movie") TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, seasonYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },

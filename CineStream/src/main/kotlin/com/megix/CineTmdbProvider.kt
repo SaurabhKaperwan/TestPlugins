@@ -253,7 +253,8 @@ class CineTmdbProvider: MainAPI() {
                     }
             }?.flatten() ?: listOf()
 
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            return newAnimeLoadResponse(title, url, if(isAnime) TvType.Anime else TvType.TvSeries) {
+                addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = poster
                 this.backgroundPosterUrl = bgPoster
                 this.year = year
@@ -272,7 +273,7 @@ class CineTmdbProvider: MainAPI() {
             return newMovieLoadResponse(
                 title,
                 url,
-                TvType.Movie,
+                if(isAnime) TvType.AnimeMovie  else TvType.Movie,
                 LinkData(
                     data.id,
                     res.external_ids?.imdb_id,
