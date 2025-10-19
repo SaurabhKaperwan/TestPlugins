@@ -2,7 +2,6 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.metaproviders.TmdbProvider
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
@@ -10,7 +9,7 @@ import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 
-class CineTmdbProvider: TmdbProvider() {
+class CineTmdbProvider: MainAPI() {
     override var name = "CineTmdb"
     override var mainUrl = "https://www.themoviedb.org"
     override var supportedTypes = setOf(
@@ -38,6 +37,7 @@ class CineTmdbProvider: TmdbProvider() {
         "discover/tv?api_key=$apiKey&with_networks=213" to "Netflix",
         "discover/tv?api_key=$apiKey&with_networks=1024" to "Amazon",
         "discover/tv?api_key=$apiKey&with_networks=2739" to "Disney+",
+        "discover/tv?api_key=$apiKey&with_watch_providers=2336&watch_region=IN" to "JioHotstar",
         "discover/tv?api_key=$apiKey&with_networks=453" to "Hulu",
         "discover/tv?api_key=$apiKey&with_networks=2552" to "Apple TV+",
         "discover/tv?api_key=$apiKey&with_networks=49" to "HBO",
@@ -260,11 +260,12 @@ class CineTmdbProvider: TmdbProvider() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
+        val res = parseJson<LinkData>(data)
         callback.invoke(
             newExtractorLink(
                 "json",
                 "json",
-                data
+                res.toString()
             )
         )
         return true
@@ -295,7 +296,6 @@ class CineTmdbProvider: TmdbProvider() {
         val isCartoon: Boolean = false,
         val alttitle: String? = null,
         val nametitle: String? = null,
-        val isDub: Boolean = false,
     )
 
     data class Data(
