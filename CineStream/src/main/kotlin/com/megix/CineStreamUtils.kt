@@ -47,6 +47,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.lagradost.cloudstream3.APIHolder.unixTimeMS
+
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -322,7 +324,7 @@ fun isUpcoming(dateString: String?): Boolean {
         val dateTime = dateString?.let { format.parse(it)?.time } ?: return false
         unixTimeMS < dateTime
     } catch (t: Throwable) {
-        logError(t)
+        //logError(t)
         false
     }
 }
