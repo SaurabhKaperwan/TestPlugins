@@ -5,7 +5,10 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.metaproviders.TmdbProvider
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.metaproviders.TmdbLink
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTMDbId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 
 class CineTmdbProvider: TmdbProvider() {
     override var name = "CineTmdb"
@@ -73,6 +76,26 @@ class CineTmdbProvider: TmdbProvider() {
         if (link == null) return null
         return if (link.startsWith("/")) "https://image.tmdb.org/t/p/w500/$link" else link
     }
+
+    private fun getOriImageUrl(link: String?): String? {
+        if (link == null) return null
+        return if (link.startsWith("/")) "https://image.tmdb.org/t/p/original/$link" else link
+    }
+
+    fun getType(t: String?): TvType {
+        return when (t) {
+            "movie" -> TvType.Movie
+            else -> TvType.TvSeries
+        }
+    }
+
+    fun getStatus(t: String?): ShowStatus {
+        return when (t) {
+            "Returning Series" -> ShowStatus.Ongoing
+            else -> ShowStatus.Completed
+        }
+    }
+
 
     override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query)
 
@@ -352,6 +375,12 @@ class CineTmdbProvider: TmdbProvider() {
 
     data class ResultsRecommendations(
         @JsonProperty("results") val results: ArrayList<Media>? = arrayListOf(),
+    )
+
+    data class AltTitles(
+        @JsonProperty("iso_3166_1") val iso_3166_1: String? = null,
+        @JsonProperty("title") val title: String? = null,
+        @JsonProperty("type") val type: String? = null,
     )
 
     data class ResultsAltTitles(
