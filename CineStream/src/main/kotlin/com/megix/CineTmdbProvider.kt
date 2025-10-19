@@ -21,7 +21,7 @@ class CineTmdbProvider: TmdbProvider() {
     override val hasMainPage = true
     override val hasQuickSearch = false
     override val useMetaLoadResponse = true
-    private val apiUrl = "https://api.themoviedb.org"
+    private val apiUrl = "https://api.themoviedb.org/3"
 
     companion object {
         private const val apiKey = BuildConfig.TMDB_KEY
