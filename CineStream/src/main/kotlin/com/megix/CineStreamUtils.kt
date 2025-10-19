@@ -599,8 +599,34 @@ suspend fun bypassHrefli(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
-
 suspend fun convertTmdbToAnimeId(
+    title: String?,
+    date: String?,
+    airedDate: String?,
+    type: TvType
+): AniIds {
+    val sDate = date?.split("-")
+    val sAiredDate = airedDate?.split("-")
+
+    val year = sDate?.firstOrNull()?.toIntOrNull()
+    val airedYear = sAiredDate?.firstOrNull()?.toIntOrNull()
+    val season = getSeason(sDate?.get(1)?.toIntOrNull())
+    val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
+
+    return if (type == TvType.AnimeMovie) {
+        tmdbToAnimeId(title, airedYear, "", type)
+    } else {
+        val ids = tmdbToAnimeId(title, year, season, type)
+        if (ids.id == null && ids.idMal == null) tmdbToAnimeId(
+            title,
+            airedYear,
+            airedSeason,
+            type
+        ) else ids
+    }
+}
+
+suspend fun convertImdbToAnimeId(
     title: String?,
     year: Int?,
     airedDate: String?,
