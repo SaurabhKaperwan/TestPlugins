@@ -1,15 +1,15 @@
-package com.horis.cloudstreamplugins
+package com.megix
 
 import android.content.Context
 import android.content.SharedPreferences
 
-object NetflixMirrorStorage {
+object CineStreamStorage {
     private lateinit var context: Context
     private lateinit var prefs: SharedPreferences
 
     fun init(context: Context) {
         this.context = context.applicationContext
-        this.prefs = context.getSharedPreferences("NetflixMirrorPrefs", Context.MODE_PRIVATE)
+        this.prefs = context.getSharedPreferences("CineStreamPrefs", Context.MODE_PRIVATE)
     }
 
     fun saveCookie(cookie: String) {
