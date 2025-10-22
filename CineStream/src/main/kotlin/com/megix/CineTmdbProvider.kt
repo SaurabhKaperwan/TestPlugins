@@ -174,7 +174,7 @@ class CineTmdbProvider: MainAPI() {
 
         val res = app.get(resUrl).parsedSafe<MediaDetail>()
             ?: throw ErrorLoadingException("Invalid Json Response")
-        val title = res.title ?: res.name ?: return null
+        var title = res.title ?: res.name ?: return null
         val poster = getOriImageUrl(res.posterPath)
         val bgPoster = getOriImageUrl(res.backdropPath)
         val orgTitle = res.originalTitle ?: res.originalName ?: return null
@@ -185,7 +185,10 @@ class CineTmdbProvider: MainAPI() {
         val isCartoon = genres?.contains("Animation") ?: false
         val isAnime = isCartoon && (res.original_language == "zh" || res.original_language == "ja" || res.original_language == "ko")
         val isAsian = !isAnime && (res.original_language == "zh" || res.original_language == "ko")
+        val isTurkish = res.original_language == "tr"
         val isBollywood = res.production_countries?.any { it.name == "India" } ?: false
+
+        if(isTurkish) title = orgTitle ?: title
 
         val keywords = res.keywords?.results?.mapNotNull { it.name }.orEmpty()
             .ifEmpty { res.keywords?.keywords?.mapNotNull { it.name } }
@@ -334,9 +337,9 @@ class CineTmdbProvider: MainAPI() {
 
         callback.invoke(
             newExtractorLink(
-                "year",
-                "year",
-                "$year | $seasonYear",
+                "date",
+                "date",
+                "${res.date} | ${res.airedDate}",
             )
         )
 
@@ -371,7 +374,7 @@ class CineTmdbProvider: MainAPI() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { if (res.isAnime) {
-                val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
+                val (aniId, malId) = convertTmdbToAnimeId(callback ,res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },

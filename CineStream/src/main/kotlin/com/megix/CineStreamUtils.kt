@@ -600,6 +600,7 @@ suspend fun bypassHrefli(url: String): String? {
 }
 
 suspend fun convertTmdbToAnimeId(
+    callback: (ExtractorLink) -> Unit,
     title: String?,
     date: String?,
     airedDate: String?,
@@ -613,16 +614,18 @@ suspend fun convertTmdbToAnimeId(
     val season = getSeason(sDate?.get(1)?.toIntOrNull())
     val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
 
+    callback.invoke(
+        newExtractorLink(
+            "ani Date",
+            "ani Date",
+            "$airedYear | $year | $airedSeason",
+        )
+    )
+
     return if (type == TvType.AnimeMovie) {
         tmdbToAnimeId(title, airedYear, "", type)
     } else {
-        val ids = tmdbToAnimeId(title, year, season, type)
-        if (ids.id == null && ids.idMal == null) tmdbToAnimeId(
-            title,
-            airedYear,
-            airedSeason,
-            type
-        ) else ids
+        tmdbToAnimeId(title, year, airedSeason, type)
     }
 }
 
