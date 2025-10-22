@@ -466,6 +466,14 @@ class CineSimklProvider: MainAPI() {
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
 
+        callback.invoke(
+            newExtractorLink(
+                "res",
+                "res",
+                 res.toString(),
+            )
+        )
+
         if(res.isAnime) runAnimeInvokers(res, subtitleCallback, callback)
         else runGeneralInvokers(res, subtitleCallback, callback)
 

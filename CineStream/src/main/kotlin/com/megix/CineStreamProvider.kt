@@ -638,6 +638,22 @@ open class CineStreamProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                "res",
+                "res",
+                 res.toString(),
+            )
+        )
+
+        callback.invoke(
+            newExtractorLink(
+                "year",
+                "year",
+                "$year | $seasonYear",
+            )
+        )
+
         val isBollywood = res.isBollywood
         val isAnime = res.isAnime
         val isAsian = res.isAsian

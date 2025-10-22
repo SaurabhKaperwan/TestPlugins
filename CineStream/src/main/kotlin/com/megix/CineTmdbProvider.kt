@@ -86,25 +86,25 @@ class CineTmdbProvider: MainAPI() {
     }
 
     override val mainPage = mainPageOf(
-        "trending/all/day?api_key=$apiKey&region=IN" to "Trending",
-        "trending/movie/week?api_key=$apiKey&region=IN" to "Popular Movies",
-        "trending/tv/week?api_key=$apiKey&region=IN" to "Popular TV Shows",
-        "discover/tv?api_key=$apiKey&with_networks=213&watch_region=IN" to "Netflix",
-        "discover/tv?api_key=$apiKey&with_networks=1024&watch_region=IN" to "Amazon",
-        "discover/tv?api_key=$apiKey&with_networks=2739&watch_region=IN" to "Disney+",
+        "trending/all/day?api_key=$apiKey&region=US" to "Trending",
+        "trending/movie/week?api_key=$apiKey&region=US" to "Popular Movies",
+        "trending/tv/week?api_key=$apiKey&region=US" to "Popular TV Shows",
+        "discover/tv?api_key=$apiKey&with_original_language=ko" to "Korean Shows",
+        "discover/tv?api_key=$apiKey&with_networks=213" to "Netflix",
+        "discover/tv?api_key=$apiKey&with_networks=1024" to "Amazon",
+        "discover/tv?api_key=$apiKey&with_networks=2739" to "Disney+",
         "discover/tv?api_key=$apiKey&with_watch_providers=2336&watch_region=IN" to "JioHotstar",
-        "discover/tv?api_key=$apiKey&with_networks=453&watch_region=IN" to "Hulu",
-        "discover/tv?api_key=$apiKey&with_networks=2552&watch_region=IN" to "Apple TV+",
-        "discover/tv?api_key=$apiKey&with_networks=49&watch_region=IN" to "HBO",
-        "discover/tv?api_key=$apiKey&with_networks=4330&watch_region=IN" to "Paramount+",
-        "discover/tv?api_key=$apiKey&with_networks=3353&watch_region=IN" to "Peacock",
+        "discover/tv?api_key=$apiKey&with_networks=453" to "Hulu",
+        "discover/tv?api_key=$apiKey&with_networks=2552" to "Apple TV+",
+        "discover/tv?api_key=$apiKey&with_networks=49" to "HBO",
+        "discover/tv?api_key=$apiKey&with_networks=4330" to "Paramount+",
+        "discover/tv?api_key=$apiKey&with_networks=3353" to "Peacock",
         "discover/movie?api_key=$apiKey&language=en-US&page=1&sort_by=popularity.desc&with_origin_country=IN&release_date.gte=${getDate().lastWeekStart}&release_date.lte=${getDate().today}" to "Trending Indian Movies",
         "discover/tv?api_key=$apiKey&with_keywords=210024|222243&sort_by=popularity.desc&air_date.lte=${getDate().today}&air_date.gte=${getDate().today}" to "Airing Today Anime",
         "discover/tv?api_key=$apiKey&with_keywords=210024|222243&sort_by=popularity.desc&air_date.lte=${getDate().nextWeek}&air_date.gte=${getDate().today}" to "On The Air Anime",
         "discover/movie?api_key=$apiKey&with_keywords=210024|222243" to "Anime Movies",
-        "movie/top_rated?api_key=$apiKey&region=IN" to "Top Rated Movies",
-        "tv/top_rated?api_key=$apiKey&region=IN" to "Top Rated TV Shows",
-        "discover/tv?api_key=$apiKey&with_original_language=ko" to "Korean Shows",
+        "movie/top_rated?api_key=$apiKey&region=US" to "Top Rated Movies",
+        "tv/top_rated?api_key=$apiKey&region=US" to "Top Rated TV Shows",
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
@@ -317,11 +317,28 @@ class CineTmdbProvider: MainAPI() {
             callback: (ExtractorLink) -> Unit
     ): Boolean {
         val res = parseJson<LinkData>(data)
+
+        callback.invoke(
+            newExtractorLink(
+                "res",
+                "res",
+                 res.toString(),
+            )
+        )
+
         //year : first episode year
         //seasonYear : current episode year
 
         val year = res.airedYear ?: res.year
         val seasonYear = res.year ?: res.airedYear
+
+        callback.invoke(
+            newExtractorLink(
+                "year",
+                "year",
+                "$year | $seasonYear",
+            )
+        )
 
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
