@@ -78,7 +78,7 @@ class CineStreamAIOProvider : MainAPI() {
         }
 
         val endpoints = listOf(
-            "$mainUrl/catalog/movie/search/search=$query.json"
+            "$mainUrl/catalog/movie/search/search=$query.json",
             "$mainUrl/catalog/series/search/search=$query.json",
             "$mainUrl/catalog/anime.series/search/search=$query.json",
             "$mainUrl/catalog/anime.movie/search/search=$query.json"

@@ -78,7 +78,7 @@ import com.megix.CineStreamExtractors.invokeVicSrcWtf
 import com.megix.CineStreamExtractors.invokeXDmovies
 import com.megix.CineStreamExtractors.invokeDahmerMovies
 
-class CineStreamProvider : MainAPI() {
+open class CineStreamProvider : MainAPI() {
     override var mainUrl = "https://cinemeta-catalogs.strem.io"
     override var name = "CineStream"
     override val hasMainPage = true
