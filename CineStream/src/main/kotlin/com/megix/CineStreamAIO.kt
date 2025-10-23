@@ -3,6 +3,8 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.google.gson.Gson
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 
 class CineStreamAIOProvider : MainAPI() {
     override var mainUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
@@ -58,7 +60,7 @@ class CineStreamAIOProvider : MainAPI() {
         suspend fun fetchResults(url: String): List<SearchResponse> {
             val result = runCatching {
                 val json = app.get(url).text
-                tryParseJson<SearchResult>(json)?.metas?.map {
+                gson.fromJson(json, SearchResult::class.java).map {
                     val title = it.name ?: ""
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
                         posterUrl = it.poster
