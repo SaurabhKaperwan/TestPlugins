@@ -7,6 +7,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
 class CineStreamAIOProvider : MainAPI() {
     override var mainUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
@@ -63,7 +64,7 @@ class CineStreamAIOProvider : MainAPI() {
             val result = runCatching {
                 val json = app.get(url).text
                 val data = gson.fromJson(json, SearchResult::class.java)
-                data.map {
+                tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.name ?: ""
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
                         posterUrl = it.poster
