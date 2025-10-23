@@ -320,28 +320,11 @@ class CineTmdbProvider: MainAPI() {
             callback: (ExtractorLink) -> Unit
     ): Boolean {
         val res = parseJson<LinkData>(data)
-
-        callback.invoke(
-            newExtractorLink(
-                "res",
-                "res",
-                 res.toString(),
-            )
-        )
-
         //year : first episode year
         //seasonYear : current episode year
 
         val year = res.airedYear ?: res.year
         val seasonYear = res.year ?: res.airedYear
-
-        callback.invoke(
-            newExtractorLink(
-                "date",
-                "date",
-                "${res.date} | ${res.airedDate}",
-            )
-        )
 
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -374,7 +357,7 @@ class CineTmdbProvider: MainAPI() {
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { if (res.isAnime) {
-                val (aniId, malId) = convertTmdbToAnimeId(callback ,res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
+                val (aniId, malId) = convertTmdbToAnimeId(res.title, res.date, res.airedDate, if (res.season == null) TvType.AnimeMovie else TvType.Anime)
                 invokeAnimes(malId, aniId, res.episode, res.airedYear, "imdb", subtitleCallback, callback)
             }},
             { invokePrimebox(res.title, year, res.season, res.episode, subtitleCallback, callback) },
