@@ -11,7 +11,6 @@ open class CineStream: Plugin() {
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
         registerMainAPI(CineTmdbProvider())
-        registerMainAPI(CineStreamAIOProvider())
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Animezia())
         registerExtractorAPI(server2())
