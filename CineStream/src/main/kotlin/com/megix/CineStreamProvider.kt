@@ -184,8 +184,8 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$aio_meta_url/movie/tmdb.trending/skip=###" to "Trending Movies",
-        "$aio_meta_url/series/tmdb.trending/skip=###" to "Trending Series",
+        "$aio_meta_url/catalog/movie/tmdb.trending/skip=###" to "Trending Movies",
+        "$aio_meta_url/catalog/series/tmdb.trending/skip=###" to "Trending Series",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Action" to "Top Action Movies",
@@ -238,7 +238,7 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home,
             ),
-            hasNext = movies.hasMore
+            hasNext = true
         )
     }
 
@@ -541,7 +541,6 @@ open class CineStreamProvider : MainAPI() {
 
     data class Home(
         val metas: List<Media>,
-        val hasMore: Boolean = false,
     )
 
     data class ExtenalIds(
