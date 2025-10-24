@@ -88,8 +88,6 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
-    val aio_meta_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
-
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -121,7 +119,7 @@ open class CineStreamProvider : MainAPI() {
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
         const val mp4MoviezAPI = "https://www.mp4moviez.esq"
         const val Film1kApi = "https://www.film1k.com"
-        const val cinemaOSApi = "https://cinemaos.live"
+        const val cinemaOSApi = "https://cinemaos.tech"
         const val tripleOneMoviesApi = "https://111movies.com"
         const val vidfastProApi = "https://vidfast.pro"
         const val vidPlusApi = "https://player.vidplus.to"
@@ -184,26 +182,28 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$aio_meta_url/catalog/movie/tmdb.trending/skip=###" to "Trending Movies",
-        "$aio_meta_url/catalog/series/tmdb.trending/skip=###" to "Trending Series",
+        "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
+        "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Action" to "Top Action Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Action" to "Top Action Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Comedy" to "Top Comedy Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Comedy" to "Top Comedy Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Romance" to "Top Romance Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Romance" to "Top Romance Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre==Horror" to "Top Horror Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Horror" to "Top Horror Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Thriller" to "Top Thriller Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Thriller" to "Top Thriller Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Fantasy" to "Top Fantasy Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Fantasy" to "Top Fantasy Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Mystery" to "Top Mystery Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Mystery" to "Top Mystery Series",
-        "$aio_meta_url/catalog/movie/tvdb.trending/skip=###&genre=Crime" to "Top Crime Movies",
-        "$aio_meta_url/catalog/series/tvdb.trending/skip=###&genre=Crime" to "Top Crime Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Comedy" to "Top Comedy Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Comedy" to "Top Comedy Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Romance" to "Top Romance Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Romance" to "Top Romance Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Horror" to "Top Horror Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Horror" to "Top Horror Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Thriller" to "Top Thriller Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Thriller" to "Top Thriller Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Sci-Fi" to "Top Sci-Fi Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Sci-Fi" to "Top Sci-Fi Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Fantasy" to "Top Fantasy Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Fantasy" to "Top Fantasy Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Mystery" to "Top Mystery Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Mystery" to "Top Mystery Series",
+        "$mainUrl/top/catalog/movie/top/skip=###&genre=Crime" to "Top Crime Movies",
+        "$mainUrl/top/catalog/series/top/skip=###&genre=Crime" to "Top Crime Series",
     )
 
     override suspend fun getMainPage(
@@ -238,7 +238,7 @@ open class CineStreamProvider : MainAPI() {
                 name = request.name,
                 list = home,
             ),
-            hasNext = true
+            hasNext = movies.hasMore
         )
     }
 
@@ -261,8 +261,8 @@ open class CineStreamProvider : MainAPI() {
         }
 
         val endpoints = listOf(
-            "$aio_meta_url/catalog/movie/search/search=$query.json",
-            "$aio_meta_url/catalog/series/search/search=$query.json",
+            "$cinemeta_url/catalog/movie/top/search=$query.json",
+            "$cinemeta_url/catalog/series/top/search=$query.json",
             "$kitsu_url/catalog/anime/kitsu-anime-airing/search=$query.json"
         )
 
@@ -289,7 +289,7 @@ open class CineStreamProvider : MainAPI() {
         val type = if(movie.type == "movie") TvType.Movie else TvType.TvSeries
         val meta_url =
             if(id.contains("kitsu")) kitsu_url
-            else aio_meta_url
+            else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
         val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
         val malId = if(externalIds != null) externalIds.myanimelist else null
@@ -299,7 +299,7 @@ open class CineStreamProvider : MainAPI() {
         val movieData = tryParseJson<ResponseData>(json)
         val title = movieData?.meta?.name.toString()
         val engTitle = movieData?.meta?.aliases?.firstOrNull() ?: title
-        val posterUrl = movieData ?.meta?.poster
+        val posterUrl = movieData ?.meta?.poster?.replace("/small/", "/medium/")
         val imdbRating = movieData?.meta?.imdbRating?.toDoubleOrNull()
         val year = movieData?.meta?.year
         val releaseInfo = movieData?.meta?.releaseInfo
@@ -541,6 +541,7 @@ open class CineStreamProvider : MainAPI() {
 
     data class Home(
         val metas: List<Media>,
+        val hasMore: Boolean = false,
     )
 
     data class ExtenalIds(

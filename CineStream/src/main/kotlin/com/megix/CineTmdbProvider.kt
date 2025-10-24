@@ -326,6 +326,22 @@ class CineTmdbProvider: MainAPI() {
         val year = res.airedYear ?: res.year
         val seasonYear = res.year ?: res.airedYear
 
+        callback.invoke(
+            newExtractorLink(
+                "TMDB",
+                "TMDB",
+                res.toString(),
+            )
+        )
+
+        callback.invoke(
+            newExtractorLink(
+                "TMDB2",
+                "TMDB2",
+                "$year $seasonYear",
+            )
+        )
+
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
