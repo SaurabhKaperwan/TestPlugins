@@ -610,13 +610,13 @@ suspend fun convertTmdbToAnimeId(
 
     val year = sDate?.firstOrNull()?.toIntOrNull()
     val airedYear = sAiredDate?.firstOrNull()?.toIntOrNull()
-    // val season = getSeason(sDate?.get(1)?.toIntOrNull())
+    val season = getSeason(sDate?.get(1)?.toIntOrNull())
     val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
 
     return if (type == TvType.AnimeMovie) {
-        tmdbToAnimeId(title, year, "", type)
+        tmdbToAnimeId(title, airedYear, "", type)
     } else {
-        tmdbToAnimeId(title, airedYear, airedSeason, type)
+        tmdbToAnimeId(title, year, season, type)
     }
 }
 
