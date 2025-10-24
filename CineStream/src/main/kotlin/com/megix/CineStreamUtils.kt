@@ -161,7 +161,7 @@ suspend fun parseTmdbCastData(tvType: String, tmdbId: Int? = null): List<ActorDa
     return if (tvType != "anime") {
         try {
             val url = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/tmdb:$tmdbId.json"
-            val tmdbJson = app.get(url, timeout = 8L).text
+            val tmdbJson = app.get(url, timeout = 2L).text
             val gson = Gson()
             val tmdbData = gson.fromJson(tmdbJson, TmdbResponse::class.java)
             tmdbData.meta?.appExtras?.cast?.mapNotNull { castMember ->
@@ -610,13 +610,13 @@ suspend fun convertTmdbToAnimeId(
 
     val year = sDate?.firstOrNull()?.toIntOrNull()
     val airedYear = sAiredDate?.firstOrNull()?.toIntOrNull()
-    val season = getSeason(sDate?.get(1)?.toIntOrNull())
+    // val season = getSeason(sDate?.get(1)?.toIntOrNull())
     val airedSeason = getSeason(sAiredDate?.get(1)?.toIntOrNull())
 
     return if (type == TvType.AnimeMovie) {
-        tmdbToAnimeId(title, airedYear, "", type)
+        tmdbToAnimeId(title, year, "", type)
     } else {
-        tmdbToAnimeId(title, year, airedSeason, type)
+        tmdbToAnimeId(title, airedYear, airedSeason, type)
     }
 }
 
