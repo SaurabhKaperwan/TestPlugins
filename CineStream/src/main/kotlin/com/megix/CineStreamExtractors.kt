@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import org.jsoup.Jsoup
 import org.json.JSONObject
 import org.json.JSONArray
+import org.json.getJSONArray
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -173,7 +174,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "Connection" to "keep-alive",
         )
 
-        val serevrs = listOf(
+        val servers = listOf(
             "myflixerzupcloud",
             "1movies",
             "moviebox",

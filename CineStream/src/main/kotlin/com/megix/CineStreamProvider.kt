@@ -657,7 +657,7 @@ open class CineStreamProvider : MainAPI() {
             { if (!isAnime) invokeHdmovie2(res.title, seasonYear, res.episode, subtitleCallback, callback) },
             // { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.id, res.season, res.episode, subtitleCallback, callback) },
-            { invokeVideasy(res.title ,res.tmdbId, year, season, episode, subtitleCallback, callback) },
+            { invokeVideasy(res.title ,res.tmdbId, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.id, res.title, year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.id, res.season, res.episode, callback) },
             { if (!isBollywood) invokeHindmoviez("HindMoviez", res.id, res.title, res.season, res.episode, callback) },
