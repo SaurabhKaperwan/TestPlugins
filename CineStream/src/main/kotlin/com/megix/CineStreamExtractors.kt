@@ -181,6 +181,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "onionplay",
             "m4uhd",
             "hdmovie",
+            "cdn"
         )
 
         servers.amap { server ->
@@ -200,7 +201,16 @@ object CineStreamExtractors : CineStreamProvider() {
             )
 
             if(response.isSuccessful) {
+
                 val json = response.text
+                callback.invoke(
+                    newExtractorLink(
+                        "json Videasy[$server]",
+                        "json Videasy[$server]",
+                        json
+                    )
+                )
+
                 val result = JSONObject(json).getJSONObject("result")
 
                 val sourcesArray = result.getJSONArray("sources")
