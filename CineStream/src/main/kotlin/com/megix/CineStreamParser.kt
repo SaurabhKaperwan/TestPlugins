@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
 data class AllLoadLinksData(
-    val title: String,
-    val imdbId: String,
-    val tmdbId: Int?,
-    val anilistId: Int?,
-    val malId: Int?,
+    val title: String? = null,
+    val imdbId: String? = null,
+    val tmdbId: Int? = null,
+    val anilistId: Int? = null,
+    val malId: Int? = null,
     val year: Int? = null,
     val airedYear: Int? = null,
     val season: Int? = null,
