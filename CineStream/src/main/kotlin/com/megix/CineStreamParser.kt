@@ -3,6 +3,27 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+data class LoadLinksData(
+    val title: String,
+    val imdbId: String,
+    val tmdbId: Int?,
+    val anilistId: Int?,
+    val malId: Int?,
+    val year: Int? = null,
+    val airedYear: Int? = null,
+    val season: Int? = null,
+    val episode: Int? = null,
+    val isAnime: Boolean = false,
+    val isBollywood: Boolean = false,
+    val isAsian: Boolean = false,
+    val isCartoon: Boolean = false,
+    val originalTitle: String? = null,
+    val imdbTitle: String? = null,
+    val imdbSeason : Int? = null,
+    val imdbEpisode : Int? = null,
+    val imdbYear : Int? = null,
+)
+
 data class TmdbDate(
     val today: String,
     val nextWeek: String,
