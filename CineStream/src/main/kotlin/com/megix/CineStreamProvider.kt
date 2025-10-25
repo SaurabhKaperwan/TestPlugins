@@ -562,7 +562,9 @@ open class CineStreamProvider : MainAPI() {
 
             movieData?.meta?.let { meta ->
                 imdbTitle = meta.name
-                imdbYear = meta.year?.substringBefore("-")?.toIntOrNull() ?: meta.year?.toIntOrNull()
+                imdbYear = meta.year?.substringBefore("-")?.toIntOrNull()
+                            ?: meta.year?.substringBefore("–")?.toIntOrNull()
+                            ?: meta.year?.toIntOrNull()
                 tmdbId = meta.moviedb_id
             }
         } catch (e: Exception) {

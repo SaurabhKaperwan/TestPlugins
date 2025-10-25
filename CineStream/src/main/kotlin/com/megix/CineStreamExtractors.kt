@@ -818,6 +818,15 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val tokenJson = app.get("https://enc-dec.app/api/enc-xprime").text
+
+        callback.invoke(
+            newExtractorLink(
+                "PrimeBox",
+                "PrimeBox",
+                tokenJson,
+            )
+        )
+
         val jsonObject = JSONObject(tokenJson)
         val token = jsonObject.getString("result")
 
@@ -1760,7 +1769,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-            if (seeders < 10) return@forEach
+            if (seeders < 20) return@forEach
             val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
             callback.invoke(
                 newExtractorLink(
@@ -1803,7 +1812,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-            if (seeders < 10) return@forEach
+            if (seeders < 20) return@forEach
             val magnet = "magnet:?xt=urn:btih:${stream.infoHash}&dn=${stream.infoHash}$sourceTrackers&index=${stream.fileIdx}"
             callback.invoke(
                 newExtractorLink(
@@ -2893,7 +2902,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
                 val match = regex.find(stream.title)
                 val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-                if (seeders < 10) continue
+                if (seeders < 20) continue
                 val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
                 callback.invoke(
                     newExtractorLink(
