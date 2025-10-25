@@ -23,13 +23,10 @@ import com.megix.CineStreamExtractors.invokeMoviesdrive
 import com.megix.CineStreamExtractors.invokeW4U
 import com.megix.CineStreamExtractors.invokeWYZIESubs
 import com.megix.CineStreamExtractors.invokeAnizone
-// import com.megix.CineStreamExtractors.invokeVidbinge
 import com.megix.CineStreamExtractors.invokeUhdmovies
-// import com.megix.CineStreamExtractors.invokeRar
 import com.megix.CineStreamExtractors.invokeAnimes
 import com.megix.CineStreamExtractors.invokeMultimovies
 import com.megix.CineStreamExtractors.invokeStreamify
-import com.megix.CineStreamExtractors.invokeCinemaluxe
 import com.megix.CineStreamExtractors.invokeBollyflix
 import com.megix.CineStreamExtractors.invokeTorrentio
 import com.megix.CineStreamExtractors.invokeTokyoInsider
@@ -364,8 +361,8 @@ class CineSimklProvider: MainAPI() {
 
         val recommendations = relations + users_recommendations
 
-        val imdbType = if (tvType == "tv") "series" else tvType
-        val cast = parseCastData(imdbType, ids?.imdb)
+        val imdbType = if (tvType == "show") "series" else tvType
+        val cast = parseCastData(imdbType, imdbId)
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
@@ -492,7 +489,6 @@ class CineSimklProvider: MainAPI() {
             { if(res.isAsian && res.season != null) invokeStreamAsia(res.title, "kdhd", res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
-            { invokeCinemaluxe(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
