@@ -3,7 +3,7 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
-data class LoadLinksData(
+data class AllLoadLinksData(
     val title: String,
     val imdbId: String,
     val tmdbId: Int?,

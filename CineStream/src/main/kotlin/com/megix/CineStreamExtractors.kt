@@ -121,7 +121,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            { invokeAllanime(res.title, year, res.episode, subtitleCallback, callback) },
+            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
