@@ -275,7 +275,7 @@ class CineTmdbProvider: MainAPI() {
                         res.title,
                         res.imdbId,
                         res.id,
-                        res.aniId,
+                        res.aniId?.toIntOrNull(),
                         null,
                         year,
                         seasonYear,
