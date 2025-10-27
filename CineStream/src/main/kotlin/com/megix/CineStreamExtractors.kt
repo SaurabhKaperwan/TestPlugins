@@ -417,10 +417,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val enc_data = JSONObject(json).getString("result")
 
         val headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Connection": "keep-alive",
-            "Referer": "$vidlinkAPI/",
-            "Origin": "$vidlinkAPI/",
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Connection" to "keep-alive",
+            "Referer" to "$vidlinkAPI/",
+            "Origin" to "$vidlinkAPI/",
         }
 
         val epUrl = if(season == null) {
@@ -430,6 +430,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
+        val gson = Gson()
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
 
