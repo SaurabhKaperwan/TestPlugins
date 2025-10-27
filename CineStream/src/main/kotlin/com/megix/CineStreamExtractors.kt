@@ -416,12 +416,12 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val enc_data = JSONObject(json).getString("result")
 
-        val headers = {
+        val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$vidlinkAPI/",
             "Origin" to "$vidlinkAPI/",
-        }
+        )
 
         val epUrl = if(season == null) {
             "$vidlinkAPI/api/b/movie/$enc_data"
