@@ -350,8 +350,8 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season = null) {
-            "$hexaAPI/api/tmdb/movie/$tmdb_id/images"
+        val url = if(season == null) {
+            "$hexaAPI/api/tmdb/movie/$tmdbId/images"
         } else {
             "$hexaAPI/api/tmdb/tv/$tmdbId/season/$season/episode/$episode/images"
         }
@@ -370,18 +370,39 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val jsonBody = """{"text":"$enc_data","key":"$key"}"""
         val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
-        val json = app.post(
+        val response = app.post(
             "$multiDecryptAPI/dec-hexa",
             requestBody = requestBody
-        ).text
+        )
 
         callback.invoke(
             newExtractorLink(
                 "Hexa",
                 "Hexa",
-                json
+                response.text
             )
         )
+
+        if(response.isSuccessful) {
+            val json = response.text
+            val result = JSONObject(json).getJSONObject("result")
+            val sourcesArray = result.getJSONArray("sources")
+
+            for (i in 0 until sourcesArray.length()) {
+                val src = sourcesArray.getJSONObject(i)
+                val server = src.getString("server")
+                val m3u8 = src.getString("url")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Hexa[$server]",
+                        "Hexa[$server]",
+                        m3u8,
+                        type = ExtractorLinkType.M3U8
+                    )
+                )
+            }
+        }
     }
 
     suspend fun invokeDramadrip(
