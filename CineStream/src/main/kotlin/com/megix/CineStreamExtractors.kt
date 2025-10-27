@@ -44,6 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.imdbId, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
+            { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -397,6 +398,52 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         }
+    }
+
+    suspend fun invokeVidlink(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
+        } else {
+            "$multiDecryptAPI/enc-vidlink?text=$tmdbId/$season/$episode"
+        }
+
+        val json = app.get(url).text
+        val enc_data = JSONObject(json).getString("result")
+
+        val headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Connection": "keep-alive",
+            "Referer": "$vidlinkAPI/",
+            "Origin": "$vidlinkAPI/",
+        }
+
+        val epUrl = if(season == null) {
+            "$vidlinkAPI/api/b/movie/$enc_data"
+        } else {
+            "$vidlinkAPI/api/b/tv/$enc_data/$season/$episode"
+        }
+
+        val epJson = app.get(epUrl, headers = headers).text
+        val data = gson.fromJson(epJson, VidlinkResponse::class.java)
+        val m3u8 = data.stream.playlist
+
+        callback.invoke(
+            newExtractorLink(
+                "Vidlink",
+                "Vidlink",
+                m3u8,
+                type = ExtractorLinkType.M3U8
+            ) {
+                this.headers = headers
+            }
+        )
+
     }
 
     suspend fun invokeDramadrip(

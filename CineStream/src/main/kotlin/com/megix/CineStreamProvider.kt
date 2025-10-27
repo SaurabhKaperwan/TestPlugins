@@ -72,6 +72,7 @@ open class CineStreamProvider : MainAPI() {
         const val netflix2API = "https://net51.cc"
         const val hexaAPI = "https://themoviedb.hexa.watch"
         const val videasyAPI = "https://api.videasy.net"
+        const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
 
