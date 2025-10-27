@@ -375,14 +375,6 @@ object CineStreamExtractors : CineStreamProvider() {
             requestBody = requestBody
         )
 
-        callback.invoke(
-            newExtractorLink(
-                "Hexa",
-                "Hexa",
-                response.text
-            )
-        )
-
         if(response.isSuccessful) {
             val json = response.text
             val result = JSONObject(json).getJSONObject("result")
@@ -399,7 +391,9 @@ object CineStreamExtractors : CineStreamProvider() {
                         "Hexa[$server]",
                         m3u8,
                         type = ExtractorLinkType.M3U8
-                    )
+                    ) {
+                        this.referer = "https://hexa.watch/"
+                    }
                 )
             }
         }
