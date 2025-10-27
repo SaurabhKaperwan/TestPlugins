@@ -26,22 +26,16 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.toString
+import java.security.SecureRandom
 
 object CineStreamExtractors : CineStreamProvider() {
 
+    //Call all providers here
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString(),
-            )
-        )
-
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -49,6 +43,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.imdbId, callback) },
+            { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -61,14 +56,12 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            // { if (!isAnime) invokeFlixhq(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
-        //  { if (isBollywood) invokeHindmoviez("JaduMovies", res.id, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { invokeW4U(res.title, res.year, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -90,7 +83,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidPlus(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            // { if (!isAnime) invokeVidJoy(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -108,14 +100,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString(),
-            )
-        )
-
         runAllAsync(
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
@@ -308,9 +292,9 @@ object CineStreamExtractors : CineStreamProvider() {
 
         servers.amap { server ->
             val url = if (season == null) {
-                "https://api.videasy.net/$server/sources-with-title?title=$title&mediaType=movie&year=$year&tmdbId=$tmdbId"
+                "$videasyAPI/$server/sources-with-title?title=$title&mediaType=movie&year=$year&tmdbId=$tmdbId"
             } else {
-                "https://api.videasy.net/$server/sources-with-title?title=$title&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
+                "$videasyAPI/$server/sources-with-title?title=$title&mediaType=tv&year=$year&tmdbId=$tmdbId&episodeId=$episode&seasonId=$season"
             }
 
             val enc_data = app.get(url, headers = headers).text
@@ -318,7 +302,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val jsonBody = """{"text":"$enc_data","id":"$tmdbId"}"""
             val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
             val response = app.post(
-                "https://enc-dec.app/api/dec-videasy",
+                "$multiDecryptAPI/dec-videasy",
                 requestBody = requestBody
             )
 
@@ -358,6 +342,46 @@ object CineStreamExtractors : CineStreamProvider() {
 
             }
         }
+    }
+
+    suspend fun invokeHexa(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season = null) {
+            "$hexaAPI/api/tmdb/movie/$tmdb_id/images"
+        } else {
+            "$hexaAPI/api/tmdb/tv/$tmdbId/season/$season/episode/$episode/images"
+        }
+
+        val keyBytes = ByteArray(32)
+        SecureRandom().nextBytes(keyBytes)
+        val key = keyBytes.joinToString("") { "%02x".format(it) }
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Accept" to "plain/text",
+            "X-Api-Key" to key
+        )
+
+        val enc_data = app.get(url, headers = headers).text
+
+        val jsonBody = """{"text":"$enc_data","key":"$key"}"""
+        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+        val json = app.post(
+            "$multiDecryptAPI/dec-hexa",
+            requestBody = requestBody
+        ).text
+
+        callback.invoke(
+            newExtractorLink(
+                "Hexa",
+                "Hexa",
+                json
+            )
+        )
     }
 
     suspend fun invokeDramadrip(

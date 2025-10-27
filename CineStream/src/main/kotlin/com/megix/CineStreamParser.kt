@@ -3,6 +3,10 @@ package com.megix
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.annotations.SerializedName
 
+//year => for movie : release year for movie : season 1 release year
+//airedYear => for movie : release year for movie : episode release year
+//imdbTitle, imdbSeason, imdbEpisode, imdbYear => for kitsu providers
+
 data class AllLoadLinksData(
     val title: String? = null,
     val imdbId: String? = null,
