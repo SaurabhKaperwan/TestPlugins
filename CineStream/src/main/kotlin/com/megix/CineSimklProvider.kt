@@ -375,7 +375,7 @@ class CineSimklProvider: MainAPI() {
                         isCartoon
                     ).toJson()
                 ) {
-                    this.name = it.title + if (isUpcoming(it.date)) " • [UPCOMING]" else ""
+                    this.name = it.title + if (it.aired = false) " • [UPCOMING]" else ""
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
@@ -585,7 +585,7 @@ class CineSimklProvider: MainAPI() {
         var episode     : Int?     = null,
         var type        : String?  = null,
         var description : String?  = null,
-        var aired       : Boolean? = null,
+        var aired       : Boolean  = false,
         var img         : String?  = null,
         var date        : String?  = null,
     )
