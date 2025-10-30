@@ -49,6 +49,7 @@ import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.time.OffsetDateTime
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -350,17 +351,14 @@ fun isUpcoming(dateString: String?): Boolean {
     if (dateString.isNullOrBlank()) return false
 
     return try {
-        // Parse ISO 8601 with offset (e.g., 2022-01-13T21:00:00-05:00)
-        val offsetDateTime = OffsetDateTime.parse(dateString)
+        val event = OffsetDateTime.parse(dateString)
+        val userZone = ZoneId.systemDefault()
+        val eventInUserZone = event.atZoneSameInstant(userZone)
+        val nowInUserZone = ZonedDateTime.now(userZone)
 
-        // Convert to UTC instant
-        val eventInstant = offsetDateTime.toInstant()
-
-        // Current time in UTC
-        val nowInstant = Instant.now()
-
-        // True if event is after now
-        eventInstant.isAfter(nowInstant)
+        eventInUserZone.isAfter(nowInUserZone)
+    } catch (e: DateTimeParseException) {
+        false
     } catch (t: Throwable) {
         false
     }
