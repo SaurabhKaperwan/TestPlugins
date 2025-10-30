@@ -51,6 +51,7 @@ import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.time.OffsetDateTime
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 val SPEC_OPTIONS = mapOf(
@@ -334,19 +335,6 @@ fun convertToUserZone(isoString: String?): String? {
     }
 }
 
-fun getUtcTime(dateString: String?): String? {
-    if (dateString.isNullOrBlank()) return null
-
-    return try {
-        return OffsetDateTime
-            .parse(dateString)
-            .toInstant()
-            .toString()
-    } catch (t: Throwable) {
-        null
-    }
-}
-
 fun isUpcoming(dateString: String?): Boolean {
     if (dateString.isNullOrBlank()) return false
 
@@ -357,8 +345,6 @@ fun isUpcoming(dateString: String?): Boolean {
         val nowInUserZone = ZonedDateTime.now(userZone)
 
         eventInUserZone.isAfter(nowInUserZone)
-    } catch (e: DateTimeParseException) {
-        false
     } catch (t: Throwable) {
         false
     }
