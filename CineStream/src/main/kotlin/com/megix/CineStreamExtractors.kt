@@ -54,6 +54,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -84,7 +85,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidPlus(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
@@ -114,12 +114,14 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeNuvioStreams(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -275,7 +277,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        val headers = mapOf(
+        var headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
         )
@@ -316,13 +318,36 @@ object CineStreamExtractors : CineStreamProvider() {
                     val obj = sourcesArray.getJSONObject(i)
                     val quality = obj.getString("quality")
                     val source = obj.getString("url")
+                    var type = INFER_TYPE
+                    if(source.contains(".m3u8")) {
+                        headers = headers + mapOf(
+                            "Accept" to "application/vnd.apple.mpegurl,application/x-mpegURL,*/*",
+                            "Referer" to "$videasyAPI/"
+                        )
+                        type = ExtractorLinkType.M3U8
+                    } else if(source.contains(".mp4")) {
+                        headers = headers + mapOf(
+                            "Accept" to "video/mp4,*/*",
+                            "Range" to "bytes=0-",
+                        )
+                        type = ExtractorLinkType.VIDEO
+                    } else if(source.contains(".mkv")) {
+                        headers = headers + mapOf(
+                            "Accept" to "video/x-matroska,*/*",
+                            "Range" to "bytes=0-",
+                        )
+                        type = ExtractorLinkType.VIDEO
+                    }
+
                     callback.invoke(
                         newExtractorLink(
                             "Videasy[$server]",
                             "Videasy[$server]",
-                            source
+                            source,
+                            type
                         ) {
                             this.quality = getIndexQuality(quality)
+                            this.headers = headers
                         }
                     )
                 }
@@ -391,9 +416,9 @@ object CineStreamExtractors : CineStreamProvider() {
                         "Hexa[$server]",
                         "Hexa[$server]",
                         m3u8,
-                        type = ExtractorLinkType.M3U8
+                        type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                     ) {
-                        this.referer = "https://hexa.watch/"
+                        this.referer = "$hexaAPI/"
                     }
                 )
             }
@@ -416,14 +441,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val enc_data = JSONObject(json).getString("result")
 
-        callback.invoke(
-            newExtractorLink(
-                "enc_data",
-                "enc_data",
-                enc_data
-            )
-        )
-
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
@@ -438,13 +455,15 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
+
         callback.invoke(
             newExtractorLink(
                 "epJson",
                 "epJson",
-                epJson
+                epJson,
             )
         )
+
         val gson = Gson()
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist

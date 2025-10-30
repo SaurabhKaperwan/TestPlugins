@@ -48,6 +48,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
+import java.time.ZoneId
 
 
 val SPEC_OPTIONS = mapOf(
@@ -316,6 +317,25 @@ fun getDate(): TmdbDate {
     val monthStart = formatter.format(calendar.time)
 
     return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
+}
+
+
+fun isUpcomingInLocalTime(dateString: String?): Boolean {
+    if (dateString.isNullOrBlank()) return false
+
+    return try {
+        val offsetDateTime = OffsetDateTime.parse(dateString)
+        val localZone = ZoneId.systemDefault()
+
+        // Convert event to local timezone
+        val eventLocal = offsetDateTime.atZoneSameInstant(localZone)
+        val nowLocal = java.time.ZonedDateTime.now(localZone)
+
+        eventLocal.isAfter(nowLocal)
+    } catch (t: Throwable) {
+        logError(t)
+        false
+    }
 }
 
 fun isUpcoming(dateString: String?): Boolean {
