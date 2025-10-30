@@ -49,10 +49,8 @@ import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.Instant
-
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -320,6 +318,19 @@ fun getDate(): TmdbDate {
     val monthStart = formatter.format(calendar.time)
 
     return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
+}
+
+fun convertToUserZone(isoString: String?): String? {
+    if (isoString.isNullOrBlank()) return null
+
+    return try {
+        val original = OffsetDateTime.parse(isoString)
+        val userZone = ZoneId.systemDefault()
+        return original.atZoneSameInstant(userZone)
+            .format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+    } catch (t: Throwable) {
+        null
+    }
 }
 
 fun getUtcTime(dateString: String?): String? {

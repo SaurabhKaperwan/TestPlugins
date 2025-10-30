@@ -432,12 +432,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val url = if(season == null) {
-            "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
-        } else {
-            "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
-        }
-
+        val url = "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         val json = app.get(url).text
         val enc_data = JSONObject(json).getString("result")
 
@@ -455,7 +450,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
-
         val gson = Gson()
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
