@@ -48,7 +48,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
-import java.time.ZoneId
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.Instant
 
 
 val SPEC_OPTIONS = mapOf(
@@ -319,36 +322,26 @@ fun getDate(): TmdbDate {
     return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
 }
 
-
-fun isUpcomingInLocalTime(dateString: String?): Boolean {
+fun isUpcoming(dateString: String?): Boolean {
     if (dateString.isNullOrBlank()) return false
 
     return try {
+        // Parse ISO 8601 with offset (e.g., 2022-01-13T21:00:00-05:00)
         val offsetDateTime = OffsetDateTime.parse(dateString)
-        val localZone = ZoneId.systemDefault()
 
-        // Convert event to local timezone
-        val eventLocal = offsetDateTime.atZoneSameInstant(localZone)
-        val nowLocal = java.time.ZonedDateTime.now(localZone)
+        // Convert to UTC instant
+        val eventInstant = offsetDateTime.toInstant()
 
-        eventLocal.isAfter(nowLocal)
+        // Current time in UTC
+        val nowInstant = Instant.now()
+
+        // True if event is after now
+        eventInstant.isAfter(nowInstant)
     } catch (t: Throwable) {
         logError(t)
         false
     }
 }
-
-fun isUpcoming(dateString: String?): Boolean {
-    return try {
-        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val dateTime = dateString?.let { format.parse(it)?.time } ?: return false
-        unixTimeMS < dateTime
-    } catch (t: Throwable) {
-        //logError(t)
-        false
-    }
-}
-
 
 suspend fun loadNameExtractor(
     name: String? = null,
