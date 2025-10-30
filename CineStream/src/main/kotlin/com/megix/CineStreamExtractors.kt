@@ -435,7 +435,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season == null) {
             "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         } else {
-            "$multiDecryptAPI/enc-vidlink?text=$tmdbId/$season/$episode"
+            "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         }
 
         val json = app.get(url).text
@@ -455,14 +455,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "epJson",
-                "epJson",
-                epJson,
-            )
-        )
 
         val gson = Gson()
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)

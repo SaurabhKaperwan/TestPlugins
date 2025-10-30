@@ -322,6 +322,19 @@ fun getDate(): TmdbDate {
     return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
 }
 
+fun getUtcTime(dateString: String?): String? {
+    if (dateString.isNullOrBlank()) return null
+
+    return try {
+        return OffsetDateTime
+            .parse(dateString)
+            .toInstant()
+            .toString()
+    } catch (t: Throwable) {
+        null
+    }
+}
+
 fun isUpcoming(dateString: String?): Boolean {
     if (dateString.isNullOrBlank()) return false
 
