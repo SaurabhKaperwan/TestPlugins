@@ -195,7 +195,7 @@ class CineTmdbProvider: MainAPI() {
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
                         }.apply {
-                            this.addDate(eps.airDate)
+                            this.addDate(eps.airDate, "yyyy-MM-dd'T'HH:mm:ssXXX")
                         }
                     }
             }?.flatten() ?: listOf()

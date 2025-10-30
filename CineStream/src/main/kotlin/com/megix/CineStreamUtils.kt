@@ -320,7 +320,7 @@ fun getDate(): TmdbDate {
 
 fun isUpcoming(dateString: String?): Boolean {
     return try {
-        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
         val dateTime = dateString?.let { format.parse(it)?.time } ?: return false
         unixTimeMS < dateTime
     } catch (t: Throwable) {
@@ -328,7 +328,6 @@ fun isUpcoming(dateString: String?): Boolean {
         false
     }
 }
-
 
 suspend fun loadNameExtractor(
     name: String? = null,
