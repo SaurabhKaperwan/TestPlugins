@@ -338,7 +338,6 @@ fun isUpcoming(dateString: String?): Boolean {
         // True if event is after now
         eventInstant.isAfter(nowInstant)
     } catch (t: Throwable) {
-        logError(t)
         false
     }
 }
