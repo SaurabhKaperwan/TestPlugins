@@ -319,6 +319,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val quality = obj.getString("quality")
                     val source = obj.getString("url")
                     var type = INFER_TYPE
+
                     if(source.contains(".m3u8")) {
                         headers = headers + mapOf(
                             "Accept" to "application/vnd.apple.mpegurl,application/x-mpegURL,*/*",
@@ -436,6 +437,14 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val enc_data = JSONObject(json).getString("result")
 
+        callback(
+            newExtractorLink(
+                "enc_data",
+                "enc_data",
+                enc_data
+            )
+        )
+
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
@@ -450,6 +459,13 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
+        callback(
+            newExtractorLink(
+                "epJson",
+                "epJson",
+                epJson
+            )
+        )
         val gson = Gson()
         val data = gson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist

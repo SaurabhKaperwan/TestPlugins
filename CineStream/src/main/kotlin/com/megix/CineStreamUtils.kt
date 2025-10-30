@@ -48,11 +48,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
-import java.time.OffsetDateTime
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+
 
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
@@ -322,33 +318,17 @@ fun getDate(): TmdbDate {
     return TmdbDate(today, nextWeek, lastWeekStart, monthStart)
 }
 
-fun convertToUserZone(isoString: String?): String? {
-    if (isoString.isNullOrBlank()) return null
-
-    return try {
-        val original = OffsetDateTime.parse(isoString)
-        val userZone = ZoneId.systemDefault()
-        return original.atZoneSameInstant(userZone)
-            .format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
-    } catch (t: Throwable) {
-        null
-    }
-}
-
 fun isUpcoming(dateString: String?): Boolean {
-    if (dateString.isNullOrBlank()) return false
-
     return try {
-        val event = OffsetDateTime.parse(dateString)
-        val userZone = ZoneId.systemDefault()
-        val eventInUserZone = event.atZoneSameInstant(userZone)
-        val nowInUserZone = ZonedDateTime.now(userZone)
-
-        eventInUserZone.isAfter(nowInUserZone)
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dateTime = dateString?.let { format.parse(it)?.time } ?: return false
+        unixTimeMS < dateTime
     } catch (t: Throwable) {
+        //logError(t)
         false
     }
 }
+
 
 suspend fun loadNameExtractor(
     name: String? = null,
