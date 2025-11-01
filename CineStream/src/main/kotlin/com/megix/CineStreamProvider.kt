@@ -179,7 +179,7 @@ open class CineStreamProvider : MainAPI() {
                 else TvType.TvSeries
             val title = movie.aliases?.firstOrNull() ?: movie.name ?: ""
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
-                this.posterUrl = movie.poster
+                this.posterUrl = movie.poster?.replace("/small/", "/large/")
                 this.score = Score.from10(movie.imdbRating)
             }
         }
@@ -200,9 +200,8 @@ open class CineStreamProvider : MainAPI() {
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: ""
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
-                        posterUrl = it.poster
+                        posterUrl = it.poster?.replace("/small/", "/large/")
                         this.score = Score.from10(it.imdbRating)
-                        this.posterHeaders = posterHeaders
                     }
                 } ?: emptyList()
             }.getOrDefault(emptyList())
@@ -253,7 +252,7 @@ open class CineStreamProvider : MainAPI() {
         val anilistId = if(externalIds != null) externalIds.anilist else null
         val title = movieData?.meta?.name.toString()
         val engTitle = movieData?.meta?.aliases?.firstOrNull() ?: title
-        val posterUrl = movieData ?.meta?.poster
+        val posterUrl = movieData ?.meta?.poster?.replace("/small/", "/large/")
         val imdbRating = movieData?.meta?.imdbRating?.toDoubleOrNull()
         val year = movieData?.meta?.year
         val releaseInfo = movieData?.meta?.releaseInfo
@@ -278,7 +277,7 @@ open class CineStreamProvider : MainAPI() {
 
         val country = movieData?.meta?.country ?: ""
         val genre = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
-        val background = movieData?.meta?.background
+        val background = movieData?.meta?.background?.replace("/medium/", "/large/")
         val isCartoon = genre.any { it.contains("Animation", true) }
         var isAnime = (country.contains("Japan", true) ||
             country.contains("China", true)) && isCartoon
