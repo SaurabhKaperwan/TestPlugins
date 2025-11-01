@@ -291,6 +291,13 @@ class CineSimklProvider: MainAPI() {
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
+
+        val plot = if(anilistId != null) {
+            null
+        } else {
+            json.overview
+        }
+
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl = getPosterUrl(json.fanart, "fanart")
@@ -337,8 +344,9 @@ class CineSimklProvider: MainAPI() {
             return newMovieLoadResponse("${enTitle}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
-                this.plot = json.overview
+                this.plot = plot
                 this.tags = genres
+                this.comingSoon = isUpcoming(json.released)
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
@@ -388,7 +396,7 @@ class CineSimklProvider: MainAPI() {
                 addEpisodes(DubStatus.Subbed, episodes)
                 this.posterUrl = getPosterUrl(json.poster, "poster")
                 this.backgroundPosterUrl = backgroundPosterUrl
-                this.plot = json.overview
+                this.plot = plot
                 this.tags = genres
                 this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
@@ -501,6 +509,7 @@ class CineSimklProvider: MainAPI() {
         var en_title              : String?                          = null,
         var title_en              : String?                          = null,
         var year                  : Int?                             = null,
+        var released              : String?                          = null,
         var type                  : String?                          = null,
         var url                   : String?                          = null,
         var poster                : String?                          = null,

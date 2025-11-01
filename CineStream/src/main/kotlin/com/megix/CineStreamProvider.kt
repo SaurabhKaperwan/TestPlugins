@@ -30,6 +30,8 @@ open class CineStreamProvider : MainAPI() {
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
+    val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
+
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
@@ -128,9 +130,11 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
+        "$aiometa_url/catalog/movie/tvdb.trending/skip=###" to "Trending Movies",
+        "$aiometa_url/catalog/series/tvdb.trending/skip=###" to "Trending Series",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
-        "$kitsu_url/catalog/anime/kitsu-anime-airing/skip=###" to "Top Airing Anime",
+        "$aiometa_url/catalog/anime/mal.airing/skip=###" to "Top Airing Anime",
         "$kitsu_url/catalog/anime/kitsu-anime-trending/skip=###" to "Top Anime",
         "$mainUrl/top/catalog/movie/top/skip=###&genre=Action" to "Top Action Movies",
         "$mainUrl/top/catalog/series/top/skip=###&genre=Action" to "Top Action Series",
@@ -198,6 +202,7 @@ open class CineStreamProvider : MainAPI() {
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
                         posterUrl = it.poster
                         this.score = Score.from10(it.imdbRating)
+                        this.posterHeaders = posterHeaders
                     }
                 } ?: emptyList()
             }.getOrDefault(emptyList())
@@ -234,18 +239,21 @@ open class CineStreamProvider : MainAPI() {
         var id = movie.id
         val type = if(movie.type == "movie") TvType.Movie else TvType.TvSeries
         val meta_url =
-            if(id.contains("kitsu")) kitsu_url
+            if(id.contains("kitsu") || id.contains("mal")) kitsu_url
             else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
-        val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
-        val malId = if(externalIds != null) externalIds.myanimelist else null
-        val anilistId = if(externalIds != null) externalIds.anilist else null
         id = if(isKitsu) id.replace(":", "%3A") else id
         val json = app.get("$meta_url/meta/$tvtype/$id.json").text
         val movieData = tryParseJson<ResponseData>(json)
+        if(isKitsu && id.contains("mal")) {
+           id = movieData?.meta?.id ?: id
+        }
+        val externalIds = if(isKitsu) getExternalIds(id.substringAfter("kitsu:"),"kitsu") else  null
+        val malId = if(externalIds != null) externalIds.myanimelist else null
+        val anilistId = if(externalIds != null) externalIds.anilist else null
         val title = movieData?.meta?.name.toString()
         val engTitle = movieData?.meta?.aliases?.firstOrNull() ?: title
-        val posterUrl = movieData ?.meta?.poster?.replace("/small/", "/large/")
+        val posterUrl = movieData ?.meta?.poster
         val imdbRating = movieData?.meta?.imdbRating?.toDoubleOrNull()
         val year = movieData?.meta?.year
         val releaseInfo = movieData?.meta?.releaseInfo
@@ -270,7 +278,7 @@ open class CineStreamProvider : MainAPI() {
 
         val country = movieData?.meta?.country ?: ""
         val genre = movieData?.meta?.genre ?: movieData?.meta?.genres ?: emptyList()
-        val background = movieData?.meta?.background?.replace("/medium/", "/large/")
+        val background = movieData?.meta?.background
         val isCartoon = genre.any { it.contains("Animation", true) }
         var isAnime = (country.contains("Japan", true) ||
             country.contains("China", true)) && isCartoon
@@ -520,7 +528,7 @@ open class CineStreamProvider : MainAPI() {
 
     data class Home(
         val metas: List<Media>,
-        val hasMore: Boolean = false,
+        val hasMore: Boolean = true,
     )
 
     data class ExtenalIds(
