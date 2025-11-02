@@ -386,11 +386,11 @@ class CineSimklProvider: MainAPI() {
                         isCartoon
                     ).toJson()
                 ) {
-                    this.name = it.title + if (it.aired == false) " • [UPCOMING]" else ""
+                    this.name = it.title + if(it.aired == false) " • [UPCOMING]" else ""
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
-                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://simkl.in/update_m_alert.jpg"
+                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(it.date)
                 }
             }

@@ -191,7 +191,7 @@ class CineTmdbProvider: MainAPI() {
                                 eps.name + if (isUpcoming(eps.airDate)) " • [UPCOMING]" else ""
                             this.season = eps.seasonNumber
                             this.episode = eps.episodeNumber
-                            this.posterUrl = getImageUrl(eps.stillPath)
+                            this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
                         }.apply {
