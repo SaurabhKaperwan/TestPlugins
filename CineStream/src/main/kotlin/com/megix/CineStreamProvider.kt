@@ -78,6 +78,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
+        const val cometAPI = "https://comet.elfhosted.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
