@@ -104,6 +104,13 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                "AllAnime",
+                "AllAnime",
+                res.toString()
+            )
+        )
         runAllAsync(
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
@@ -112,7 +119,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(if(res.kitsuId != null) "kitsu:${res.kitsuId}" else res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeComet(if(res.kitsuId != null) "kitsu:${res.kitsuId}" else res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeTorrentsDB(if(res.kitsuId != null) "kitsu:${res.kitsuId}" else res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
