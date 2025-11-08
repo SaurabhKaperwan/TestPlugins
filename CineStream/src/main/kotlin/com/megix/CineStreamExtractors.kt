@@ -1883,7 +1883,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season == null) {
             "$torrentioAPI/$torrentioCONFIG/stream/movie/$id.json"
         } else if(id?.contains("kitsu") == true) {
-            "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$episode.json"
+            "$torrentioAPI/$torrentioCONFIG/stream/series/kitsu:$id:$episode.json"
         } else {
             "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$season:$episode.json"
         }
@@ -1969,7 +1969,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season == null) {
             "$cometAPI/stream/movie/$id.json"
         } else if(id?.contains("kitsu") == true) {
-            "$cometAPI/stream/series/$id:$episode.json"
+            "$cometAPI/stream/series/kitsu:$id:$episode.json"
         } else {
             "$cometAPI/stream/series/$id:$season:$episode.json"
         }
