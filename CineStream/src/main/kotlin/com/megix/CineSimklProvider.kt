@@ -462,9 +462,9 @@ class CineSimklProvider: MainAPI() {
     ) {
         var (imdbId, imdbSeason, imdbEpisode) = try {
             if (res.imdbId != null) {
-                Triple(res.imdbId, res.season, res.episode)
+                Triple(res.imdbId, res.imdbSeason ?: res.season, res.episode)
             } else {
-                extractImdbInfo(res.kitsuId, res.season, res.episode) ?: Triple(null, null, null)
+                extractImdbInfo(res.kitsuId, res.imdbSeason ?: res.season, res.episode) ?: Triple(null, null, null)
             }
         } catch (e: Exception) {
             Triple(null, null, null)

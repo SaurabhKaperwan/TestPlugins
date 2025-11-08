@@ -1912,7 +1912,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio",
-                    "[Torrentio]" + title,
+                    "[Torrentio] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -1955,7 +1955,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB",
-                    "[TorrentsDB]" + title,
+                    "[TorrentsDB] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
