@@ -110,8 +110,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
-            { invokeTorrentio(res.kitsuId, res.season, res.episode, callback) },
-            { invokeComet(res.kitsuId, res.season, res.episode, callback) },
+            { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
@@ -1883,7 +1883,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season == null) {
             "$torrentioAPI/$torrentioCONFIG/stream/movie/$id.json"
         } else if(id?.contains("kitsu") == true) {
-            "$torrentioAPI/$torrentioCONFIG/stream/series/kitsu:$id:$episode.json"
+            "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$episode.json"
         } else {
             "$torrentioAPI/$torrentioCONFIG/stream/series/$id:$season:$episode.json"
         }
@@ -1969,7 +1969,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val url = if(season == null) {
             "$cometAPI/stream/movie/$id.json"
         } else if(id?.contains("kitsu") == true) {
-            "$cometAPI/stream/series/kitsu:$id:$episode.json"
+            "$cometAPI/stream/series/$id:$episode.json"
         } else {
             "$cometAPI/stream/series/$id:$season:$episode.json"
         }
