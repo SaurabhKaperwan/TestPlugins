@@ -96,7 +96,6 @@ class CineTmdbProvider: MainAPI() {
         }
     }
 
-
     override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query)
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
@@ -256,7 +255,6 @@ class CineTmdbProvider: MainAPI() {
             }
         }
     }
-
 
      override suspend fun loadLinks(
             data: String,
@@ -425,7 +423,6 @@ class CineTmdbProvider: MainAPI() {
     data class ProductionCountries(
         @JsonProperty("name") val name: String? = null,
     )
-
 
     data class MediaDetail(
         @JsonProperty("id") val id: Int? = null,
