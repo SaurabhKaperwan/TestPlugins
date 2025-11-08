@@ -13,6 +13,7 @@ data class AllLoadLinksData(
     val tmdbId: Int? = null,
     val anilistId: Int? = null,
     val malId: Int? = null,
+    val kitsuId: String? = null,
     val year: Int? = null,
     val airedYear: Int? = null,
     val season: Int? = null,

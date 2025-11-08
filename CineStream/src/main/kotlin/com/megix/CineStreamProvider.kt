@@ -252,6 +252,7 @@ open class CineStreamProvider : MainAPI() {
             if(id.contains("kitsu") || id.contains("mal")) kitsu_url
             else cinemeta_url
         val isKitsu = if(meta_url == kitsu_url) true else false
+        val kitsuId = if(isKitsu) id.substringAfter("kitsu:") else null
         id = if(isKitsu) id.replace(":", "%3A") else id
         val json = app.get("$meta_url/meta/$tvtype/$id.json").text
         val movieData = tryParseJson<ResponseData>(json)
@@ -317,6 +318,7 @@ open class CineStreamProvider : MainAPI() {
                 isKitsu,
                 anilistId,
                 malId,
+                kitsuId,
             ).toJson()
             return newMovieLoadResponse(engTitle, url, if(isAnime) TvType.AnimeMovie  else type, data) {
                 this.posterUrl = posterUrl
@@ -355,6 +357,7 @@ open class CineStreamProvider : MainAPI() {
                         isKitsu,
                         anilistId,
                         malId,
+                        kitsuId
                     ).toJson()
                 ) {
                     this.name = ep.name ?: ep.title
@@ -409,6 +412,8 @@ open class CineStreamProvider : MainAPI() {
                                 res.tmdbId,
                                 res.anilistId,
                                 res.malId,
+                                res.kitsuId,
+                                null,
                                 year,
                                 seasonYear,
                                 res.season,
@@ -458,6 +463,7 @@ open class CineStreamProvider : MainAPI() {
         val isKitsu : Boolean = false,
         val anilistId : Int? = null,
         val malId : Int? = null,
+        val kitsuId : String? = null,
     )
 
     data class PassData(
@@ -598,6 +604,7 @@ open class CineStreamProvider : MainAPI() {
                 tmdbId,
                 res.anilistId,
                 res.malId,
+                res.kitsuId,
                 year,
                 seasonYear,
                 res.season,
