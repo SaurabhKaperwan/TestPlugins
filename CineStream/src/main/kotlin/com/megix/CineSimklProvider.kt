@@ -288,7 +288,7 @@ class CineSimklProvider: MainAPI() {
             json.en_title ?: json.title
         }
 
-        val kitsuId = ids?.kitsu?.toIntOrNull()
+        val kitsuId = ids?.kitsu
         val anilistId = ids?.anilist?.toIntOrNull()
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
@@ -434,7 +434,7 @@ class CineSimklProvider: MainAPI() {
                     res.tmdbId,
                     res.anilistId,
                     res.malId,
-                    if(res.kitsuId) res.kitsuId.toString() else null,
+                    res.kitsuId,
                     res.year,
                     res.airedYear,
                     res.season,
@@ -490,7 +490,7 @@ class CineSimklProvider: MainAPI() {
                 tmdbId,
                 res.anilistId,
                 res.malId,
-                if(res.kitsuId) res.kitsuId.toString() else null,
+                res.kitsuId,
                 res.year,
                 res.airedYear,
                 res.season,
@@ -614,7 +614,7 @@ class CineSimklProvider: MainAPI() {
         val year        : Int?    = null,
         val anilistId   : Int?    = null,
         val malId       : Int?    = null,
-        val kitsuId     : Int?    = null,
+        val kitsuId     : String? = null,
         val imdbSeason  : Int?    = null,
         val season      : Int?    = null,
         val episode     : Int?    = null,
