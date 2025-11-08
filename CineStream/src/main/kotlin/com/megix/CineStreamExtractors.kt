@@ -1984,7 +1984,7 @@ object CineStreamExtractors : CineStreamProvider() {
             .filter { s -> s.isNotEmpty() }.joinToString("") { "&tr=$it" }
 
         res?.streams?.forEach { stream ->
-            val title = stream.title ?: stream.name ?: ""
+            val title = stream.description ?: stream.title ?: stream.name ?: ""
             val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 21
@@ -1993,7 +1993,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Comet",
-                    title,
+                    "[Comet🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {

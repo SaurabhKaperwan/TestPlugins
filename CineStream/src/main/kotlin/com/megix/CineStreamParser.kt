@@ -405,6 +405,7 @@ data class TorrentioStream(
     val title: String?,
     val infoHash: String?,
     val fileIdx: Int?,
+    val description: String?,
 )
 
 data class StreamifyResponse(

@@ -106,7 +106,7 @@ class CineSimklProvider: MainAPI() {
     }
 
    private suspend fun extractImdbInfo(
-        kitsuId: Int? = null,
+        kitsuId: String? = null,
         season: Int? = null,
         episode: Int? = null
     ): Triple<String?, Int?, Int?>? {
