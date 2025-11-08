@@ -1977,6 +1977,15 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         )
         val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
+
+        callback.invoke(
+            newExtractorLink(
+                "Comet",
+                "Comet",
+                res.toString()
+            )
+        )
+
         val resp = app.get(TRACKER_LIST_URL).text
         val sourceTrackers = resp
             .split("\n")
@@ -1985,6 +1994,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
         res?.streams?.forEach { stream ->
             val title = stream.title ?: stream.name ?: ""
+
+            callback.invoke(
+                newExtractorLink(
+                    "title",
+                    "title",
+                    title
+                )
+            )
+
             val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
             val match = regex.find(title)
             val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
