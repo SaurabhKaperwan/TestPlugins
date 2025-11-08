@@ -413,7 +413,6 @@ open class CineStreamProvider : MainAPI() {
                                 res.anilistId,
                                 res.malId,
                                 res.kitsuId,
-                                null,
                                 year,
                                 seasonYear,
                                 res.season,
