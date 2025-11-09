@@ -2658,15 +2658,6 @@ object CineStreamExtractors : CineStreamProvider() {
             url = "$api/search/$id $season"
         }
         var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
-
-        callback.invoke(
-            newExtractorLink(
-                "href",
-                "href",
-                href.toString(),
-            )
-        )
-
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
@@ -2683,24 +2674,7 @@ object CineStreamExtractors : CineStreamProvider() {
             var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
                     ?.substringAfter("=") ?: ""
-
-            callback.invoke(
-                newExtractorLink(
-                    "link",
-                    "link",
-                    link,
-                )
-            )
-
-            link = base64Decode(href)
-
-            callback.invoke(
-                newExtractorLink(
-                    "link2",
-                    "link2",
-                    link,
-                )
-            )
+            //link = base64Decode(href)
 
             val selector =
                 if (season == null) "p a.maxbutton" else "h3 a:matches(Episode $episode)"
@@ -2709,25 +2683,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 link,
             ).document.selectFirst(selector)?.let {
                 val source = it.attr("href")
-
-                callback.invoke(
-                    newExtractorLink(
-                        "source",
-                        "source",
-                        source,
-                    )
-                )
-
                 val bypassedLink = bypassHrefli(source).toString()
-
-                callback.invoke(
-                    newExtractorLink(
-                        "bypassedLink",
-                        "bypassedLink",
-                        bypassedLink,
-                    )
-                )
-
                 loadSourceNameExtractor("Moviesmod", bypassedLink, "", subtitleCallback, callback)
             }
         }
