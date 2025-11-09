@@ -79,7 +79,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(!res.isAnime) invokeMadplay(res.tmdbId, res.season, res.episode, callback) },
             { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
-            { invokeThepiratebay(res.imdbId, res.season, res.episode, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
@@ -2659,6 +2658,15 @@ object CineStreamExtractors : CineStreamProvider() {
             url = "$api/search/$id $season"
         }
         var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
+
+        callback.invoke(
+            newExtractorLink(
+                "href",
+                "href",
+                href.toString(),
+            )
+        )
+
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
@@ -2672,18 +2680,54 @@ object CineStreamExtractors : CineStreamProvider() {
                         .contains("1080p", true) || !element.text().contains("720p", true)
                 }
         entries.amap { it ->
-            var href =
+            var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
                     ?.substringAfter("=") ?: ""
-            href = base64Decode(href)
+
+            callback.invoke(
+                newExtractorLink(
+                    "link",
+                    "link",
+                    link,
+                )
+            )
+
+            link = base64Decode(href)
+
+            callback.invoke(
+                newExtractorLink(
+                    "link2",
+                    "link2",
+                    link,
+                )
+            )
+
             val selector =
                 if (season == null) "p a.maxbutton" else "h3 a:matches(Episode $episode)"
-            if (href.isNotEmpty())
+            if (link.isNotEmpty())
             app.get(
-                href,
+                link,
             ).document.selectFirst(selector)?.let {
-                val link = it.attr("href")
-                val bypassedLink = bypassHrefli(link).toString()
+                val source = it.attr("href")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "source",
+                        "source",
+                        source,
+                    )
+                )
+
+                val bypassedLink = bypassHrefli(source).toString()
+
+                callback.invoke(
+                    newExtractorLink(
+                        "bypassedLink",
+                        "bypassedLink",
+                        bypassedLink,
+                    )
+                )
+
                 loadSourceNameExtractor("Moviesmod", bypassedLink, "", subtitleCallback, callback)
             }
         }
@@ -3041,42 +3085,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
             getSoaperLinks(soaperAPI ,"$soaperAPI$episodeLink", "E", subtitleCallback, callback)
         }
-    }
-
-    suspend fun invokeThepiratebay(
-        imdbId: String? =null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        try {
-            val url = if(season == null) {
-                "$ThePirateBayApi/stream/movie/$imdbId.json"
-            }
-            else {
-                "$ThePirateBayApi/stream/series/$imdbId:$season:$episode.json"
-            }
-            val res = app.get(url, timeout = 10).parsedSafe<TBPResponse>()
-
-            for(stream in res?.streams!!)
-            {
-                val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
-                val match = regex.find(stream.title)
-                val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-                if (seeders < 20) continue
-                val magnetLink = generateMagnetLink(TRACKER_LIST_URL,stream.infoHash)
-                callback.invoke(
-                    newExtractorLink(
-                        "ThePirateBay",
-                        "[ThePirateBay] [${stream.title}]",
-                        magnetLink,
-                        ExtractorLinkType.MAGNET
-                    ) {
-                        this.quality = getIndexQuality(stream.title)
-                    }
-                )
-            }
-        } catch (_: Exception) { }
     }
 
     // only for movies

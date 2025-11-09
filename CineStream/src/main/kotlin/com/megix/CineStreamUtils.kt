@@ -882,6 +882,15 @@ suspend fun getProtonStream(
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
                 val source = it.replace("\\/", "/")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Protonmovies",
+                        "Protonmovies",
+                        source,
+                    )
+                )
+
                 gofileExtractor("Protonmovies", source, "", subtitleCallback, callback)
             }
         }
