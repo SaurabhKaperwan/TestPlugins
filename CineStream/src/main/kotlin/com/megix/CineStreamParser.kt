@@ -30,7 +30,6 @@ data class AllLoadLinksData(
 )
 
 //Anizip
-
 data class AnizipEpisode(
     @SerializedName("anidbEid") val anidbEid: Int?,
     @SerializedName("episode") val episode: String?,
@@ -39,12 +38,12 @@ data class AnizipEpisode(
 data class Anizip(val episodes: Map<String, AnizipEpisode>?)
 
 //Animetosho
-
 data class Animetosho(
     val title: String?,
     @SerializedName("magnet_uri") val magnetUri: String?,
     val seeders: Int?,
-    val leechers: Int?
+    val leechers: Int?,
+    @SerializedName("total_size") val totalSize: String?
 )
 
 //Vidlink

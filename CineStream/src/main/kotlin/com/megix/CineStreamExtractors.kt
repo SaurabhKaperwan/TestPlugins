@@ -1902,7 +1902,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "Torrentio",
+                    "Torrentio🧲",
                     "[Torrentio🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
@@ -1925,18 +1925,22 @@ object CineStreamExtractors : CineStreamProvider() {
         val listType = object : TypeToken<List<Animetosho>>() {}.type
         val items: List<Animetosho> = gson.fromJson(json2, listType)
         val filtered = items.filter { (it.seeders ?: 0) > 20 }
-        val sorted = filtered .sortedByDescending { it.seeders ?: -1 }
+        val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
 
          for (it in sorted) {
             val title = it.title ?: ""
             val s = it.seeders ?: 0
             val l = it.leechers ?: 0
             val magnet = it.magnetUri ?: ""
+            val size = it.totalSize?.toLongOrNull() ?: 0L
+
+            val sizeStr = formatSize(size)
+            val displayTitle = "[Animetosho🧲] $title | 🟢⬆️ $s | 🔴⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
                 newExtractorLink(
-                    "Animetosho",
-                    "[Animetosho🧲] $title | Seeders: $s | Leechers: $l",
+                    "Animetosho🧲",
+                    displayTitle,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -1972,7 +1976,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "TorrentsDB",
+                    "TorrentsDB🧲",
                     "[TorrentsDB🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
@@ -2011,7 +2015,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
-                    "Comet",
+                    "Comet🧲",
                     "[Comet🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
