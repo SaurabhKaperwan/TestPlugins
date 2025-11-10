@@ -508,6 +508,15 @@ fun fixUrl(url: String, domain: String): String {
     }
 }
 
+//Anizip
+fun getEpAnizipId(json: String, ep: Int): Int? {
+    val gson = Gson()
+    val root = gson.fromJson(json, Anizip::class.java)
+    val episode = show.episodes?.get(ep.toString())
+    val anidbEid = episode?.anidbEid
+    return anidbEid
+}
+
 //Xprime
 suspend fun multiDecrypt(text : String, source: String) : String? {
     val headers = mapOf(

@@ -19,6 +19,7 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import okhttp3.MediaType.Companion.toMediaType
 import java.util.Base64
@@ -110,6 +111,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeAnimetosho(res.kitsuId, res.episode, callback) },
             { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
@@ -163,14 +165,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name ?: "Nuvio"
+            val name = it.name?.replace(" (SLOW) -", "") ?: "Nuvio"
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    name,
+                    "Nuvio",
                     name,
                     it.url,
                 ) {
@@ -1906,6 +1908,39 @@ object CineStreamExtractors : CineStreamProvider() {
                     ExtractorLinkType.MAGNET,
                 ) {
                     this.quality = getIndexQuality(stream.name)
+                }
+            )
+        }
+    }
+
+    suspend fun invokeAnimetosho(
+        id: String? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val json = app.get("$anizipAPI/mappings?kitsu_id=$id").text
+        val epId = getEpAnizipId(json, episode ?: 1) ?: return
+        val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
+        val gson = Gson()
+        val listType = object : TypeToken<List<Animetosho>>() {}.type
+        val items: List<Animetosho> = gson.fromJson(json2, listType)
+        val filtered = items.filter { (it.seeders ?: 0) > 20 }
+        val sorted = filtered .sortedByDescending { it.seeders ?: -1 }
+
+         for (it in sorted) {
+            val title = it.title ?: ""
+            val s = it.seeders ?: 0
+            val l = it.leechers ?: 0
+            val magnet = it.magnetUri ?: ""
+
+            callback.invoke(
+                newExtractorLink(
+                    "Animetosho",
+                    "[Animetosho🧲] $title | Seeders: $s | Leechers: $l",
+                    magnet,
+                    ExtractorLinkType.MAGNET,
+                ) {
+                    this.quality = getIndexQuality(title)
                 }
             )
         }
