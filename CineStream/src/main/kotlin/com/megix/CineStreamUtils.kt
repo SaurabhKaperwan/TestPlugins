@@ -512,7 +512,7 @@ fun fixUrl(url: String, domain: String): String {
 fun getEpAnizipId(json: String, ep: Int): Int? {
     val gson = Gson()
     val root = gson.fromJson(json, Anizip::class.java)
-    val episode = show.episodes?.get(ep.toString())
+    val episode = root.episodes?.get(ep.toString())
     val anidbEid = episode?.anidbEid
     return anidbEid
 }
