@@ -57,6 +57,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -372,6 +373,69 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
 
             }
+        }
+    }
+
+    suspend fun invokeMapple(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val text = app.get("$multiDecryptAPI/enc-mapple").text
+        val sessionId = JSONObject(text).getJSONObject("result").getString("sessionId")
+
+        var mediaType = ""
+        var tv_slug = ""
+        var url = ""
+
+        if(season == null) {
+          mediaType =  "movie"
+          url = "$mappleAPI/watch/movie/$tmdbId"
+        } else {
+            mediaType = "tv"
+            tv_slug = "$season-$episode"
+            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+        }
+
+        val sources = listOf(
+            "mapple",
+            "sakura",
+            "alfa",
+            "oak",
+            "wiggles"
+        )
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Connection" to "keep-alive",
+            "Referer" to "$mappleAPI/"
+            "Next-Action" to "40c2896f5f22d9d6342e5a6d8f4d8c58d69654bacd"
+        )
+
+        sources.amap { source ->
+
+            val payload = mapOf(
+                "mediaId" to "$tmdbId",
+                "mediaType" to mediaType,
+                "tv_slug" to tv_slug,
+                "source" to source,
+                "sessionId" to sessionId
+            )
+
+            val json = app.post(
+                url,
+                data = payload,
+                headers = headers
+            ).text
+
+            callback.invoke(
+                newExtractorLink(
+                    source,
+                    source,
+                    json,
+                )
+            )
         }
     }
 
@@ -1266,7 +1330,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val groups = doc.select("div.server-items.lang-group")
             for (grp in groups) {
-                val serverType = grp.attr("data-id")
+                val serverType = grp.attr("data-id").uppercase()
                 for (span in grp.select("span.server")) {
                     val lid = span.attr("data-lid").ifBlank { null }
                     servers.add(ServerInfo(serverType, lid))
