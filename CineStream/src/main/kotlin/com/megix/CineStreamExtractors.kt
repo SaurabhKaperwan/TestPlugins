@@ -1264,10 +1264,9 @@ object CineStreamExtractors : CineStreamProvider() {
             val doc = Jsoup.parse(html)
             val servers = mutableListOf<ServerInfo>()
 
-            // For each server-items block (grouped by data-id)
             val groups = doc.select("div.server-items.lang-group")
             for (grp in groups) {
-                val serverType = grp.attr("data-id") // "sub", "softsub", "dub", ...
+                val serverType = grp.attr("data-id")
                 for (span in grp.select("span.server")) {
                     val lid = span.attr("data-lid").ifBlank { null }
                     servers.add(ServerInfo(serverType, lid))
@@ -1305,79 +1304,17 @@ object CineStreamExtractors : CineStreamProvider() {
         val enc_token = encrypt(token)
         val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
         val servers = JSONObject(servers_resp).getString("result")
-
-        callback.invoke(
-            newExtractorLink(
-                "servers",
-                "servers",
-                servers,
-            )
-        )
-
         val all = parseServersFromHtml(servers)
 
-        all.forEach {
-            val lid = it.lid ?: return@forEach
-
-            callback.invoke(
-                newExtractorLink(
-                    "lid",
-                    "lid",
-                    lid,
-                )
-            )
-
+        all.amap {
+            val lid = it.lid ?: return@amap
             val enc_lid = encrypt(lid)
-
-            callback.invoke(
-                newExtractorLink(
-                    "enc_lid",
-                    "enc_lid",
-                    enc_lid,
-                )
-            )
-
             val type = it.serverType
-
-            callback.invoke(
-                newExtractorLink(
-                    "type",
-                    "type",
-                    type,
-                )
-            )
-
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
-
-
-            callback.invoke(
-                newExtractorLink(
-                    "embed_resp",
-                    "embed_resp",
-                    embed_resp,
-                )
-            )
-
             val encrypted = JSONObject(embed_resp).getString("result")
-
-            callback.invoke(
-                newExtractorLink(
-                    "encrypted",
-                    "encrypted",
-                    encrypted,
-                )
-            )
-
-
             val decoded = decrypt(encrypted)
-
-            callback.invoke(
-                newExtractorLink(
-                    "decoded",
-                    "decoded",
-                    decoded,
-                )
-            )
+            val embed_url = JSONObject(decoded).getJSONObject("result").getString("url")
+            loadExtractor(embed_url, "Animekai[$type]" ,subtitleCallback, callback)
         }
     }
 
