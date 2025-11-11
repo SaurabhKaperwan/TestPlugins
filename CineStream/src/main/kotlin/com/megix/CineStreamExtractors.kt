@@ -1248,6 +1248,11 @@ object CineStreamExtractors : CineStreamProvider() {
             return json.getString("result")
         }
 
+        data class ServerInfo(
+            val serverType: String,
+            val lid: String?,
+        )
+
         fun getEpisodeToken(html: String, episode: Int): String? {
             val doc = Jsoup.parse(html)
             val selector = "div.eplist ul.range li a[num=\"$episode\"]"
@@ -1255,12 +1260,29 @@ object CineStreamExtractors : CineStreamProvider() {
             return episodeElement?.attr("token")
         }
 
-        suspend fun parseHtml(html: String): String {
-            val jsonBody = """{"text":"$html"}"""
+        fun parseServersFromHtml(html: String): List<ServerInfo> {
+            val doc = Jsoup.parse(html)
+            val servers = mutableListOf<ServerInfo>()
+
+            // For each server-items block (grouped by data-id)
+            val groups = doc.select("div.server-items.lang-group")
+            for (grp in groups) {
+                val serverType = grp.attr("data-id") // "sub", "softsub", "dub", ...
+                for (span in grp.select("span.server")) {
+                    val lid = span.attr("data-lid").ifBlank { null }
+                    servers.add(ServerInfo(serverType, lid))
+                }
+            }
+            return servers
+        }
+
+
+        suspend fun decrypt(text: String): String {
+            val jsonBody = """{"text":"$text"}"""
             val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
             val text = app.post(
-                "$multiDecryptAPI/parse-html",
+                "$multiDecryptAPI/dec-kai",
                 requestBody = requestBody
             ).text
 
@@ -1279,45 +1301,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val enc_id = encrypt(id)
         val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
         html = JSONObject(json).getString("result")
-
-        callback.invoke(
-            newExtractorLink(
-                "html",
-                "html",
-                html,
-            )
-        )
-
         val token = getEpisodeToken(html, episode ?: 1) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "token",
-                "token",
-                token,
-            )
-        )
-
         val enc_token = encrypt(token)
-
-        callback.invoke(
-            newExtractorLink(
-                "enc_token",
-                "enc_token",
-                enc_token,
-            )
-        )
-
         val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "servers_resp",
-                "servers_resp",
-                servers_resp,
-            )
-        )
-
         val servers = JSONObject(servers_resp).getString("result")
 
         callback.invoke(
@@ -1327,6 +1313,72 @@ object CineStreamExtractors : CineStreamProvider() {
                 servers,
             )
         )
+
+        val all = parseServersFromHtml(servers)
+
+        all.forEach {
+            val lid = it.lid ?: return@forEach
+
+            callback.invoke(
+                newExtractorLink(
+                    "lid",
+                    "lid",
+                    lid,
+                )
+            )
+
+            val enc_lid = encrypt(lid)
+
+            callback.invoke(
+                newExtractorLink(
+                    "enc_lid",
+                    "enc_lid",
+                    enc_lid,
+                )
+            )
+
+            val type = it.serverType
+
+            callback.invoke(
+                newExtractorLink(
+                    "type",
+                    "type",
+                    type,
+                )
+            )
+
+            val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
+
+
+            callback.invoke(
+                newExtractorLink(
+                    "embed_resp",
+                    "embed_resp",
+                    embed_resp,
+                )
+            )
+
+            val encrypted = JSONObject(embed_resp).getString("result")
+
+            callback.invoke(
+                newExtractorLink(
+                    "encrypted",
+                    "encrypted",
+                    encrypted,
+                )
+            )
+
+
+            val decoded = decrypt(encrypted)
+
+            callback.invoke(
+                newExtractorLink(
+                    "decoded",
+                    "decoded",
+                    decoded,
+                )
+            )
+        }
     }
 
     suspend fun invokeKisskh(
