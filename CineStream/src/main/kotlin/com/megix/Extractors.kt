@@ -325,15 +325,6 @@ open class MegaUp : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                url
-            )
-        )
-
         val mediaUrl = url.replace("/e/", "/media/").replace("/e2/", "/media/")
         val displayName = referer ?: this.name
 
