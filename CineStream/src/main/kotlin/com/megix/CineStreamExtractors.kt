@@ -415,17 +415,22 @@ object CineStreamExtractors : CineStreamProvider() {
 
         sources.amap { source ->
 
-            val payload = mapOf(
-                "mediaId" to "$tmdbId",
-                "mediaType" to mediaType,
-                "tv_slug" to tv_slug,
-                "source" to source,
-                "sessionId" to sessionId
-            )
+            val jsonBody = """
+                [
+                    {
+                        "mediaId": "$tmdbId",
+                        "mediaType": "$mediaType",
+                        "tv_slug": "$tv_slug",
+                        "source": "$source",
+                        "sessionId": "$sessionId"
+                    }
+                ]
+            """.trimIndent()
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
             val json = app.post(
                 url,
-                data = payload,
+                requestBody = requestBody,
                 headers = headers
             ).text
 
