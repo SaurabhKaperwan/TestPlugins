@@ -434,13 +434,20 @@ object CineStreamExtractors : CineStreamProvider() {
                 headers = headers
             ).text
 
-            callback.invoke(
-                newExtractorLink(
-                    source,
-                    source,
-                    json,
+            val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
+            val video_link =  regex.find(response)?.groupValues?.get(1)
+
+            if(video_link != null) {
+                callback.invoke(
+                    newExtractorLink(
+                        "Mapple[${source.uppercase()}]",
+                        "Mapple[${source..uppercase()}]",
+                        video_link
+                    ) {
+                        this.referer = "$mappleAPI/"
+                    }
                 )
-            )
+            }
         }
     }
 
@@ -487,8 +494,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 callback.invoke(
                     newExtractorLink(
-                        "Hexa[$server]",
-                        "Hexa[$server]",
+                        "Hexa[${server.uppercase()}]",
+                        "Hexa[${server.uppercase()}]",
                         m3u8,
                         type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
                     ) {
