@@ -1248,6 +1248,13 @@ object CineStreamExtractors : CineStreamProvider() {
             return json.getString("result")
         }
 
+        fun getEpisodeToken(html: String, episode: Int): String? {
+            val doc = Jsoup.parse(html)
+            val selector = "div.eplist ul.range li a[num=\"$episode\"]"
+            val episodeElement = doc.selectFirst(selector)
+            return episodeElement?.attr("token")
+        }
+
         suspend fun parseHtml(html: String): String {
             val jsonBody = """{"text":"$html"}"""
             val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
@@ -1271,15 +1278,6 @@ object CineStreamExtractors : CineStreamProvider() {
             .selectFirst("div.rate-box")?.attr("data-id") ?: return
         val enc_id = encrypt(id)
         val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "json",
-                "json",
-                json,
-            )
-        )
-
         html = JSONObject(json).getString("result")
 
         callback.invoke(
@@ -1290,13 +1288,43 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
-        val episodes = parseHtml(html)
+        val token = getEpisodeToken(html, episode ?: 1) ?: return
 
         callback.invoke(
             newExtractorLink(
-                "episodes",
-                "episodes",
-                episodes.toString(),
+                "token",
+                "token",
+                token,
+            )
+        )
+
+        val enc_token = encrypt(token)
+
+        callback.invoke(
+            newExtractorLink(
+                "enc_token",
+                "enc_token",
+                enc_token,
+            )
+        )
+
+        val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
+
+        callback.invoke(
+            newExtractorLink(
+                "servers_resp",
+                "servers_resp",
+                servers_resp,
+            )
+        )
+
+        val servers = JSONObject(servers_resp).getString("result")
+
+        callback.invoke(
+            newExtractorLink(
+                "servers",
+                "servers",
+                servers,
             )
         )
     }
