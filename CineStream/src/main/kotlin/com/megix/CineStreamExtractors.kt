@@ -1262,50 +1262,14 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val searchJson = app.get("$animekaiAPI/ajax/anime/search?keyword=$title", headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "Search",
-                "Search",
-                searchJson,
-            )
-        )
-
         val root = JSONObject(searchJson)
-        val html = root.getJSONObject("result").getString("html")
+        var html = root.getJSONObject("result").getString("html")
         val doc = Jsoup.parse(html)
         val url = doc.selectFirst("a.aitem")?.attr("href") ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "url",
-                "url",
-                url,
-            )
-        )
-
         val id = app.get(animekaiAPI + url)
             .document
             .selectFirst("div.rate-box")?.attr("data-id") ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "id",
-                "id",
-                id,
-            )
-        )
-
         val enc_id = encrypt(id)
-
-        callback.invoke(
-            newExtractorLink(
-                "enc_id",
-                "enc_id",
-                enc_id,
-            )
-        )
-
         val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
 
         callback.invoke(
@@ -1316,7 +1280,17 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
-        val episodes = parseHtml(JSONObject(json).getString("html"))
+        html = JSONObject(json).getString("result")
+
+        callback.invoke(
+            newExtractorLink(
+                "html",
+                "html",
+                html,
+            )
+        )
+
+        val episodes = parseHtml(html)
 
         callback.invoke(
             newExtractorLink(
