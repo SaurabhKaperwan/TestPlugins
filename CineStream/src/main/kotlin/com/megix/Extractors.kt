@@ -12,7 +12,6 @@ import java.io.IOException
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 import com.fasterxml.jackson.annotation.JsonProperty
-import org.json.JSONObject
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
