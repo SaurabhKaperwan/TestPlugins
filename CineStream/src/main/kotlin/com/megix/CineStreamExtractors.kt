@@ -1313,7 +1313,25 @@ object CineStreamExtractors : CineStreamProvider() {
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
             val encrypted = JSONObject(embed_resp).getString("result")
             val decoded = decrypt(encrypted)
+
+            callback.invoke(
+                newExtractorLink(
+                    "decoded",
+                    "decoded",
+                    decoded,
+                )
+            )
+
             val embed_url = JSONObject(decoded).getJSONObject("result").getString("url")
+
+            callback.invoke(
+                newExtractorLink(
+                    "embed_url",
+                    "embed_url",
+                    embed_url,
+                )
+            )
+
             loadExtractor(embed_url, "Animekai[$type]" ,subtitleCallback, callback)
         }
     }

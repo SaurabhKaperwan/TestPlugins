@@ -326,8 +326,16 @@ open class MegaUp : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
 
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                url
+            )
+        )
+
         val mediaUrl = url.replace("/e/", "/media/").replace("/e2/", "/media/")
-        val displayName = referer ?: "AnimeKai"
+        val displayName = referer ?: this.name
 
         val encodedResult = app.get(mediaUrl, headers = HEADERS)
         .parsedSafe<AnimeKaiResponse>()
