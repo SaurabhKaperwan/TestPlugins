@@ -442,7 +442,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     newExtractorLink(
                         "Mapple[${source.uppercase()}]",
                         "Mapple[${source.uppercase()}]",
-                        video_link
+                        video_link,
+                        ExtractorLinkType.M3U8
                     ) {
                         this.referer = "$mappleAPI/"
                     }
