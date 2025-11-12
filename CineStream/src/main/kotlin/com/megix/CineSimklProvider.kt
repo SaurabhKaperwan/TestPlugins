@@ -256,7 +256,7 @@ class CineSimklProvider: MainAPI() {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
-                } ?: throw ErrorLoadingException("Invalid Json reponse")
+                } ?: return null
 
             return newHomePageResponse(
                 list = HomePageList(
