@@ -45,10 +45,10 @@ class CineSimklProvider: MainAPI() {
     private val haglund_url = "https://arm.haglund.dev/api/v2"
 
     override val mainPage = mainPageOf(
-        "/movies/genres/all/all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Trending Movies This Week",
-        "/tv/genres/all-countries/this-year/popular-today?limit=$mediaLimit" to "Trending Shows Today",
-        "/anime/trending?extended=overview&limit=$mediaLimit" to "Trending Anime",
-        "/anime/airing?date?sort=rank" to "Airing Anime Today",
+        "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
+        "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Shows Today",
+        "/anime/trending/today?limit=$mediaLimit&extended=overview" to "Trending Anime",
+        "/anime/airing?today?sort=rank" to "Airing Anime Today",
         "/tv/genres/kr/all-networks/all-years/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all//all-countries/this-year/popular-this-week?limit=$mediaLimit" to "Top Rated Movies This Year",
         "/tv/genres/all-countries/all-networks/this-year/popular-today?limit=$mediaLimit" to "Top Rated Shows This Year",
@@ -247,16 +247,16 @@ class CineSimklProvider: MainAPI() {
                             ?: return null
             return newHomePageResponse(homePageList, false)
         } else {
-            val jsonString = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers).text
-            val json = parseJson<Array<SimklResponse>>(jsonString)
-            val data = json.map {
-                val allratings = it.ratings
-                val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
-                    this.posterUrl = getPosterUrl(it.poster, "poster")
-                    this.score = Score.from10(score)
-                }
-            }
+
+             val data = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers)
+                .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
+                    val allratings = it.ratings
+                    val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
+                    newMovieSearchResponse("${it.title}", "$mainUrl${it.url}") {
+                        this.posterUrl = getPosterUrl(it.poster, "poster")
+                        this.score = Score.from10(score)
+                    }
+                } ?: throw ErrorLoadingException("Invalid Json reponse")
 
             return newHomePageResponse(
                 list = HomePageList(
