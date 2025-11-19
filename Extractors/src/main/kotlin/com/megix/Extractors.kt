@@ -409,7 +409,7 @@ open class HubCloud : ExtractorApi() {
         }
 
         if(!link.startsWith("https://")) {
-            link = newBaseUrl + link
+            link = latestUrl + link
         }
 
         val document = app.get(link).document
