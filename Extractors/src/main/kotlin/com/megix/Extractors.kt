@@ -19,6 +19,22 @@ fun getIndexQuality(str: String?): Int {
         ?: Qualities.Unknown.value
 }
 
+fun getBaseUrl(url: String): String {
+    return URI(url).let {
+        "${it.scheme}://${it.host}"
+    }
+}
+
+suspend fun getLatestUrl(url: String, source: String): String {
+    val link = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString(source)
+    if(link.isNullOrEmpty()) {
+        return getBaseUrl(url)
+    }
+    return link
+}
+
 class Watchadsontape : StreamTape() {
     override var mainUrl: String = "https://watchadsontape.com"
 }
@@ -29,7 +45,7 @@ class Smoothpre : VidHidePro() {
 
 class Howblogs : ExtractorApi() {
     override val name: String = "Howblogs"
-    override val mainUrl: String = "https://howblogs.xyz"
+    override val mainUrl: String = "https://howblogs.*"
     override val requiresReferer = false
 
     override suspend fun getUrl(
@@ -72,12 +88,6 @@ open class Driveleech : ExtractorApi() {
     override val name: String = "Driveleech"
     override val mainUrl: String = "https://driveleech.*"
     override val requiresReferer = false
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
 
     private suspend fun CFType1(url: String): List<String> {
         val document = app.get(url+"?type=1").document
@@ -123,7 +133,6 @@ open class Driveleech : ExtractorApi() {
         return link?.substringAfter("?url=")
     }
 
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -131,15 +140,6 @@ open class Driveleech : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         val baseUrl = getBaseUrl(url)
-
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                baseUrl
-            )
-        )
-
         val document = if(url.contains("r?key=")) {
             val temp = app.get(url).document.selectFirst("script")?.data()?.substringAfter("replace(\"")?.substringBefore("\")") ?: ""
             app.get(baseUrl + temp).document
@@ -253,12 +253,6 @@ open class VCloud : ExtractorApi() {
     override val name: String = "V-Cloud"
     override val mainUrl: String = "https://vcloud.*"
     override val requiresReferer = false
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
 
     override suspend fun getUrl(
         url: String,
@@ -391,40 +385,15 @@ open class HubCloud : ExtractorApi() {
     override val mainUrl: String = "https://hubcloud.*"
     override val requiresReferer = false
 
-    private suspend fun getLatestUrl(url: String): String {
-        val link = JSONObject(
-            app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-        ).optString("hubcloud")
-        if(link.isNullOrEmpty()) {
-            return getBaseUrl(url)
-        }
-        return link
-    }
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl(url)
+        val latestUrl = getLatestUrl(url, "hubcloud")
         val baseUrl = getBaseUrl(url)
         val newUrl = url.replace(baseUrl, latestUrl)
-
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                "latestUrl: $latestUrl, baseUrl: $baseUrl, newUrl: $newUrl",
-            )
-        )
-
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -587,40 +556,15 @@ open class GDFlix : ExtractorApi() {
     override val mainUrl = "https://gdflix.*"
     override val requiresReferer = false
 
-    private suspend fun getLatestUrl(url: String): String {
-        val link = JSONObject(
-            app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-        ).optString("gdflix")
-        if(link.isNullOrEmpty()) {
-            return getBaseUrl(url)
-        }
-        return link
-    }
-
-    fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
-    }
-
     override suspend fun getUrl(
         url: String,
         referer: String?,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val latestUrl = getLatestUrl(url)
+        val latestUrl = getLatestUrl(url, "gdflix")
         val baseUrl = getBaseUrl(url)
         val newUrl = url.replace(baseUrl, latestUrl)
-
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                "latestUrl: $latestUrl, baseUrl: $baseUrl, newUrl: $newUrl",
-            )
-        )
-
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
