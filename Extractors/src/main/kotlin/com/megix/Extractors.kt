@@ -124,6 +124,14 @@ open class Driveleech : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                mainUrl
+            )
+        )
+
         val document = if(url.contains("r?key=")) {
             val temp = app.get(url).document.selectFirst("script")?.data()?.substringAfter("replace(\"")?.substringBefore("\")") ?: ""
             app.get(mainUrl + temp).document
@@ -250,7 +258,16 @@ open class VCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        var href=url
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                mainUrl
+            )
+        )
+
+        var href = url
         if (href.contains("api/index.php"))
         {
             href=app.get(url).document.selectFirst("div.main h4 a")?.attr("href") ?:""
@@ -397,6 +414,15 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                mainUrl
+            )
+        )
+
         val latestUrl = getLatestUrl()
         val newUrl = url.replace(mainUrl, latestUrl)
         val doc = app.get(newUrl).document
@@ -579,6 +605,15 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                mainUrl
+            )
+        )
+
         val latestUrl = getLatestUrl()
         val newUrl = url.replace(mainUrl, latestUrl)
         val document = app.get(newUrl).document
@@ -864,6 +899,15 @@ class Photolinx : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                mainUrl
+            )
+        )
+
         val client = OkHttpClient()
         val res = app.get(url)
         val document = res.document
