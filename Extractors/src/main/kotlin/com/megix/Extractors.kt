@@ -594,6 +594,13 @@ open class GDFlix : ExtractorApi() {
         val latestUrl = getLatestUrl(url, "gdflix")
         val baseUrl = getBaseUrl(url)
         val newUrl = url.replace(baseUrl, latestUrl)
+        callback.invoke(
+            newExtractorLink(
+                "$name",
+                "$name",
+                newUrl,
+            )
+        )
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
@@ -626,6 +633,13 @@ open class GDFlix : ExtractorApi() {
                 }
 
                 link.contains("pixeldra") -> {
+                    callback.invoke(
+                        newExtractorLink(
+                            "gdflix",
+                            "gdflix",
+                            "$link",
+                        )
+                    )
                     val baseUrlLink = getBaseUrl(link)
                     val finalURL = if (link.contains("download", true)) link
                         else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
