@@ -829,7 +829,7 @@ class Gofile : ExtractorApi() {
                     link,
                 ) {
                     this.quality = getQuality(fileName)
-                    this.headers = this.headers = VIDEO_HEADERS + mapOf(
+                    this.headers = VIDEO_HEADERS + mapOf(
                         "Cookie" to "accountToken=$token"
                     )
                 }

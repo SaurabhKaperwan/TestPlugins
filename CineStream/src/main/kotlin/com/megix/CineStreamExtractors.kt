@@ -2320,11 +2320,12 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val malsync = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
-            .parsedSafe<MALSyncResponses>()?.sites
+        val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
+            .parsedSafe<MALSyncResponses>()
 
         // val zoroIds = malsync?.zoro?.keys?.map { it }
-        val title = malsync?.title
+        val title = mal_response?.title
+        val malsync = mal_response?.sites
         val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":"," ")
         val hianimeurl = malsync?.zoro?.firstNotNullOf { it.value["url"] }
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
