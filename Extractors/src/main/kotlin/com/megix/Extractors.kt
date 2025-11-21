@@ -605,6 +605,14 @@ open class GDFlix : ExtractorApi() {
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
 
+            callback.invoke(
+                newExtractorLink(
+                    "GDFlix",
+                    "GDFlix",
+                    "$text : $link",
+                )
+            )
+
             when {
                 text.contains("DIRECT DL") -> {
                     callback.invoke(
@@ -628,7 +636,7 @@ open class GDFlix : ExtractorApi() {
                 text.contains("PixelDrain", true) -> {
                     val baseUrlLink = getBaseUrl(link)
                     val finalURL = if (link.contains("download", true)) link
-                    else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
+                        else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
