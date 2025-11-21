@@ -632,7 +632,7 @@ open class GDFlix : ExtractorApi() {
                     callback.invoke(
                         newExtractorLink(
                             "Pixeldrain",
-                            "Pixeldrain $fileName[$fileSize]",
+                            "GDFlix[Pixeldrain] $fileName[$fileSize]",
                             link
                         ) {
                             this.quality = quality
