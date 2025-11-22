@@ -260,6 +260,20 @@ class PrimeVideoProvider : MainAPI() {
                     }
                 )
             }
+
+            item.tracks?.filter { it.kind == "captions" }?.map { track ->
+                callback.invoke(
+                    newExtractorLink(
+                        track.label.toString(),
+                        track.label.toString(),
+                        httpsify(track.file.toString()),
+                    ) {
+                        this.headers = mapOf(
+                            "Referer" to "$newUrl/"
+                        )
+                    }
+                )
+            }
         }
 
         return true
