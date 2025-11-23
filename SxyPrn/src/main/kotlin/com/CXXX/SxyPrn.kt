@@ -108,6 +108,16 @@ class SxyPrn : MainAPI() {
         return sut
     }
 
+    fun ssut51(input: String): Int {
+        var sum = 0
+        for (char in input) {
+            if (char.isDigit()) {
+                sum += Character.getNumericValue(char)
+            }
+        }
+        return sum
+    }
+
    override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
