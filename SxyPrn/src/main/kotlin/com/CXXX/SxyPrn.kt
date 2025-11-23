@@ -122,27 +122,36 @@ class SxyPrn : MainAPI() {
                 }
             },
             {
-                val parsed = AppUtils.parseJson<Map<String, String>>(
-                    document.select("span.vidsnfo").attr("data-vnfo")
+                val regex = Regex(
+                    """data-vnfo='\{".+?":"(.+?)"'""",
+                    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
                 )
-                var url = parsed[parsed.keys.toList()[0]].toString()
 
-                var tmp = url.split("/").toMutableList()
-                tmp[1] += "8"
-                tmp = updateUrl(tmp)
+                val matchResult = regex.find(document.toString())
 
-                url = fixUrl(tmp.joinToString("/"))
+                if (matchResult != null) {
+                    var videoUrl = matchResult.groupValues[1].replace("\\/", "/")
+                    val tmpFile = videoUrl.split("/").toMutableList()
 
-                callback.invoke(
-                    newExtractorLink(
-                        source = this.name,
-                        name = this.name,
-                        url = url
-                    ) {
-                        this.referer = ""
-                        this.quality = Qualities.Unknown.value
+                    if (tmpFile.size > 7) {
+                        val calculatedValue = tmpFile[5].toInt() - ssut51(tmpFile[6]) - ssut51(tmpFile[7])
+                        tmpFile[5] = calculatedValue.toString()
                     }
-                )
+
+                    videoUrl = tmpFile.joinToString("/")
+                    val finalUrl = "$mainUrl/".dropLast(1) + videoUrl.replace("/cdn/", "/cdn8/")
+
+                    callback.invoke(
+                        newExtractorLink(
+                            source = this.name,
+                            name = this.name,
+                            url = finalUrl
+                        ) {
+                            this.referer = mainUrl
+                            this.quality = Qualities.Unknown.value
+                        }
+                    )
+                }
             },
         )
 
