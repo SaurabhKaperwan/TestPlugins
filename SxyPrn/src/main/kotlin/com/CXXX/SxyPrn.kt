@@ -170,7 +170,7 @@ class SxyPrn : MainAPI() {
                         newExtractorLink(
                             source = this.name,
                             name = this.name,
-                            url = processedTmp.joinToString("/")
+                            url = mainUrl + processedTmp.joinToString("/")
                         ) {
                             this.referer = mainUrl
                             this.quality = Qualities.Unknown.value
