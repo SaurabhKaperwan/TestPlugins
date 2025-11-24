@@ -10,6 +10,8 @@ import com.lagradost.cloudstream3.utils.loadExtractor
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.runAllAsync
+import org.json.JSONObject
+import java.lang.Exception
 
 class SxyPrn : MainAPI() {
     override var mainUrl = "https://sxyprn.com"
@@ -108,15 +110,33 @@ class SxyPrn : MainAPI() {
         return sut
     }
 
-    fun ssut51(input: String): Int {
-        var sum = 0
-        for (char in input) {
-            if (char.isDigit()) {
-                sum += Character.getNumericValue(char)
-            }
+    private fun preda(arg: MutableList<String>): MutableList<String> {
+        if (arg.size <= 7) return arg
+
+        try {
+            val val5 = arg[5].toLong()
+            val deduction = ssut51(arg[6]) + ssut51(arg[7])
+            arg[5] = (val5 - deduction).toString()
+
+        } catch (e: NumberFormatException) {
+            println("Error parsing URL segments in preda: ${e.message}")
         }
-        return sum
+        return arg
     }
+
+
+    private fun ssut51(arg: String): Long {
+        val str = arg.replace(Regex("[^0-9]"), "")
+
+        var sut: Long = 0
+
+        for (char in str) {
+            sut += char.toString().toInt()
+        }
+
+        return sut
+    }
+
 
    override suspend fun loadLinks(
         data: String,
@@ -132,30 +152,25 @@ class SxyPrn : MainAPI() {
                 }
             },
             {
-                val regex = Regex(
-                    """data-vnfo='\{".+?":"(.+?)"'""",
-                    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
-                )
+                val vnfoString = document.select(".vidsnfo").attr("data-vnfo")
+                val vidsnfo = JSONObject(vnfoString)
+                val keys = vidsnfo.keys()
+                while (keys.hasNext()) {
+                    val pid = keys.next()
+                    val src = vidsnfo.getString(pid)
 
-                val matchResult = regex.find(document.toString())
+                    val tmp = src.split("/").toMutableList()
 
-                if (matchResult != null) {
-                    var videoUrl = matchResult.groupValues[1].replace("\\/", "/")
-                    val tmpFile = videoUrl.split("/").toMutableList()
-
-                    if (tmpFile.size > 7) {
-                        val calculatedValue = tmpFile[5].toInt() - ssut51(tmpFile[6]) - ssut51(tmpFile[7])
-                        tmpFile[5] = calculatedValue.toString()
+                    if (tmp.size > 1) {
+                        tmp[1] = tmp[1] + "8"
                     }
 
-                    videoUrl = tmpFile.joinToString("/")
-                    val finalUrl = "$mainUrl/".dropLast(1) + videoUrl.replace("/cdn/", "/cdn8/")
-
+                    val processedTmp = preda(tmp)
                     callback.invoke(
                         newExtractorLink(
                             source = this.name,
                             name = this.name,
-                            url = finalUrl
+                            url = processedTmp.joinToString("/")
                         ) {
                             this.referer = mainUrl
                             this.quality = Qualities.Unknown.value
