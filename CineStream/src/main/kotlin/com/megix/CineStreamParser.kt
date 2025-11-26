@@ -30,7 +30,7 @@ data class AllLoadLinksData(
 )
 
 //XDmovies
-class XDMoviesSearchResponse: ArrayList<SearchData.SearchDataItem>() {
+class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
     data class SearchDataItem(
         val id: Int,
         val path: String,
