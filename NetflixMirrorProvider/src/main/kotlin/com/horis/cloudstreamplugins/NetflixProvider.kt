@@ -229,7 +229,7 @@ class NetflixProvider : MainAPI() {
                 callback.invoke(
                     newExtractorLink(
                         name,
-                        name,
+                        it.label,
                         """$newUrl${it.file.replace("/tv/", "/")}""",
                         type = ExtractorLinkType.M3U8
                     ) {
