@@ -216,7 +216,7 @@ class JioHotstarProvider : MainAPI() {
             "ott" to "hs"
         )
         val playlist = app.get(
-            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/home",
             cookies = cookies
@@ -228,10 +228,10 @@ class JioHotstarProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        "$mainUrl/${it.file}",
+                        "$newUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$newUrl/home"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
