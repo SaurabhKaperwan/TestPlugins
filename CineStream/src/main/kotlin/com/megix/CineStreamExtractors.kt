@@ -2976,7 +2976,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
                                     else -> {
                                         server.subtitles?.forEach { sub ->
-                                            val lang = SubtitleHelper.fromTwoLettersToLanguage(sub.lang ?: "") ?: sub.lang.orEmpty()
+                                            val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
                                             subtitleCallback(newSubtitleFile(lang, httpsify(src)))
                                         }
