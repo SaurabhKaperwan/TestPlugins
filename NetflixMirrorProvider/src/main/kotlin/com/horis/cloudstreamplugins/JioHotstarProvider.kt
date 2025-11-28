@@ -217,9 +217,9 @@ class JioHotstarProvider : MainAPI() {
         )
 
         val playlist = app.get(
-            "$newUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/home",
+            referer = "$mainUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
@@ -232,7 +232,7 @@ class JioHotstarProvider : MainAPI() {
                         "$newUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$newUrl/home"
+                        this.referer = "$newUrl/"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", "").substringBefore("&in"))
                     }
                 )
