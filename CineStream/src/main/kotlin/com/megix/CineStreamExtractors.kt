@@ -73,7 +73,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
-            { invokeW4U(res.title, res.year, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -92,7 +91,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeNuvioStreams(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams(vflixAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -131,7 +131,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeNuvioStreams(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams(vflixAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -146,7 +147,8 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeNuvioStreams(
+    suspend fun invokeStremioStreams(
+        api: String,
         imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
@@ -154,9 +156,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
-            "$nuvioStreamsAPI/stream/movie/$imdbId.json"
+            "$api/stream/movie/$imdbId.json"
         } else {
-            "$nuvioStreamsAPI/stream/series/$imdbId:$season:$episode.json"
+            "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
         val json = app.get(url).text
@@ -168,14 +170,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
         data.streams.forEach {
             val title = it.title ?: ""
-            val name = it.name?.replace(" (SLOW) -", "") ?: "Nuvio"
+            val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
             if(
                 it.url.contains("https://github.com") ||
                 it.url.contains("video-downloads.googleusercontent")
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    "Nuvio",
+                    name,
                     name,
                     it.url,
                 ) {
@@ -186,6 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         }
     }
+
 
     suspend fun invokeWebStreamr(
         imdbId: String? = null,
@@ -384,9 +387,17 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val text = app.get("$multiDecryptAPI/enc-mapple").text
-        val jsonObj= JSONObject(text)
+        val jsonObj = JSONObject(text)
         val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
         val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
+
+        callback.invoke(
+            newExtractorLink(
+                "Mapple",
+                "Mapple",
+                "$sessionId  $nextAction",
+            )
+        )
 
         var mediaType = ""
         var tv_slug = ""
@@ -437,8 +448,24 @@ object CineStreamExtractors : CineStreamProvider() {
                 headers = headers
             ).text
 
+            callback.invoke(
+                newExtractorLink(
+                    "Mapple json",
+                    "Mapple json",
+                    json,
+                )
+            )
+
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
+
+            callback.invoke(
+                newExtractorLink(
+                    "Mapple link",
+                    "Mapple link",
+                    video_link.toString(),
+                )
+            )
 
             if(video_link != null) {
                 M3u8Helper.generateM3u8(
@@ -2449,50 +2476,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     it.url
                 )
             )
-        }
-    }
-
-    suspend fun invokeW4U(
-        title: String? = null,
-        year: Int? = null,
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season == null) "$W4UAPI/?s=$title $year" else "$W4UAPI/?s=$title $season"
-        val document = app.get(url).document
-        val link = document.selectFirst("div.post-thumb > a")?.attr("href")
-        val doc = app.get(link ?: return).document
-        val imdbId = doc.selectFirst("div.imdb_left > a")?.attr("href")?.substringAfter("title/")?.substringBefore("/") ?: ""
-        if("$id" == imdbId) {
-            if(season != null && episode != null) {
-                doc.select("a.my-button").mapNotNull {
-                    val title = it.parent()?.parent()?.previousElementSibling()?.text()?: ""
-                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                    val quality = qualityRegex.find(title) ?. groupValues ?. get(1) ?: ""
-                    val realSeason = Regex("""(?:Season |S)(\d+)""").find(title) ?. groupValues ?. get(1) ?. toIntOrNull() ?: 300
-                    if(season == realSeason) {
-                        val doc2 = app.get(it.attr("href")).document
-                        val h3 = doc2.select("h3:matches((?i)(episode))").get(episode-1)
-                        var source = h3?.nextElementSibling()?.selectFirst("a")?.attr("href") ?: ""
-                        loadSourceNameExtractor("W4U", source, "", subtitleCallback, callback, getIndexQuality(quality))
-                    }
-                    else {
-                    }
-                }
-            }
-            else {
-                doc.select("a.my-button").mapNotNull {
-                    val title = it.parent()?.parent()?.previousElementSibling()?.text()?: ""
-                    val qualityRegex = """(1080p|720p|480p|2160p|4K|[0-9]*0p)""".toRegex(RegexOption.IGNORE_CASE)
-                    val quality = qualityRegex.find(title) ?. groupValues ?. get(1) ?: ""
-                    app.get(it.attr("href")).document.select("h4 > a").mapNotNull {
-                        loadSourceNameExtractor("W4U", it.attr("href"), "", subtitleCallback, callback, getIndexQuality(quality))
-                    }
-                }
-            }
         }
     }
 
