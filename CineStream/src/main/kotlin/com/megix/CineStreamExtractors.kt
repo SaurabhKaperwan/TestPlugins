@@ -1274,7 +1274,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 for (key in episodesObject.keySet()) {
                     val seasonGroup = episodesObject.getAsJsonObject(key)
 
-                    if (seasonGroup.has(episodeKey)) {
+                    if (seasonGroup.has(episodeKey.toString())) {
                         return seasonGroup.getAsJsonObject(episodeKey.toString()).get("token").asString
                     }
                 }
