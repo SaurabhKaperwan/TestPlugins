@@ -19,6 +19,7 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
@@ -92,7 +93,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeWebStreamr(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams(vflixAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -132,7 +132,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeWebStreamr(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams(nuvioStreamsAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams(vflixAPI ,res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -177,8 +176,8 @@ object CineStreamExtractors : CineStreamProvider() {
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
-                    name,
-                    name,
+                    "Nuvio",
+                    "[Nuvio] " + name,
                     it.url,
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
@@ -391,14 +390,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
         val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
-        callback.invoke(
-            newExtractorLink(
-                "Mapple",
-                "Mapple",
-                "$sessionId  $nextAction",
-            )
-        )
-
         var mediaType = ""
         var tv_slug = ""
         var url = ""
@@ -448,24 +439,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 headers = headers
             ).text
 
-            callback.invoke(
-                newExtractorLink(
-                    "Mapple json",
-                    "Mapple json",
-                    json,
-                )
-            )
-
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
-
-            callback.invoke(
-                newExtractorLink(
-                    "Mapple link",
-                    "Mapple link",
-                    video_link.toString(),
-                )
-            )
 
             if(video_link != null) {
                 M3u8Helper.generateM3u8(
@@ -522,10 +497,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     newExtractorLink(
                         "Hexa[${server.uppercase()}]",
                         "Hexa[${server.uppercase()}]",
-                        m3u8,
-                        type = if(m3u8.contains("m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+                        m3u8
                     ) {
-                        this.referer = "$hexaAPI/"
+                        this.headers = M3U8_HEADERS
                     }
                 )
             }
@@ -1271,7 +1245,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeAnimekai(
-        title: String? = null,
+        malId: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
@@ -1292,11 +1266,23 @@ object CineStreamExtractors : CineStreamProvider() {
             val lid: String?,
         )
 
-        fun getEpisodeToken(html: String, episode: Int): String? {
-            val doc = Jsoup.parse(html)
-            val selector = "div.eplist ul.range li a[num=\"$episode\"]"
-            val episodeElement = doc.selectFirst(selector)
-            return episodeElement?.attr("token")
+        fun getEpisodeToken(json: String, episodeKey: Int): String? {
+            return try {
+                val root = JsonParser.parseString(json).asJsonArray
+                val episodesObject = root.get(0).asJsonObject.getAsJsonObject("episodes")
+
+                for (key in episodesObject.keySet()) {
+                    val seasonGroup = episodesObject.getAsJsonObject(key)
+
+                    if (seasonGroup.has(episodeKey)) {
+                        return seasonGroup.getAsJsonObject(episodeKey.toString()).get("token").asString
+                    }
+                }
+                null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
         }
 
         fun parseServersFromHtml(html: String): List<ServerInfo> {
@@ -1328,18 +1314,8 @@ object CineStreamExtractors : CineStreamProvider() {
             return json.getJSONObject("result").getString("url")
         }
 
-        val searchJson = app.get("$animekaiAPI/ajax/anime/search?keyword=$title", headers = headers).text
-        val root = JSONObject(searchJson)
-        var html = root.getJSONObject("result").getString("html")
-        val doc = Jsoup.parse(html)
-        val url = doc.selectFirst("a.aitem")?.attr("href") ?: return
-        val id = app.get(animekaiAPI + url)
-            .document
-            .selectFirst("div.rate-box")?.attr("data-id") ?: return
-        val enc_id = encrypt(id)
-        val json = app.get("$animekaiAPI/ajax/episodes/list?ani_id=$id&_=$enc_id", headers = headers).text
-        html = JSONObject(json).getString("result")
-        val token = getEpisodeToken(html, episode ?: 1) ?: return
+        val json = app.get("$multiDecryptAPI/db/kai/find?mal_id=$malId").text
+        val token = getEpisodeToken(json, episode ?: 1) ?: return
         val enc_token = encrypt(token)
         val servers_resp = app.get("$animekaiAPI/ajax/links/list?token=$token&_=$enc_token", headers = headers).text
         val servers = JSONObject(servers_resp).getString("result")
@@ -2285,7 +2261,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 invokeAnimez(title, episode, callback)
             },
             {
-                invokeAnimekai(title, episode, subtitleCallback, callback)
+                invokeAnimekai(malId, episode, subtitleCallback, callback)
             },
             {
                 if(origin == "imdb" && title != null) invokeTokyoInsider(
@@ -3277,7 +3253,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = extractorLinkType
                 )
                 {
-                    this.headers = mapOf("Referer" to cinemaOSApi)
+                    this.headers = mapOf("Referer" to cinemaOSApi) + M3U8_HEADERS
                     this.quality = quality
                 }
             )
@@ -3343,10 +3319,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             )
         }
-
-
-
-
     }
 
     suspend fun invokeVidFastPro(
