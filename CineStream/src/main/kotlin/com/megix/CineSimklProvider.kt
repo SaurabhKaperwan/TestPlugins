@@ -398,7 +398,7 @@ class CineSimklProvider: MainAPI() {
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
-                    if (nextAir == null && this.date != null && this.date!! > unixTimeMS && this.season != 0) {
+                    if (nextAir == null && this.date != null && it.aired == false && this.season != 0) {
                         nextAir = NextAiring(
                             episode = this.episode!!,
                             unixTime = this.date!!.div(1000L),
