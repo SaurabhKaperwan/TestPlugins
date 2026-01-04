@@ -1408,85 +1408,57 @@ object CineStreamExtractors : CineStreamProvider() {
         val epsId =
             if (season == null) resDetail.episodes?.first()?.id else resDetail.episodes?.find { it.number == episode }?.id
                 ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "KissKh",
-                "KissKh",
-                epsId.toString(),
-            )
+        val epJson = app.get("$multiDecryptAPI/enc-kisskh?text=$epsId&type=vid", referer = kissKhAPI).text
+        val vid_key = JSONObject(epJson).getString("result")
+        val sourcesResponse = app.get(
+            "$kissKhAPI/api/DramaList/Episode/$epsId.png?err=false&ts=&time=&kkey=$vid_key",
+            referer = kissKhAPI
         )
+
+        if (sourcesResponse.code != 200) return
+        sourcesResponse.parsedSafe<KisskhSources>()?.let { source ->
+            listOf(source.video, source.thirdParty).amap { link ->
+                val safeLink = link ?: return@amap null
+                when {
+                    safeLink.contains(".m3u8") || safeLink.contains(".mp4") -> {
+                        callback.invoke(
+                            newExtractorLink(
+                                "Kisskh",
+                                "Kisskh",
+                                fixUrl(safeLink, kissKhAPI),
+                                INFER_TYPE
+                            ) {
+                                referer = kissKhAPI
+                                quality = Qualities.P720.value
+                                headers = mapOf("Origin" to kissKhAPI)
+                            }
+                        )
+                    }
+
+                    else -> {
+                        val cleanedLink = safeLink.substringBefore("?").takeIf { it.isNotBlank() }
+                            ?: return@amap null
+                        loadSourceNameExtractor(
+                            "Kisskh",
+                            fixUrl(cleanedLink, kissKhAPI),
+                            "$kissKhAPI/",
+                            subtitleCallback,
+                            callback,
+                            Qualities.P720.value
+                        )
+                    }
+                }
+            }
+        }
+
+        val subJson = app.get("$multiDecryptAPI/enc-kisskh?text=$epsId&type=sub", referer = kissKhAPI).text
+        val sub_key = JSONObject(subJson).getString("result")
+        val subResponse = app.get("$kissKhAPI/api/Sub/$epsId&kkey=$sub_key")
+        if (subResponse.code != 200) return
+        tryParseJson<List<KisskhSubtitle>>(subResponse.text)?.forEach { sub ->
+            subtitleCallback.invoke(newSubtitleFile(sub.label, sub.src ?: return@forEach))
+        }
     }
-
-    // suspend fun invokeKisskh(
-    //     title: String? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit,
-    // ) {
-    //     val type = "series"
-    //     var json = app.get("$StreamAsiaAPI/catalog/kisskh/kkh-search-results/search=$title.json").text
-    //     val searhData = tryParseJson<StreamAsiaSearch>(json) ?: return
-    //     val id = searhData.metas.firstOrNull { meta ->
-    //         meta.type == type && (
-    //             if(season == null) {
-    //                 meta.name.equals(title, ignoreCase = true)
-    //             }
-    //             else if (season == 1) {
-    //                 meta.name.equals(title, ignoreCase = true) ||
-    //                 meta.name.equals("$title Season 1", ignoreCase = true)
-    //             }
-    //             else {
-    //                 meta.name.equals("$title Season $season", ignoreCase = true)
-    //             }
-    //         )
-    //     }?.id ?: return
-
-    //     val epJson = app.get("$StreamAsiaAPI/meta/$type/$id.json").text
-    //     val epData = tryParseJson<StreamAsiaInfo>(epJson) ?: return
-    //     val epId = epData.meta.videos.firstOrNull { video ->
-    //         video.episode == episode ?: 1
-    //     }?.id ?: return
-
-    //     val streamJson = app.get("$StreamAsiaAPI/stream/$type/$epId.json").text
-    //     val streamData = tryParseJson<StreamAsiaStreams>(streamJson)
-
-    //     if(streamData != null) {
-    //         streamData.streams.forEach {
-    //             val url = it.url ?: return@forEach
-    //             val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-    //             callback.invoke(
-    //                 newExtractorLink(
-    //                     "Kisskh",
-    //                     "Kisskh",
-    //                     url,
-    //                     type
-    //                 ) {
-    //                     this.headers = mapOf(
-    //                         "Referer" to "https://kisskh.ovh/",
-    //                         "Origin" to "https://kisskh.ovh"
-    //                     )
-    //                 }
-    //             )
-    //         }
-    //     }
-
-    //     val subtitleJson = app.get("$StreamAsiaAPI/subtitles/$type/$epId.json").text
-    //     val subtitleData = tryParseJson<StreamAsiaSubtitles>(subtitleJson)
-
-    //     if(subtitleData != null) {
-    //         subtitleData.subtitles.forEach {
-    //             val lang = it.lang ?: "und"
-    //             subtitleCallback.invoke(
-    //                 newSubtitleFile(
-    //                     lang.replace("(OpenSubs) ", ""),
-    //                     it.url ?: return@forEach,
-    //                 )
-    //             )
-    //         }
-    //     }
-    // }
 
     suspend fun invokeTokyoInsider(
         title: String? = null,

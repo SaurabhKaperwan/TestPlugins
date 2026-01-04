@@ -44,6 +44,16 @@ data class KisskhEpisodes(
     @JsonProperty("number") val number: Int?,
 )
 
+data class KisskhSources(
+    @JsonProperty("Video") val video: String?,
+    @JsonProperty("ThirdParty") val thirdParty: String?,
+)
+
+data class KisskhSubtitle(
+    @JsonProperty("src") val src: String?,
+    @JsonProperty("label") val label: String?,
+)
+
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {
     data class SearchDataItem(
