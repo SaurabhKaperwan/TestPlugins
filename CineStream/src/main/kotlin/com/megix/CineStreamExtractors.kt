@@ -1456,7 +1456,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val subResponse = app.get("$kissKhAPI/api/Sub/$epsId&kkey=$sub_key")
         if (subResponse.code != 200) return
         tryParseJson<List<KisskhSubtitle>>(subResponse.text)?.forEach { sub ->
-            subtitleCallback.invoke(newSubtitleFile(sub.label, sub.src ?: return@forEach))
+            subtitleCallback.invoke(newSubtitleFile(sub.label ?: return@forEach, sub.src ?: return@forEach))
         }
     }
 
