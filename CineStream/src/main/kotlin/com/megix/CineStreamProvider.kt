@@ -57,7 +57,7 @@ open class CineStreamProvider : MainAPI() {
         const val sudatchiAPI = "https://sudatchi.com"
         const val aniversehdAPI = "https://aniversehd.com"
         const val animezAPI = "https://animeyy.com"
-        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","de":"on","en":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","proxyConfig":"","disableExtractor_hubcloud":"on"}"""
+        const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","hi":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on"}"""
         const val mp4MoviezAPI = "https://www.mp4moviez.zip"
         const val Film1kApi = "https://www.film1k.com"
         const val cinemaOSApi = "https://cinemaos.tech"
@@ -74,15 +74,16 @@ open class CineStreamProvider : MainAPI() {
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
-        const val cometAPI = "https://comet.elfhosted.com"
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
         const val animekaiAPI = "https://anikai.to"
         const val mappleAPI = "https://mapple.mov"
         const val vidzeeApi = "https://player.vidzee.wtf"
-        const val einthusanAPI = "https://einthusan.asaddon.com/hindi"
         const val ccloudAPI = "https://stremio-ccloud.liara.run"
+        const val vflixAPI = "https://stream.vflix.life/stremio"
+        const val nodebridAPI = "https://nodebrid.fly.dev"
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
+        const val kissKhAPI = "https://kisskh.ws"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {

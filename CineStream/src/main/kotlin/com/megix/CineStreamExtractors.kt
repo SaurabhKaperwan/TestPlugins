@@ -40,6 +40,15 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                "CineStream",
+                "CineStream",
+                res.toString(),
+            )
+        )
+
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -53,7 +62,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian && res.season != null) invokeKisskh(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian) invokeKisskh(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeOnetouchtv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -68,7 +77,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVideasy(res.title ,res.tmdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
-            { invokeComet(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
             { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
@@ -90,9 +98,10 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeStremioStreams("Nuvio", nuvioStreamsAPI ,res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Einthusan[Hindi]", einthusanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Vflix", vflixAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
@@ -108,6 +117,15 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                "CineStream",
+                "CineStream",
+                res.toString(),
+            )
+        )
+
         runAllAsync(
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
@@ -116,7 +134,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeTorrentio("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            { invokeComet("kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
@@ -131,8 +148,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Vflix", vflixAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Anime World[Multi]", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Ccloud", ccloudAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -167,9 +185,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val json = app.get(url).text
         val gson = Gson()
         val data = gson.fromJson(json, StreamifyResponse::class.java)
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
 
         data.streams.forEach {
             val title = it.title ?: ""
@@ -184,9 +199,17 @@ object CineStreamExtractors : CineStreamProvider() {
                 INFER_TYPE
             }
 
+            val headers = mapOf(
+                "User-Agent" to (it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
+                "Referer"    to (it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
+                "Origin"     to (it.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
+            )
+
             if(
                 it.url.contains("https://github.com") ||
-                it.url.contains("video-downloads.googleusercontent")
+                it.url.contains("video-downloads.googleusercontent") ||
+                it.name?.contains("XDM") == true ||
+                it.name?.contains("Instant Download") == true
             ) return@forEach
             callback.invoke(
                 newExtractorLink(
@@ -1352,68 +1375,118 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val type = "series"
-        var json = app.get("$StreamAsiaAPI/catalog/kisskh/kkh-search-results/search=$title.json").text
-        val searhData = tryParseJson<StreamAsiaSearch>(json) ?: return
-        val id = searhData.metas.firstOrNull { meta ->
-            meta.type == type && (
-                if(season == null) {
-                    meta.name.equals(title, ignoreCase = true)
+         val slug = title.createSlug() ?: return
+        val type = if (season == null) "2" else "1"
+        val searchResponse = app.get(
+            "$kissKhAPI/api/DramaList/Search?q=$title&type=$type",
+            referer = "$kissKhAPI/"
+        )
+        if (searchResponse.code != 200) return
+        val res = tryParseJson<ArrayList<KisskhResults>>(searchResponse.text) ?: return
+        val (id, contentTitle) = if (res.size == 1) {
+            res.first().id to res.first().title
+        } else {
+            val data = res.find {
+                val slugTitle = it.title.createSlug() ?: return@find false
+                when {
+                    season == null -> slugTitle == slug
+                    lastSeason == 1 -> slugTitle.contains(slug)
+                    else -> slugTitle.contains(slug) && it.title?.contains(
+                        "Season $season",
+                        true
+                    ) == true
                 }
-                else if (season == 1) {
-                    meta.name.equals(title, ignoreCase = true) ||
-                    meta.name.equals("$title Season 1", ignoreCase = true)
-                }
-                else {
-                    meta.name.equals("$title Season $season", ignoreCase = true)
-                }
+            } ?: res.find { it.title.equals(title) }
+            data?.id to data?.title
+        }
+        val detailResponse = app.get(
+            "$kissKhAPI/api/DramaList/Drama/$id?isq=false",
+            referer = "$kissKhAPI/Drama/${getKisskhTitle(contentTitle)}?id=$id"
+        )
+        if (detailResponse.code != 200) return
+        val resDetail = detailResponse.parsedSafe<KisskhDetail>() ?: return
+        val epsId =
+            if (season == null) resDetail.episodes?.first()?.id else resDetail.episodes?.find { it.number == episode }?.id
+                ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "KissKh",
+                "KissKh",
+                epsId.toString(),
             )
-        }?.id ?: return
-
-        val epJson = app.get("$StreamAsiaAPI/meta/$type/$id.json").text
-        val epData = tryParseJson<StreamAsiaInfo>(epJson) ?: return
-        val epId = epData.meta.videos.firstOrNull { video ->
-            video.episode == episode ?: 1
-        }?.id ?: return
-
-        val streamJson = app.get("$StreamAsiaAPI/stream/$type/$epId.json").text
-        val streamData = tryParseJson<StreamAsiaStreams>(streamJson)
-
-        if(streamData != null) {
-            streamData.streams.forEach {
-                val url = it.url ?: return@forEach
-                val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-                callback.invoke(
-                    newExtractorLink(
-                        "Kisskh",
-                        "Kisskh",
-                        url,
-                        type
-                    ) {
-                        this.headers = mapOf(
-                            "Referer" to "https://kisskh.ovh/",
-                            "Origin" to "https://kisskh.ovh"
-                        )
-                    }
-                )
-            }
-        }
-
-        val subtitleJson = app.get("$StreamAsiaAPI/subtitles/$type/$epId.json").text
-        val subtitleData = tryParseJson<StreamAsiaSubtitles>(subtitleJson)
-
-        if(subtitleData != null) {
-            subtitleData.subtitles.forEach {
-                val lang = it.lang ?: "und"
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        lang.replace("(OpenSubs) ", ""),
-                        it.url ?: return@forEach,
-                    )
-                )
-            }
-        }
+        )
     }
+
+    // suspend fun invokeKisskh(
+    //     title: String? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
+    // ) {
+    //     val type = "series"
+    //     var json = app.get("$StreamAsiaAPI/catalog/kisskh/kkh-search-results/search=$title.json").text
+    //     val searhData = tryParseJson<StreamAsiaSearch>(json) ?: return
+    //     val id = searhData.metas.firstOrNull { meta ->
+    //         meta.type == type && (
+    //             if(season == null) {
+    //                 meta.name.equals(title, ignoreCase = true)
+    //             }
+    //             else if (season == 1) {
+    //                 meta.name.equals(title, ignoreCase = true) ||
+    //                 meta.name.equals("$title Season 1", ignoreCase = true)
+    //             }
+    //             else {
+    //                 meta.name.equals("$title Season $season", ignoreCase = true)
+    //             }
+    //         )
+    //     }?.id ?: return
+
+    //     val epJson = app.get("$StreamAsiaAPI/meta/$type/$id.json").text
+    //     val epData = tryParseJson<StreamAsiaInfo>(epJson) ?: return
+    //     val epId = epData.meta.videos.firstOrNull { video ->
+    //         video.episode == episode ?: 1
+    //     }?.id ?: return
+
+    //     val streamJson = app.get("$StreamAsiaAPI/stream/$type/$epId.json").text
+    //     val streamData = tryParseJson<StreamAsiaStreams>(streamJson)
+
+    //     if(streamData != null) {
+    //         streamData.streams.forEach {
+    //             val url = it.url ?: return@forEach
+    //             val type = if(url.contains("m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+    //             callback.invoke(
+    //                 newExtractorLink(
+    //                     "Kisskh",
+    //                     "Kisskh",
+    //                     url,
+    //                     type
+    //                 ) {
+    //                     this.headers = mapOf(
+    //                         "Referer" to "https://kisskh.ovh/",
+    //                         "Origin" to "https://kisskh.ovh"
+    //                     )
+    //                 }
+    //             )
+    //         }
+    //     }
+
+    //     val subtitleJson = app.get("$StreamAsiaAPI/subtitles/$type/$epId.json").text
+    //     val subtitleData = tryParseJson<StreamAsiaSubtitles>(subtitleJson)
+
+    //     if(subtitleData != null) {
+    //         subtitleData.subtitles.forEach {
+    //             val lang = it.lang ?: "und"
+    //             subtitleCallback.invoke(
+    //                 newSubtitleFile(
+    //                     lang.replace("(OpenSubs) ", ""),
+    //                     it.url ?: return@forEach,
+    //                 )
+    //             )
+    //         }
+    //     }
+    // }
 
     suspend fun invokeTokyoInsider(
         title: String? = null,
@@ -2094,45 +2167,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 newExtractorLink(
                     "TorrentsDB🧲",
                     "[TorrentsDB🧲] " + title,
-                    magnet,
-                    ExtractorLinkType.MAGNET,
-                ) {
-                    this.quality = getIndexQuality(stream.name)
-                }
-            )
-        }
-    }
-
-    suspend fun invokeComet(
-        id: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if(season == null) {
-            "$cometAPI/stream/movie/$id.json"
-        } else if(id?.contains("kitsu") == true) {
-            "$cometAPI/stream/series/$id:$episode.json"
-        } else {
-            "$cometAPI/stream/series/$id:$season:$episode.json"
-        }
-        val headers = mapOf(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
-        val res = app.get(url, headers = headers, timeout = 200L).parsedSafe<TorrentioResponse>()
-
-        res?.streams?.forEach { stream ->
-            val title = stream.description ?: stream.title ?: stream.name ?: ""
-            val regex = Regex("""\uD83D\uDC64\s*(\d+)""")
-            val match = regex.find(title)
-            val seeders = match?.groupValues?.get(1)?.toInt() ?: 0
-            if (seeders < 20) return@forEach
-            val magnet = buildMagnetString(stream)
-            callback.invoke(
-                newExtractorLink(
-                    "Comet🧲",
-                    "[Comet🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {

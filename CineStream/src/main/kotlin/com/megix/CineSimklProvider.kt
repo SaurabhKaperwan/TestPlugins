@@ -13,7 +13,6 @@ import com.lagradost.cloudstream3.syncproviders.SyncRepo
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -366,7 +365,6 @@ class CineSimklProvider: MainAPI() {
                 this.addTrailer(trailerLink)
             }
         } else {
-            var nextAir: NextAiring? = null
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
@@ -398,13 +396,6 @@ class CineSimklProvider: MainAPI() {
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
-                    if (nextAir == null && this.date != null && it.aired == false && this.season != 0) {
-                        nextAir = NextAiring(
-                            episode = this.episode!!,
-                            unixTime = this.date!!.div(1000L),
-                            season = if (this.season == 1) null else this.season,
-                        )
-                    }
                 }
             }
 
