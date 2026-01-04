@@ -40,15 +40,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString(),
-            )
-        )
-
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -62,7 +53,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeKisskh(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeOnetouchtv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -117,15 +108,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString(),
-            )
-        )
-
         runAllAsync(
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
@@ -1370,6 +1352,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeKisskh(
         title: String? = null,
+        year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -1388,15 +1371,14 @@ object CineStreamExtractors : CineStreamProvider() {
         } else {
             val data = res.find {
                 val slugTitle = it.title.createSlug() ?: return@find false
-                when {
-                    season == null -> slugTitle == slug
-                    season == 1 -> slugTitle.contains(slug)
-                    else -> slugTitle.contains(slug) && it.title?.contains(
-                        "Season $season",
-                        true
-                    ) == true
+                val tSlug = it.title?.createSlug() ?: return@find false
+                val tActual = it.title
+                when (season) {
+                    null -> tSlug == slug
+                    1 -> tSlug == slug || (tSlug.contains(slug) && (tActual.contains("$year") || tActual.contains("Season 1", true)))
+                    else -> tSlug.contains(slug) && tActual.contains("Season $season", true)
                 }
-            } ?: res.find { it.title.equals(title) }
+            } ?: res.find { it.title.equals(title, true) }
             data?.id to data?.title
         }
         val detailResponse = app.get(
