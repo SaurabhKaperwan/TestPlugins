@@ -1375,7 +1375,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-         val slug = title.createSlug() ?: return
+        val slug = title.createSlug() ?: return
         val type = if (season == null) "2" else "1"
         val searchResponse = app.get(
             "$kissKhAPI/api/DramaList/Search?q=$title&type=$type",
@@ -1390,7 +1390,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val slugTitle = it.title.createSlug() ?: return@find false
                 when {
                     season == null -> slugTitle == slug
-                    lastSeason == 1 -> slugTitle.contains(slug)
+                    season == 1 -> slugTitle.contains(slug)
                     else -> slugTitle.contains(slug) && it.title?.contains(
                         "Season $season",
                         true
