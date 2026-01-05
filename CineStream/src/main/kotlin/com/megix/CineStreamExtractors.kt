@@ -19,6 +19,7 @@ import java.net.URI
 import com.lagradost.cloudstream3.utils.JsUnpacker
 import com.lagradost.cloudstream3.USER_AGENT
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
@@ -47,7 +48,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.imdbId, callback) },
-            { invokeBollywood(res.title, res.season, res.episode, callback) },
+            { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -3664,26 +3665,57 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeBollywood(
         title: String? = null,
+        year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val url = if (season == null) {
-            """$bollywoodAPI/files/search?q=${URLEncoder.encode(title, "UTF-8")}&page=1"""
+            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title $year", "UTF-8")}&page=1"""
         } else {
             """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title  S${seasonSlug}E${episodeSlug}", "UTF-8")}&page=1"""
         }
 
-        val response = app.get(url, referer = "https://bollywood.eu.org/").text
+        val response = app.get(
+            url,
+            referer = "https://bollywood.eu.org/"
+        ).text
+        val jsonObject = JsonParser.parseString(response).asJsonObject
 
-        callback.invoke(
-            newExtractorLink(
-                "Bollywood",
-                "Bollywood",
-                response,
-            )
-        )
+        if (jsonObject.has("files")) {
+            val filesArray = jsonObject.getAsJsonArray("files")
+
+            filesArray.forEach { element ->
+                val item = element.asJsonObject
+                val fileName = item.get("file_name").asString
+                val fileId = item.get("id").asString
+                val extracted = extractSpecs(fileName)
+                val extractedSpecs = buildExtractedTitle(extracted)
+                // val size = item.get("file_size").asString
+                val res = app.get(
+                    "$bollywoodAPI/genLink?type=files&id=$fileId",
+                    referer = "https://bollywood.eu.org/"
+                ).text
+
+                val linkJson = JsonParser.parseString(res).asJsonObject
+                if (linkJson.has("url")) {
+                    val streamUrl = linkJson.get("url").asString
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "Bollywood",
+                            "Bollywood $extractedSpecs",
+                            streamUrl,
+                            ExtractorLinkType.VIDEO
+                        ) {
+                            this.quality = getIndexQuality(fileName)
+                            this.referer = "https://bollywood.eu.org/"
+                        }
+                    )
+                }
+            }
+        }
     }
 
     suspend fun invokeVidFastPro(
