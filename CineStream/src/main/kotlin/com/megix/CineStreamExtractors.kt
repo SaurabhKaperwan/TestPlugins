@@ -47,6 +47,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeStreamify(res.imdbId, callback) },
+            { invokeBollywood(res.title, res.season, res.episode, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -202,51 +203,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 ) {
                     this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
                     this.quality = getIndexQuality(title + name)
-                    this.headers = headers
-                }
-            )
-        }
-    }
-
-
-    suspend fun invokeWebStreamr(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val url = if(season == null) {
-            "$webStreamrAPI/stream/movie/$imdbId.json"
-        } else {
-            "$webStreamrAPI/stream/series/$imdbId:$season:$episode.json"
-        }
-        val json = app.get(url).text
-        val gson = Gson()
-        val data = gson.fromJson(json, StreamifyResponse::class.java)
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        )
-        data.streams.forEach {
-            val title = it.title ?: ""
-            val referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
-            val type = if(title.contains("hls") || title.contains("m3u8")) {
-                ExtractorLinkType.M3U8
-            } else if(title.contains("mp4")) {
-                ExtractorLinkType.VIDEO
-            } else {
-                INFER_TYPE
-            }
-
-            callback.invoke(
-                newExtractorLink(
-                    it.name ?: "WebStreamr",
-                    "[${it.name}] ${title}",
-                    it.url,
-                    type = type
-                ) {
-                    this.referer = referer
-                    this.quality = getIndexQuality(it.name ?: "")
                     this.headers = headers
                 }
             )
@@ -3704,6 +3660,30 @@ object CineStreamExtractors : CineStreamProvider() {
                 TODO("Not yet implemented")
             }
         }
+    }
+
+    suspend fun invokeBollywood(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+        val url = if (season == null) {
+            """$bollywoodAPI/files/search?q=${URLEncoder.encode(title, "UTF-8")}&page=1"""
+        } else {
+            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title  S${seasonSlug}E${episodeSlug}", "UTF-8")}&page=1"""
+        }
+
+        val response = app.get(url, referer = "https://bollywood.eu.org/").text
+
+        callback.invoke(
+            newExtractorLink(
+                "Bollywood",
+                "Bollywood",
+                response,
+            )
+        )
     }
 
     suspend fun invokeVidFastPro(
