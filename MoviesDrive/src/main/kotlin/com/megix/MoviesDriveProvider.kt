@@ -89,7 +89,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         val document = app.get(url).document
         var title = document.select("title").text().replace("Download ", "")
         var posterUrl = document.select("main > p > img").attr("src")
-        val imdbUrl = document.select("main div > a").attr("href")
+        val imdbUrl = document.select("main div > a, main > p > a").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
         val seasonRegex = """(?i)season\s*\d+""".toRegex()
 
