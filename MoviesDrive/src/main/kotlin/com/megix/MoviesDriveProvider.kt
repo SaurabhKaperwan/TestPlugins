@@ -226,7 +226,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
-                addActors(cast)
+                this.actors = cast
                 addImdbUrl(imdbUrl)
             }
         }
@@ -252,7 +252,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 this.score = Score.from10(imdbRating)
                 this.year = year.toIntOrNull()
                 this.backgroundPosterUrl = background
-                addActors(cast)
+                this.actors = cast
                 addImdbUrl(imdbUrl)
             }
         }
