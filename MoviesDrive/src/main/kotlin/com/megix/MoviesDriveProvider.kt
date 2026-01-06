@@ -91,6 +91,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         var posterUrl = document.select("main > p > img").attr("src")
         val imdbUrl = document.select("main div > a").attr("href")
         val imdbId = imdbUrl.substringAfter("title/").substringBefore("/")
+        val seasonRegex = """(?i)season\s*\d+""".toRegex()
 
         val tvtype = if (
             title.contains("Episode", true) == true ||
@@ -115,7 +116,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
         if(responseData != null) {
             val meta = responseData.meta
             description = meta.description ?: description
-            cast = meta?.appExtras?.cast?.mapNotNull { castMember ->
+            cast = meta?.app_extras?.cast?.mapNotNull { castMember ->
                 if (castMember.name != null) {
                     ActorData(
                         Actor(
@@ -141,7 +142,6 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
             val episodesMap: MutableMap<Pair<Int, Int>, List<String>> = mutableMapOf()
             var buttons = document.select("h5 > a")
                 .filter { element -> !element.text().contains("Zip", true) }
-
 
             buttons.forEach { button ->
                 val titleElement = button.parent() ?. previousElementSibling()
