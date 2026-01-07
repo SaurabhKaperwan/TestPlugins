@@ -166,9 +166,9 @@ object CineStreamExtractors : CineStreamProvider() {
         val gson = Gson()
         val data = gson.fromJson(json, StreamifyResponse::class.java)
 
-        data.streams.forEach {
-            val title = it.title ?: ""
-            val name = it.name?.replace(" (SLOW) -", "") ?: it.title ?: ""
+        data.streams.forEach { stream ->
+            val title = stream.title ?: ""
+            val name = stream.name?.replace(" (SLOW) -", "") ?: stream.title ?: ""
             val type = if(
                 title.contains("hls") ||
                 title.contains("m3u8") ||
@@ -180,26 +180,26 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val headers = mapOf(
-                "User-Agent" to (it.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
-                "Referer"    to (it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
-                "Origin"     to (it.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
+                "User-Agent" to (stream.behaviorHints?.proxyHeaders?.request?.userAgent ?: USER_AGENT),
+                "Referer"    to (stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""),
+                "Origin"     to (stream.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
             )
 
             val blockedUrls = listOf("https://github.com", "video-downloads.googleusercontent")
             val blockedNames = listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM")
 
-            if (blockedUrls.any { it.url.contains(it) } ||
-                blockedNames.any { key -> it.name?.contains(key) == true }) {
+            if (blockedUrls.any { stream.url.contains(it) } ||
+                blockedNames.any { key -> stream.name?.contains(key) == true }) {
                 return@forEach
             }
             callback.invoke(
                 newExtractorLink(
                     sourceName,
                     "[$sourceName] " + name,
-                    it.url,
+                    stream.url,
                     type,
                 ) {
-                    this.referer = it.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
+                    this.referer = stream.behaviorHints?.proxyHeaders?.request?.Referer ?: ""
                     this.quality = getIndexQuality(title + name)
                     this.headers = headers
                 }
