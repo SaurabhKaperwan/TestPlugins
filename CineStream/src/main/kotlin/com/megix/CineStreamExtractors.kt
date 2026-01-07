@@ -78,9 +78,7 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            // { invokeSoaper(res.imdbId, res.tmdbId, res.title, res.season, res.episode, subtitleCallback, callback) },
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-            { invokePlayer4U(res.title, res.season, res.episode, res.year, callback) },
             { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
@@ -142,7 +140,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePlayer4U(res.imdbTitle, res.imdbSeason, res.imdbEpisode, res.year, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -188,13 +185,13 @@ object CineStreamExtractors : CineStreamProvider() {
                 "Origin"     to (it.behaviorHints?.proxyHeaders?.request?.Origin ?: "")
             )
 
-            if(
-                it.url.contains("https://github.com") ||
-                it.url.contains("video-downloads.googleusercontent") ||
-                it.name?.contains("XDM") == true ||
-                it.name?.contains("Instant Download") == true ||
-                it.name?.contains("IOSMIRROR") == true
-            ) return@forEach
+            val blockedUrls = listOf("https://github.com", "video-downloads.googleusercontent")
+            val blockedNames = listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM")
+
+            if (blockedUrls.any { it.url.contains(it) } ||
+                blockedNames.any { key -> it.name?.contains(key) == true }) {
+                return@forEach
+            }
             callback.invoke(
                 newExtractorLink(
                     sourceName,
@@ -2888,86 +2885,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokePlayer4U(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        year: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if (title.isNullOrBlank()) return
-        if(season == null && year == null) return
-
-        val fixQuery = (season?.let { "$title S${"%02d".format(it)}E${"%02d".format(episode)}" } ?: "$title $year").replace(" ","+") // It is necessary for query with year otherwise it will give wrong movie
-        val allLinks = HashSet<Player4uLinkData>()
-
-        var page = 0
-        var nextPageExists: Boolean = true
-
-        do {
-            val url = if(page == 0) {"$Player4uApi/embed?key=$fixQuery"} else {"$Player4uApi/embed?key=$fixQuery&page=$page"}
-            try {
-                var document = app.get(url, timeout = 20).document
-                allLinks.addAll(
-                    document.select(".playbtnx").mapNotNull { element ->
-                        val titleText = element.text()?.split(" | ")?.lastOrNull() ?: return@mapNotNull null
-
-                        if (season == null && episode == null) {
-                            if (year != null && (titleText.startsWith("$title $year", ignoreCase = true) ||
-                                 titleText.startsWith("$title ($year)", ignoreCase = true))) {
-                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
-                            } else null
-                        } else {
-                            if (season != null && episode != null &&
-                                titleText.startsWith("$title S${"%02d".format(season)}E${"%02d".format(episode)}", ignoreCase = true)) {
-                                Player4uLinkData(name = titleText, url = element.attr("onclick"))
-                            } else null
-                        }
-                    }
-                )
-
-                // if(page == 0 && season == null && allLinks.size == 0)
-                // {
-                //     document = app.get("$Player4uApi/embed?key=${fixTitle.replace(" ","+")}", timeout = 20).document
-                //     allLinks.addAll(
-                //         document.select(".playbtnx").map {
-                //             Player4uLinkData(name = it.text(), url = it.attr("onclick"))
-                //         }
-                //     )
-                //     break
-                // }
-
-                nextPageExists = document.select("div a").any { it.text().contains("Next", true) }
-            } catch (e: Exception) {}
-            page++
-        } while (nextPageExists && page <= 4)
-
-        allLinks.distinctBy { it.name }.forEach { link ->
-            try {
-
-                val nameFormatted = "Player4U ${if(link.name.isNullOrEmpty()) { "" } else { "{${link.name}}" }}"
-
-                val qualityFromName = Regex("""(\d{3,4}p|4K|CAM|HQ|HD|SD|WEBRip|DVDRip|BluRay|HDRip|TVRip|HDTC|PREDVD)""", RegexOption.IGNORE_CASE)
-                    .find(nameFormatted)?.value?.uppercase() ?: "UNKNOWN"
-
-
-                val selectedQuality = getPlayer4UQuality(qualityFromName)
-
-                val subLink = "go\\('(.*)'\\)".toRegex().find(link.url)?.groups?.get(1)?.value ?: return@forEach
-                val iframeSource = app.get("$Player4uApi$subLink", timeout = 10, referer = Player4uApi)
-                    .document.select("iframe").attr("src")
-                getPlayer4uUrl(
-                    nameFormatted,
-                    selectedQuality,
-                    "https://uqloads.xyz/e/$iframeSource",
-                    Player4uApi,
-                    callback
-                )
-
-            } catch (_: Exception) { }
-        }
-    }
-
     suspend fun invokePrimeSrc(
         imdbId: String? = null,
         season: Int? = null,
@@ -3001,38 +2918,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
     }
-
-    // suspend fun invokeSoaper(
-    //     imdbId: String? = null,
-    //     tmdbId: Int? = null,
-    //     title: String? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     val headers = mapOf(
-    //         "Referer" to soaperAPI,
-    //         "Origin" to soaperAPI
-    //     )
-    //     val document = app.get("$soaperAPI/search.html?keyword=$title", headers = headers).document
-    //     val href = document.selectFirst("div.img-group a:has(img[src*='$tmdbId']), div.img-group a:has(img[src*='$imdbId'])")?.attr("href") ?: return
-
-    //     if(season == null) {
-    //         getSoaperLinks(soaperAPI, "$soaperAPI$href", "M", subtitleCallback, callback)
-    //     } else {
-    //         val doc = app.get("$soaperAPI$href", headers = headers).document
-    //         val seasonDiv = doc.select("div.alert-info-ex").firstOrNull { div ->
-    //             div.selectFirst("h4")?.text()?.contains("Season$season", ignoreCase = true) == true
-    //         }
-
-    //         val episodeLink = seasonDiv?.select("a")?.firstOrNull { a ->
-    //             a.text().trim().startsWith("$episode.")
-    //         }?.attr("href") ?: return
-
-    //         getSoaperLinks(soaperAPI ,"$soaperAPI$episodeLink", "E", subtitleCallback, callback)
-    //     }
-    // }
 
     // only for movies
     suspend fun invokeMp4Moviez(
@@ -3670,8 +3555,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
                 val fileId = item.get("id").asString
-                val extracted = extractSpecs(fileName)
-                val extractedSpecs = buildExtractedTitle(extracted)
                 // val size = item.get("file_size").asString
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
@@ -3685,7 +3568,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood $extractedSpecs",
+                            "Bollywood [$fileName]",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {

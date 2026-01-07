@@ -756,83 +756,6 @@ suspend fun gofileExtractor(
     }
 }
 
-fun String?.createPlayerSlug(): String? {
-    return this?.replace(Regex("[^A-Za-z0-9]+"), " ")?.replace(Regex("\\s+"), " ")?.trim() // Replace spaces with hyphens
-}
-
-fun getPlayer4UQuality (quality :String) : Int
-{
-    return when (quality) {
-        "4K", "2160P" -> Qualities.P2160.value
-        "FHD", "1080P" -> Qualities.P1080.value
-        "HQ", "HD", "720P","DVDRIP","TVRIP","HDTC","PREDVD" -> Qualities.P720.value
-        "480P" -> Qualities.P480.value
-        "360P","CAM" -> Qualities.P360.value
-        "DS" -> Qualities.P144.value
-        "SD" -> Qualities.P480.value
-        "WEBRIP" -> Qualities.P720.value
-        "BLURAY", "BRRIP" -> Qualities.P1080.value
-        "HDRIP" -> Qualities.P1080.value
-        "TS" -> Qualities.P480.value
-        "R5" -> Qualities.P480.value
-        "SCR" -> Qualities.P480.value
-        "TC" -> Qualities.P480.value
-        else -> Qualities.Unknown.value
-    }
-}
-
-suspend fun getPlayer4uUrl(
-    name: String,
-    selectedQuality: Int,
-    url: String,
-    referer: String?,
-    callback: (ExtractorLink) -> Unit
-) {
-    val response = app.get(url, referer = referer)
-    var script = getAndUnpack(response.text).takeIf { it.isNotEmpty() }
-        ?: response.document.selectFirst("script:containsData(sources:)")?.data()
-
-    if (script == null) {
-        val iframeUrl = Regex("""<iframe src="(.*?)"""").find(response.text)?.groupValues?.getOrNull(1) ?: return
-        val iframeResponse = app.get(iframeUrl, referer = null, headers = mapOf("Accept-Language" to "en-US,en;q=0.5"))
-        script = getAndUnpack(iframeResponse.text).takeIf { it.isNotEmpty() } ?: return
-    }
-    val m3u8 = Regex("\"hls2\":\\s*\"(.*?m3u8.*?)\"").find(script)?.groupValues?.getOrNull(1).orEmpty()
-    callback.invoke(
-        newExtractorLink(
-            "Player4U",
-            name,
-            m3u8,
-            type = ExtractorLinkType.M3U8
-        ) {
-            this.quality = selectedQuality
-        }
-    )
-
-}
-
-fun decryptBase64BlowfishEbc(base64Encrypted: String, key: String): String {
-    try {
-        val encryptedBytes =  base64DecodeArray(base64Encrypted)
-        val secretKeySpec = SecretKeySpec(key.toByteArray(), "Blowfish")
-        val cipher = Cipher.getInstance("Blowfish/ECB/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec)
-        val decryptedBytes = cipher.doFinal(encryptedBytes)
-        return String(decryptedBytes)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return "Decryption failed: ${e.message}"
-    }
-}
-
-// Decrypt Links using Blowfish
-fun decryptLinks(data: String): List<String> {
-    val key = data.substring(data.length - 10)
-    val ct = data.substring(0, data.length - 10)
-    val pt = decryptBase64BlowfishEbc(ct, key)
-    return pt.chunked(5)
-}
-
 suspend fun generateMagnetLink(url: String, hash: String?): String {
     val response = app.get(url)
     val trackerList = response.text.trim().split("\n")
@@ -1128,62 +1051,6 @@ suspend fun getGojoStreams(
     }
 }
 
-// suspend fun getSoaperLinks(
-//         soaperAPI: String,
-//         url: String,
-//         type: String,
-//         subtitleCallback: (SubtitleFile) -> Unit,
-//         callback: (ExtractorLink) -> Unit
-// ) {
-//     val headers = mapOf(
-//         "Referer" to soaperAPI,
-//         "Origin" to soaperAPI
-//     )
-
-//     val document = app.get(url, headers = headers).document
-//     val eId = document.select("#hId").attr("value")
-//     val hIsW = document.select("#hIsW").attr("value")
-//     val data = mapOf(
-//         "pass" to eId,
-//         "param" to "",
-//         "extra" to "1",
-//         "e2" to hIsW,
-//         "server" to "0",
-//     )
-
-//     val res = app.post("$soaperAPI/home/index/Get${type}InfoAjax", data = data, headers = headers).text
-//     val json = JSONObject(res)
-//     val videoPath = json.getString("val").replace("\\/", "/")
-//     val videoUrl = soaperAPI + videoPath
-
-//     callback.invoke(
-//         newExtractorLink(
-//             "Soaper",
-//             "Soaper",
-//             videoUrl,
-//             ExtractorLinkType.M3U8
-//         ) {
-//             this.referer = url
-//             this.quality = Qualities.P1080.value
-//         }
-//     )
-
-//     val subs = json.getJSONArray("subs")
-
-//     for (i in 0 until subs.length()) {
-//         val sub = subs.getJSONObject(i)
-//         val name = sub.getString("name")
-//         val path = sub.getString("path").replace("\\/", "/")
-//         val subUrl = soaperAPI + path
-//         subtitleCallback.invoke(
-//             newSubtitleFile(
-//                 name,
-//                 subUrl
-//             )
-//         )
-//     }
-// }
-
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
@@ -1238,42 +1105,6 @@ suspend fun cinematickitloadBypass(url: String): String? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-suspend fun cinematickitBypass(url: String): String? {
-    return try {
-        val cleanedUrl = url.replace("&#038;", "&")
-        val encodedLink = cleanedUrl.substringAfter("safelink=").substringBefore("-")
-        if (encodedLink.isEmpty()) return null
-        val decodedUrl = cinematickitBase64Decode(encodedLink)
-        val doc = app.get(decodedUrl).document
-        val goValue = doc.select("form#landing input[name=go]").attr("value")
-        if (goValue.isBlank()) return null
-        val decodedGoUrl = cinematickitBase64Decode(goValue).replace("&#038;", "&")
-        val responseDoc = app.get(decodedGoUrl).document
-        val script = responseDoc.select("script").firstOrNull { it.data().contains("window.location.replace") }?.data() ?: return null
-        val regex = Regex("""window\.location\.replace\s*\(\s*["'](.+?)["']\s*\)\s*;?""")
-        val match = regex.find(script) ?: return null
-        val redirectPath = match.groupValues[1]
-        return if (redirectPath.startsWith("http")) redirectPath else URI(decodedGoUrl).let { "${it.scheme}://${it.host}$redirectPath" }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun cinematickitBase64Decode(string: String): String {
-    val clean = string.trim().replace("\n", "").replace("\r", "")
-    val padded = clean.padEnd((clean.length + 3) / 4 * 4, '=')
-    return try {
-        val decodedBytes = Base64.getDecoder().decode(padded)
-        String(decodedBytes, Charsets.UTF_8)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        ""
     }
 }
 
