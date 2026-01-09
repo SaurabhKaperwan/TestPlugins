@@ -239,7 +239,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val dlink = aTag.attr("href")
         val text = aTag.text()
 
-        if(dlink.isNullOrEmpty) return
+        if(dlink.isNullOrEmpty()) return
 
         callback.invoke(
             newExtractorLink(
