@@ -233,6 +233,14 @@ object CineStreamExtractors : CineStreamProvider() {
             "$vadapavAPI/shows/$title ($year)/Season $seasonSlug/"
         }
 
+        callback.invoke(
+            newExtractorLink(
+                "Vadapav",
+                "Vadapav",
+                url,
+            )
+        )
+
         val selector = if(episode != null) "a.wrap.directory-entry:contains(E$episodeSlug)" else "a.wrap.directory-entry"
 
         val aTag = app.get(url).document.selectFirst(selector) ?: return
@@ -408,6 +416,14 @@ object CineStreamExtractors : CineStreamProvider() {
         val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
         val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
+        callback.invoke(
+            newExtractorLink(
+                "session",
+                "session",
+                "$sessionId  $nextAction",
+            )
+        )
+
         var mediaType = ""
         var tv_slug = ""
         var url = ""
@@ -459,6 +475,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 requestBody = requestBody,
                 headers = headers
             ).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "Mapple",
+                    "Mapple",
+                    json,
+                )
+            )
 
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
