@@ -66,15 +66,14 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
         const val netflix2API = "https://net51.cc"
-        const val hexaAPI = "https://flixer.sh"
-        const val videasyAPI = "https://api.vidking.net"
+        const val hexaAPI = "https://themoviedb.hexa.su"
+        const val videasyAPI = "https://api.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val torrentsDBAPI = "https://torrentsdb.com/eyJsYW5ndWFnZSI6WyJoaW5kaSJdLCJsaW1pdCI6IjUifQ=="
         const val animetoshoAPI = "https://feed.animetosho.org"
         const val anizipAPI = "https://api.ani.zip"
-        const val animekaiAPI = "https://anikai.to"
-        const val mappleAPI = "https://mapple.mov"
+        const val mappleAPI = "https://mapple.uk"
         const val vidzeeApi = "https://player.vidzee.wtf"
         const val ccloudAPI = "https://stremio-ccloud.liara.run"
         const val vflixAPI = "https://stream.vflix.life/stremio"
@@ -82,7 +81,8 @@ open class CineStreamProvider : MainAPI() {
         const val animeWorldAPI = "https://anime-world-stremio-addon.onrender.com"
         const val kissKhAPI = "https://kisskh.ws"
         const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"
-        const val bollywoodBaseAPI = "https://bollywood.eu.org/"
+        const val bollywoodBaseAPI = "https://bollywood.eu.org"
+        const val vadapavAPI = "https://vadapav.mov"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -123,6 +123,7 @@ open class CineStreamProvider : MainAPI() {
         val dramadripAPI get() = api("dramadrip")
         val nuvioStreamsAPI get() = api("nuvio")
         val XDmoviesAPI get() = api("xdmovies")
+        val animekaiAPI get() = api("animekai")
     }
     val wpRedisInterceptor by lazy { CloudflareKiller() }
 
@@ -135,8 +136,6 @@ open class CineStreamProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$aiometa_url/catalog/movie/tvdb.trending/skip=###" to "Trending Movies",
-        "$aiometa_url/catalog/series/tvdb.trending/skip=###" to "Trending Series",
         "$mainUrl/top/catalog/movie/top/skip=###" to "Top Movies",
         "$mainUrl/top/catalog/series/top/skip=###" to "Top Series",
         "$aiometa_url/catalog/anime/mal.airing/skip=###" to "Top Airing Anime",
