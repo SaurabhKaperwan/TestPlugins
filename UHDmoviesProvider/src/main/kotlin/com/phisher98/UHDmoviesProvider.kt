@@ -184,7 +184,7 @@ class UHDmoviesProvider : MainAPI() { // all providers must be an instance of Ma
 
                 val epName =
                     epMeta?.get("name")?.asText()?.takeIf { it.isNotBlank() }
-                        ?: aTag.text()
+                        ?: "Episode ${key.second}"
 
                 val epDesc =
                     epMeta?.get("overview")?.asText()
