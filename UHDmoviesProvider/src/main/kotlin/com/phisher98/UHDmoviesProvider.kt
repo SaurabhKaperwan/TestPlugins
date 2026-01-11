@@ -170,6 +170,8 @@ class UHDmoviesProvider : MainAPI() { // all providers must be an instance of Ma
             }
 
             for ((key, value) in episodesMap) {
+                if(key.first == 0 || key.second == 0) continue
+
                 val epMeta = metaVideos.firstOrNull {
                     it["season"]?.asInt() == key.first &&
                         it["episode"]?.asInt() == key.second
