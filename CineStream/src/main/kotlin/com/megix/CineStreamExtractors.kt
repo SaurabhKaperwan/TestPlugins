@@ -168,8 +168,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val client = OkHttpClient()
-        const val HOST = "h5.aoneroom.com"
-        const val BASE_URL = "https://$HOST"
+        val HOST = "h5.aoneroom.com"
+        val BASE_URL = "https://$HOST"
 
         val BASE_HEADERS = Headers.Builder()
         .add("X-Client-Info", "{\"timezone\":\"Africa/Nairobi\"}")
