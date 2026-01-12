@@ -60,7 +60,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
-            { invokeMoviebox(res.title, if(res.season) "tv" else "movie", res.season, res.episode, subtitleCallback, callback) },
+            { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -162,17 +162,16 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeMoviebox(
         title: String? = null,
-        mediaType: String,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        private val client = OkHttpClient()
-        private const val HOST = "h5.aoneroom.com"
-        private const val BASE_URL = "https://$HOST"
+        val client = OkHttpClient()
+        const val HOST = "h5.aoneroom.com"
+        const val BASE_URL = "https://$HOST"
 
-        private val BASE_HEADERS = Headers.Builder()
+        val BASE_HEADERS = Headers.Builder()
         .add("X-Client-Info", "{\"timezone\":\"Africa/Nairobi\"}")
         .add("Accept-Language", "en-US,en;q=0.5")
         .add("Accept", "application/json")
@@ -189,7 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         client.newCall(initRequest).execute().close()
 
-        val subjectType = if (mediaType == "tv") 2 else 1
+        val subjectType = if (season != null) 2 else 1
         val searchJson = JSONObject().apply {
             put("keyword", title)
             put("page", 1)
