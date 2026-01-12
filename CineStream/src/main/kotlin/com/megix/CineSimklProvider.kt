@@ -299,8 +299,8 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            aio_meta?.optString("background", null)
-            ?: getPosterUrl(json.fanart, "fanart")
+            getPosterUrl(json.fanart, "fanart")
+            ?: aio_meta?.optString("background", null)
             ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
 

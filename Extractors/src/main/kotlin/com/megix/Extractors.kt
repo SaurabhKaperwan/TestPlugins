@@ -422,6 +422,15 @@ open class HubCloud : ExtractorApi() {
         val latestUrl = getLatestUrl(url, "hubcloud")
         val baseUrl = getBaseUrl(url)
         val newUrl = url.replace(baseUrl, latestUrl)
+
+        callback.invoke(
+            newExtractorLink(
+                "newUrl",
+                "newUrl",
+                newUrl
+            )
+        )
+
         val doc = app.get(newUrl).document
         var link = if(newUrl.contains("drive")) {
             val scriptTag = doc.selectFirst("script:containsData(url)")?.toString() ?: ""
@@ -440,6 +449,14 @@ open class HubCloud : ExtractorApi() {
         val header = document.select("div.card-header").text() ?: ""
         val size = document.select("i#size").text() ?: ""
         val quality = getIndexQuality(header)
+
+        callback.invoke(
+            newExtractorLink(
+                "header",
+                "header",
+                header
+            )
+        )
 
         div?.select("h2 a.btn")?.amap {
             val link = it.attr("href")
