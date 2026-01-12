@@ -239,14 +239,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val subjectId = selectedItem.optString("subjectId")
         if (subjectId.isEmpty()) throw IOException("subjectId not found")
 
-        callback.invoke(
-            newExtractorLink(
-                "MovieBox",
-                "MovieBox",
-                subjectId,
-            )
-        )
-
         val detailUrl = "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=${subjectId}"
         val detailRequest = Request.Builder()
             .url(detailUrl)
@@ -257,21 +249,11 @@ object CineStreamExtractors : CineStreamProvider() {
             it.body?.string() ?: ""
         }
 
-        callback.invoke(
-            newExtractorLink(
-                "MovieBox2",
-                "MovieBox2",
-                detailResponseString,
-            )
-        )
-
         val detailObj = JSONObject(detailResponseString)
         val detailInfo = unwrapData(detailObj)
         val detailSubject = detailInfo.optJSONObject("subject")
         val detailPath = detailSubject?.optString("detailPath") ?: ""
 
-        // 4. Download/Source Request
-        // Logic: specific Referer/Origin for fmoviesunblocked
         val params = StringBuilder("subjectId=$subjectId")
         if (season != null) {
             params.append("&se=$season")
@@ -305,6 +287,27 @@ object CineStreamExtractors : CineStreamProvider() {
                 downloads.toString(),
             )
         )
+
+        for (i in 0 until downloads.length()) {
+            val d = downloads.getJSONObject(i)
+            val dlink = d.optString("url")
+            if (dlink.isNotEmpty()) {
+                val resolution = d.optInt("resolution")
+                callback.invoke(
+                    newExtractorLink(
+                        "MovieBox",
+                        "MovieBox",
+                        dlink,
+                    ) {
+                        this.headers = mapOf(
+                            "Referer" to "https://fmoviesunblocked.net/",
+                            "Origin" to "https://fmoviesunblocked.net"
+                        )
+                        this.quality = resolution
+                    }
+                )
+            }
+        }
     }
 
     suspend fun invokeStremioStreams(
