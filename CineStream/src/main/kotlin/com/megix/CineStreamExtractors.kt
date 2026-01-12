@@ -228,7 +228,7 @@ object CineStreamExtractors : CineStreamProvider() {
         for (i in 0 until items.length()) {
             val item = items.getJSONObject(i)
             val itemTitle = item.optString("title", "").lowercase()
-            if (itemTitle.contains(title.lowercase())) {
+            if (itemTitle.contains(title!!.lowercase())) {
                 selectedItem = item
                 break
             }
