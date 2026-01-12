@@ -167,6 +167,16 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        fun unwrapData(json: JSONObject): JSONObject {
+            val data = json.optJSONObject("data")
+            if (data != null) {
+                val nestedData = data.optJSONObject("data")
+                return nestedData ?: data
+            }
+            return json
+        }
+
         val client = OkHttpClient()
         val HOST = "h5.aoneroom.com"
         val BASE_URL = "https://$HOST"
@@ -252,6 +262,47 @@ object CineStreamExtractors : CineStreamProvider() {
                 "MovieBox2",
                 "MovieBox2",
                 detailResponseString,
+            )
+        )
+
+        val detailObj = JSONObject(detailResponseString)
+        val detailInfo = unwrapData(detailObj)
+        val detailSubject = detailInfo.optJSONObject("subject")
+        val detailPath = detailSubject?.optString("detailPath") ?: ""
+
+        // 4. Download/Source Request
+        // Logic: specific Referer/Origin for fmoviesunblocked
+        val params = StringBuilder("subjectId=$subjectId")
+        if (season != null) {
+            params.append("&se=$season")
+            params.append("&ep=$episode")
+        }
+
+        val downloadHeaders = BASE_HEADERS.newBuilder()
+            .set("Referer", "https://fmoviesunblocked.net/spa/videoPlayPage/movies/$detailPath?id=$subjectId&type=/movie/detail")
+            .set("Origin", "https://fmoviesunblocked.net")
+            .build()
+
+        val downloadRequest = Request.Builder()
+            .url("$BASE_URL/wefeed-h5-bff/web/subject/download?$params")
+            .headers(downloadHeaders)
+            .build()
+
+        val downloadResponseString = client.newCall(downloadRequest).execute().use {
+            it.body?.string() ?: ""
+        }
+
+        val sourceObj = JSONObject(downloadResponseString)
+        val sourceData = unwrapData(sourceObj)
+        val downloads = sourceData.optJSONArray("downloads")
+
+        if (downloads == null || downloads.length() == 0) throw IOException("No download sources found")
+
+        callback.invoke(
+            newExtractorLink(
+                "MovieBox3",
+                "MovieBox3",
+                downloads.toString(),
             )
         )
     }
