@@ -458,7 +458,7 @@ open class HubCloud : ExtractorApi() {
             )
         )
 
-        div?.select("h2 a.btn")?.amap {
+        div?.select("h2 a.btn")?.forEach {
             val link = it.attr("href")
             val text = it.text()
 
@@ -632,7 +632,7 @@ open class GDFlix : ExtractorApi() {
             .substringAfter("Size : ").orEmpty()
         val quality = getIndexQuality(fileName)
 
-        document.select("div.text-center a").amap { anchor ->
+        document.select("div.text-center a").forEach { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
 
