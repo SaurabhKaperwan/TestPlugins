@@ -2378,6 +2378,15 @@ object CineStreamExtractors : CineStreamProvider() {
         if(season == null) {
             doc.select("div.download-item a").amap {
                val source = getRedirectLinks(it.attr("href"))
+
+               callback.invoke(
+                    newExtractorLink(
+                        "4Khdhub",
+                        "4Khdhub",
+                        source,
+                    )
+                )
+
                loadSourceNameExtractor(
                     "4Khdhub",
                     source,
@@ -2392,6 +2401,15 @@ object CineStreamExtractors : CineStreamProvider() {
             doc.select("div.episode-download-item:has(div.episode-file-title:contains(${seasonText}${episodeText}))").amap {
                 it.select("div.episode-links > a").amap {
                     val source = getRedirectLinks(it.attr("href"))
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "4Khdhub",
+                            "4Khdhub",
+                            source,
+                        )
+                    )
+
                     loadSourceNameExtractor(
                         "4Khdhub",
                         source,
@@ -3654,8 +3672,6 @@ object CineStreamExtractors : CineStreamProvider() {
             return json
         }
 
-        if(title == null) return
-
         val client = OkHttpClient()
         val HOST = "h5.aoneroom.com"
         val BASE_URL = "https://$HOST"
@@ -3786,7 +3802,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val resolution = d.optInt("resolution")
                     callback.invoke(
                         newExtractorLink(
-                            "MovieBox [$language]",
+                            "MovieBox",
                             "MovieBox [$language]",
                             dlink,
                         ) {
