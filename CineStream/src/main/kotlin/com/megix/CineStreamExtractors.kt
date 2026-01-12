@@ -207,11 +207,51 @@ object CineStreamExtractors : CineStreamProvider() {
             it.body?.string() ?: ""
         }
 
+        val searchObj = JSONObject(searchResponseString)
+        val results = unwrapData(searchObj)
+        val items = results.optJSONArray("items")
+
+        if (items == null || items.length() == 0) throw IOException("No search results found")
+
+        // Logic: Find item matching title
+        var selectedItem: JSONObject? = null
+        for (i in 0 until items.length()) {
+            val item = items.getJSONObject(i)
+            val itemTitle = item.optString("title", "").lowercase()
+            if (itemTitle.contains(title.lowercase())) {
+                selectedItem = item
+                break
+            }
+        }
+        // Fallback to first item if no match found
+        if (selectedItem == null) selectedItem = items.getJSONObject(0)
+
+        val subjectId = selectedItem.optString("subjectId")
+        if (subjectId.isEmpty()) throw IOException("subjectId not found")
+
         callback.invoke(
             newExtractorLink(
                 "MovieBox",
                 "MovieBox",
-                searchResponseString,
+                subjectId,
+            )
+        )
+
+        val detailUrl = "$BASE_URL/wefeed-h5-bff/web/subject/detail?subjectId=${subjectId}"
+        val detailRequest = Request.Builder()
+            .url(detailUrl)
+            .headers(BASE_HEADERS)
+            .build()
+
+        val detailResponseString = client.newCall(detailRequest).execute().use {
+            it.body?.string() ?: ""
+        }
+
+        callback.invoke(
+            newExtractorLink(
+                "MovieBox2",
+                "MovieBox2",
+                detailResponseString,
             )
         )
     }
