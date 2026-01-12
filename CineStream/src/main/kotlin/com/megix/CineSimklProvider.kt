@@ -88,7 +88,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private fun extractMetaAIO(malId: String): JSONObject? {
+    private suspend fun extractMetaAIO(malId: Int): JSONObject? {
         return try {
             val jsonString = app.get("$aio_meta/meta/series/mal%3A${malId}.json").text
             val root = JSONObject(jsonString)
@@ -285,7 +285,7 @@ class CineSimklProvider: MainAPI() {
         val aio_meta = if(malId != null) extractMetaAIO(malId) else null
 
         val enTitle =
-            aio_meta.optString("name", null)
+            aio_meta?.optString("name", null)
             ?: json.en_title
             ?: json.title
 
@@ -299,7 +299,7 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            aio_meta.optString("background", null)
+            aio_meta?.optString("background", null)
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
