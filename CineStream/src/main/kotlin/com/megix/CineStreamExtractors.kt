@@ -3708,7 +3708,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // Regex to Validate Title & Capture Language
         // 1. Matches strictly the title (ignoring case)
         // 2. Optionally captures content inside brackets: \[([^\]]+)\]
-        val titleMatchRegex = "^${Regex.escape(title)}(?: \\[([^\]]+)\\])?$".toRegex(RegexOption.IGNORE_CASE)
+        val titleMatchRegex = "^${Regex.escape(title)}(?: \\[([^\\]]+)\\])?$".toRegex(RegexOption.IGNORE_CASE)
 
         val uniqueIdsWithLang = mutableMapOf<String, String>()
 
