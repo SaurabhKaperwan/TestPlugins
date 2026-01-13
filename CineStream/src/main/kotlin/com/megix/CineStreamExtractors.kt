@@ -169,37 +169,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
-        data class FlixEpisodeIds(
-            val flixId: String,
-            val episodeId: String
-        )
-
-        fun extractIds(jsonString: String, season: Int, episode: Int): FlixEpisodeIds? {
-            return try {
-                val rootArray = JSONArray(jsonString)
-                if (rootArray.length() == 0) return null
-                val mainObj = rootArray.getJSONObject(0)
-                val info = mainObj.optJSONObject("info")
-                val flixId = info?.optString("flix_id")
-                if (flixId.isNullOrEmpty()) return null
-
-                val episodesObj = mainObj.optJSONObject("episodes")
-
-                val seasonObj = episodesObj?.optJSONObject(season.toString())
-                val episodeData = seasonObj?.optJSONObject(episode.toString())
-
-                val eid = episodeData?.optString("eid")
-
-                if (eid.isNullOrEmpty()) return null
-
-                FlixEpisodeIds(flixId, eid)
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
-
         suspend fun encrypt(id: String): String {
             val body = app.get("$multiDecryptAPI/enc-movies-flix?text=$id").text
             val json = JSONObject(body)
@@ -221,22 +190,22 @@ object CineStreamExtractors : CineStreamProvider() {
         //     }
         // }
 
-        // fun parseHtml(html: String): JSONObject {
-        //     val jsonBody = JSONObject().put("text", html)
-        //     val request = Request.Builder()
-        //         .url("$multiDecryptAPI/parse-html")
-        //         .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-        //         .build()
+        fun parseHtml(html: String): JSONObject {
+            val jsonBody = JSONObject().put("text", html)
+            val request = Request.Builder()
+                .url("$multiDecryptAPI/parse-html")
+                .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+                .build()
 
-        //     val resp = client.newCall(request).execute().body?.string() ?: "{}"
+            val resp = client.newCall(request).execute().body?.string() ?: "{}"
 
-        //     return try {
-        //         JSONObject(resp)
-        //     } catch (e: Exception) {
-        //         val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
-        //         JSONObject(clean)
-        //     }
-        // }
+            return try {
+                JSONObject(resp)
+            } catch (e: Exception) {
+                val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
+                JSONObject(clean)
+            }
+        }
 
         // fun decryptRapid(text: String): JSONObject {
         //     val jsonBody = JSONObject()
@@ -260,38 +229,83 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
         val findResp = app.get(findUrl).text
-        val ids = extractIds(findResp, season ?: 1, episode ?: 1) ?: return
 
         callback.invoke(
             newExtractorLink(
-                "ids",
-                "ids",
-                ids.toString(),
+                "findResp",
+                "findResp",
+                findResp,
             )
         )
-        val contentId = ids.flixId
-        val eid = ids.episodeId
-        val targetId = if(season != null)  eid else contentId
-        val encTargetId = if (season != null) encrypt(eid) else encrypt(contentId)
+
+        val findJson = JSONArray(findResp)
+        if (findJson.length() == 0) return
+
+        val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
+            ?: return
 
         callback.invoke(
             newExtractorLink(
-                "encTargetId",
-                "encTargetId",
-                encTargetId.toString(),
+                "contentId",
+                "contentId",
+                contentId,
             )
         )
 
-        val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
-        val serversResp = app.get(serversUrl).text
+        val encId = encrypt(contentId)
+
+       callback.invoke(
+            newExtractorLink(
+                "encId",
+                "encId",
+                encId.toString(),
+            )
+        )
+
+       // 3. Get Episodes HTML
+        val episodesUrl = "https://solarmovie.fi/ajax/episodes/list?id=$contentId&_=$encId"
+        val episodesResp = app.get(episodesUrl).text
+        val episodesHtml = JSONObject(episodesResp).getString("result")
 
         callback.invoke(
             newExtractorLink(
-                "serversResp",
-                "serversResp",
-                serversResp.toString(),
+                "episodesHtml",
+                "episodesHtml",
+                episodesHtml.toString(),
             )
         )
+
+        val episodesObj = parseHtml(episodesHtml)
+
+        callback.invoke(
+            newExtractorLink(
+                "episodesObj",
+                "episodesObj",
+                episodesObj.toString(),
+            )
+        )
+
+        // val targetId = if(season != null)  eid else contentId
+        // val encTargetId = if (season != null) encrypt(eid) else encrypt(contentId)
+
+        // callback.invoke(
+        //     newExtractorLink(
+        //         "encTargetId",
+        //         "encTargetId",
+        //         encTargetId.toString(),
+        //     )
+        // )
+
+        // val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
+        // val serversResp = app.get(serversUrl).text
+
+        // callback.invoke(
+        //     newExtractorLink(
+        //         "serversResp",
+        //         "serversResp",
+        //         serversResp.toString(),
+        //     )
+        // )
         // val serversRespStr = client.newCall(Request.Builder().url(serversUrl).build()).execute().body?.string()
         // val serversResp = JSONObject(serversRespStr ?: "{}")
         // val serversHtml = serversResp.optString("result")
