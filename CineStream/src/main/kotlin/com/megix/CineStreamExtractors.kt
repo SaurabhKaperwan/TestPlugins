@@ -169,190 +169,209 @@ object CineStreamExtractors : CineStreamProvider() {
         val UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
-        fun encrypt(text: String): String {
-            val url = "$multiDecryptAPI/enc-movies-flix?text=${java.net.URLEncoder.encode(text, "UTF-8")}"
-            val resp = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
-            return if (resp != null && resp.startsWith("\"")) {
-                resp.trim('"')
-            } else {
-                resp ?: ""
-            }
-        }
+        data class FlixEpisodeIds(
+            val flixId: String,
+            val episodeId: String
+        )
 
-        fun decrypt(text: String): String {
-            val jsonBody = JSONObject().put("text", text)
-            val request = Request.Builder()
-            .url("$multiDecryptAPI/api/dec-movies-flix")
-            .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-
-            val resp = client.newCall(request).execute().body?.string() ?: ""
-            return if (resp.startsWith("\"") && resp.endsWith("\"")) {
-                 resp.substring(1, resp.length - 1).replace("\\\"", "\"")
-            } else {
-                resp
-            }
-        }
-
-        fun parseHtml(html: String): JSONObject {
-            val jsonBody = JSONObject().put("text", html)
-            val request = Request.Builder()
-                .url("$multiDecryptAPI/parse-html")
-                .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-
-            val resp = client.newCall(request).execute().body?.string() ?: "{}"
-
+        fun extractIds(jsonString: String, season: Int, episode: Int): FlixEpisodeIds? {
             return try {
-                JSONObject(resp)
+                val rootArray = JSONArray(jsonString)
+                if (rootArray.length() == 0) return null
+                val mainObj = rootArray.getJSONObject(0)
+                val info = mainObj.optJSONObject("info")
+                val flixId = info?.optString("flix_id")
+                if (flixId.isNullOrEmpty()) return null
+
+                val episodesObj = mainObj.optJSONObject("episodes")
+
+                val seasonObj = episodesObj?.optJSONObject(season.toString())
+                val episodeData = seasonObj?.optJSONObject(episode.toString())
+
+                val eid = episodeData?.optString("eid")
+
+                if (eid.isNullOrEmpty()) return null
+
+                FlixEpisodeIds(flixId, eid)
+
             } catch (e: Exception) {
-                val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
-                JSONObject(clean)
+                e.printStackTrace()
+                null
             }
         }
 
-        fun decryptRapid(text: String): JSONObject {
-            val jsonBody = JSONObject()
-                .put("text", text)
-                .put("agent", UA)
-
-            val request = Request.Builder()
-                .url("$multiDecryptAPI/dec-rapid")
-                .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-
-            val resp = client.newCall(request).execute().body?.string() ?: "{}"
-
-            return try {
-                JSONObject(resp)
-            } catch (e: Exception) {
-                val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
-                JSONObject(clean)
-            }
+        suspend fun encrypt(id: String): String {
+            val body = app.get("$multiDecryptAPI/enc-movies-flix?text=$id").text
+            val json = JSONObject(body)
+            return json.getString("result")
         }
+
+        // fun decrypt(text: String): String {
+        //     val jsonBody = JSONObject().put("text", text)
+        //     val request = Request.Builder()
+        //     .url("$multiDecryptAPI/api/dec-movies-flix")
+        //     .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+        //     .build()
+
+        //     val resp = client.newCall(request).execute().body?.string() ?: ""
+        //     return if (resp.startsWith("\"") && resp.endsWith("\"")) {
+        //          resp.substring(1, resp.length - 1).replace("\\\"", "\"")
+        //     } else {
+        //         resp
+        //     }
+        // }
+
+        // fun parseHtml(html: String): JSONObject {
+        //     val jsonBody = JSONObject().put("text", html)
+        //     val request = Request.Builder()
+        //         .url("$multiDecryptAPI/parse-html")
+        //         .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+        //         .build()
+
+        //     val resp = client.newCall(request).execute().body?.string() ?: "{}"
+
+        //     return try {
+        //         JSONObject(resp)
+        //     } catch (e: Exception) {
+        //         val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
+        //         JSONObject(clean)
+        //     }
+        // }
+
+        // fun decryptRapid(text: String): JSONObject {
+        //     val jsonBody = JSONObject()
+        //         .put("text", text)
+        //         .put("agent", UA)
+
+        //     val request = Request.Builder()
+        //         .url("$multiDecryptAPI/dec-rapid")
+        //         .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
+        //         .build()
+
+        //     val resp = client.newCall(request).execute().body?.string() ?: "{}"
+
+        //     return try {
+        //         JSONObject(resp)
+        //     } catch (e: Exception) {
+        //         val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
+        //         JSONObject(clean)
+        //     }
+        // }
 
         val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
-        val findResp = client.newCall(Request.Builder().url(findUrl).build()).execute().body?.string()
-            ?: throw Exception("Empty response from find")
-
-        val findJson = JSONArray(findResp)
-        if (findJson.length() == 0) return
-
-        val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
-            ?: throw Exception("flix_id not found")
-
-        // 2. Encrypt Content ID
-        val encId = encrypt(contentId)
-
-        // 3. Get Episodes HTML
-        val episodesUrl = "https://solarmovie.fi/ajax/episodes/list?id=$contentId&_=$encId"
-        val episodesRespStr = client.newCall(Request.Builder().url(episodesUrl).build()).execute().body?.string()
-        val episodesResp = JSONObject(episodesRespStr ?: "{}")
-        val episodesHtml = episodesResp.optString("result")
-
-        if (episodesHtml.isEmpty()) throw Exception("Missing episodes html")
-
-        // 4. Parse Episodes HTML (via external API)
-        val episodesObj = parseHtml(episodesHtml)
-
-        // 5. Determine Episode ID (eid)
-        var eid: String? = null
-
-        if (season != null && episode != null) {
-            // Access: episodesObj[season][episode].eid
-            val seasonObj = episodesObj.optJSONObject(season.toString())
-            val episodeObj = seasonObj?.optJSONObject(episode.toString())
-            eid = episodeObj?.optString("eid")
-
-            if (eid.isNullOrEmpty()) throw Exception("Episode eid not found")
-        }
-
-        // 6. Get Servers HTML
-        // If TV, use eid. If Movie, use contentId.
-        val targetId = eid ?: contentId
-        val encTargetId = if (eid != null) encrypt(eid) else encId
-
-        val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
-        val serversRespStr = client.newCall(Request.Builder().url(serversUrl).build()).execute().body?.string()
-        val serversResp = JSONObject(serversRespStr ?: "{}")
-        val serversHtml = serversResp.optString("result")
-
-        if (serversHtml.isEmpty()) throw Exception("Missing servers html")
-
-        // 7. Parse Servers HTML
-        val serversObj = parseHtml(serversHtml)
-
-        // 8. Extract Link ID (lid)
-        // JS Logic: serversObj?.default?.['1']?.lid || find first lid in values
-        var lid: String? = serversObj.optJSONObject("default")?.optJSONObject("1")?.optString("lid")
-
-        if (lid.isNullOrEmpty()) {
-            // Fallback: Loop through all keys to find a valid lid
-            val keys = serversObj.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                val innerObj = serversObj.optJSONObject(key) ?: continue
-
-                val innerKeys = innerObj.keys()
-                while (innerKeys.hasNext()) {
-                    val innerKey = innerKeys.next()
-                    val item = innerObj.optJSONObject(innerKey)
-                    val foundLid = item?.optString("lid")
-                    if (!foundLid.isNullOrEmpty()) {
-                        lid = foundLid
-                        break
-                    }
-                }
-                if (lid != null) break
-            }
-        }
-
-        if (lid.isNullOrEmpty()) throw Exception("lid not found")
-
-        // 9. Get Embed Info
-        val encLid = encrypt(lid!!)
-        val embedUrlReq = "https://solarmovie.fi/ajax/links/view?id=$lid&_=$encLid"
-        val embedRespStr = client.newCall(Request.Builder().url(embedUrlReq).build()).execute().body?.string()
-        val embedResp = JSONObject(embedRespStr ?: "{}")
-        val encryptedEmbed = embedResp.optString("result")
-
-        if (encryptedEmbed.isEmpty()) throw Exception("Missing encrypted embed")
-
-        // 10. Decrypt Embed
-        val embedDecryptedStr = decrypt(encryptedEmbed)
-        val embedData = try {
-            JSONObject(embedDecryptedStr)
-        } catch (e: Exception) {
-            // Sometimes the API returns a stringified JSON inside a string
-            JSONObject(embedDecryptedStr.replace("\\", "")) // Basic cleanup if needed
-        }
-
-        val embedUrl = embedData.optString("url")
-        if (embedUrl.isEmpty()) throw Exception("Missing embed url")
-
-        // 11. Resolve RapidShare
-        val mediaUrl = embedUrl.replace("/e/", "/media/")
-        val mediaRespStr = client.newCall(Request.Builder().url(mediaUrl).build()).execute().body?.string()
-        val mediaResp = JSONObject(mediaRespStr ?: "{}")
-        val finalEncrypted = mediaResp.optString("result")
-
-        if (finalEncrypted.isEmpty()) throw Exception("Missing encrypted result")
-
-        // 12. Final Decrypt
-        val finalDecryptedObj = decryptRapid(finalEncrypted)
-        val sources = finalDecryptedObj.optJSONArray("sources")
+        val findResp = app.get(findUrl).text
+        val ids = extractIds(findResp, season ?: 1, episode ?: 1) ?: return
 
         callback.invoke(
             newExtractorLink(
-                "yflix",
-                "yflix",
-                finalDecryptedObj.toString(),
+                "ids",
+                "ids",
+                ids.toString(),
+            )
+        )
+        val contentId = ids.flixId
+        val eid = ids.episodeId
+        val targetId = if(season != null)  eid else contentId
+        val encTargetId = if (season != null) encrypt(eid) else encrypt(contentId)
+
+        callback.invoke(
+            newExtractorLink(
+                "encTargetId",
+                "encTargetId",
+                encTargetId.toString(),
             )
         )
 
-        val file = sources?.optJSONObject(0)?.optString("file")
+        val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
+        val serversResp = app.get(serversUrl).text
 
-        if (file.isNullOrEmpty()) throw Exception("Missing sources[0].file")
+        callback.invoke(
+            newExtractorLink(
+                "serversResp",
+                "serversResp",
+                serversResp.toString(),
+            )
+        )
+        // val serversRespStr = client.newCall(Request.Builder().url(serversUrl).build()).execute().body?.string()
+        // val serversResp = JSONObject(serversRespStr ?: "{}")
+        // val serversHtml = serversResp.optString("result")
+
+        // if (serversHtml.isEmpty()) throw Exception("Missing servers html")
+
+        // // 7. Parse Servers HTML
+        // val serversObj = parseHtml(serversHtml)
+
+        // // 8. Extract Link ID (lid)
+        // // JS Logic: serversObj?.default?.['1']?.lid || find first lid in values
+        // var lid: String? = serversObj.optJSONObject("default")?.optJSONObject("1")?.optString("lid")
+
+        // if (lid.isNullOrEmpty()) {
+        //     // Fallback: Loop through all keys to find a valid lid
+        //     val keys = serversObj.keys()
+        //     while (keys.hasNext()) {
+        //         val key = keys.next()
+        //         val innerObj = serversObj.optJSONObject(key) ?: continue
+
+        //         val innerKeys = innerObj.keys()
+        //         while (innerKeys.hasNext()) {
+        //             val innerKey = innerKeys.next()
+        //             val item = innerObj.optJSONObject(innerKey)
+        //             val foundLid = item?.optString("lid")
+        //             if (!foundLid.isNullOrEmpty()) {
+        //                 lid = foundLid
+        //                 break
+        //             }
+        //         }
+        //         if (lid != null) break
+        //     }
+        // }
+
+        // if (lid.isNullOrEmpty()) throw Exception("lid not found")
+
+        // // 9. Get Embed Info
+        // val encLid = encrypt(lid!!)
+        // val embedUrlReq = "https://solarmovie.fi/ajax/links/view?id=$lid&_=$encLid"
+        // val embedRespStr = client.newCall(Request.Builder().url(embedUrlReq).build()).execute().body?.string()
+        // val embedResp = JSONObject(embedRespStr ?: "{}")
+        // val encryptedEmbed = embedResp.optString("result")
+
+        // if (encryptedEmbed.isEmpty()) throw Exception("Missing encrypted embed")
+
+        // // 10. Decrypt Embed
+        // val embedDecryptedStr = decrypt(encryptedEmbed)
+        // val embedData = try {
+        //     JSONObject(embedDecryptedStr)
+        // } catch (e: Exception) {
+        //     // Sometimes the API returns a stringified JSON inside a string
+        //     JSONObject(embedDecryptedStr.replace("\\", "")) // Basic cleanup if needed
+        // }
+
+        // val embedUrl = embedData.optString("url")
+        // if (embedUrl.isEmpty()) throw Exception("Missing embed url")
+
+        // // 11. Resolve RapidShare
+        // val mediaUrl = embedUrl.replace("/e/", "/media/")
+        // val mediaRespStr = client.newCall(Request.Builder().url(mediaUrl).build()).execute().body?.string()
+        // val mediaResp = JSONObject(mediaRespStr ?: "{}")
+        // val finalEncrypted = mediaResp.optString("result")
+
+        // if (finalEncrypted.isEmpty()) throw Exception("Missing encrypted result")
+
+        // // 12. Final Decrypt
+        // val finalDecryptedObj = decryptRapid(finalEncrypted)
+        // val sources = finalDecryptedObj.optJSONArray("sources")
+
+        // callback.invoke(
+        //     newExtractorLink(
+        //         "yflix",
+        //         "yflix",
+        //         finalDecryptedObj.toString(),
+        //     )
+        // )
+
+        // val file = sources?.optJSONObject(0)?.optString("file")
+
+        // if (file.isNullOrEmpty()) throw Exception("Missing sources[0].file")
     }
 
     suspend fun invokeStremioStreams(
