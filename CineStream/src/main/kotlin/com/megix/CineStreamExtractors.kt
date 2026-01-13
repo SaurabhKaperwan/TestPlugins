@@ -159,7 +159,7 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeYflix(
-        tmdbId: String? = null,
+        tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
