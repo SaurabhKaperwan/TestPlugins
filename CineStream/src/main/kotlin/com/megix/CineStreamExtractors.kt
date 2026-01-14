@@ -241,13 +241,31 @@ object CineStreamExtractors : CineStreamProvider() {
         val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
             ?: return
         val encId = encrypt(contentId)
-        val episodesUrl = "$YflixAPI/ajax/episodes/list?id=$contentId&_=$encId"
-        val episodesResp = app.get(episodesUrl).text
-        val episodesHtml = JSONObject(episodesResp).getString("result")
-        val episodesObj = parseHtml(episodesHtml)
         var eid: String? = null
 
         if (season != null && episode != null) {
+            val episodesUrl = "$YflixAPI/ajax/episodes/list?id=$contentId&_=$encId"
+            val episodesResp = app.get(episodesUrl).text
+            val episodesHtml = JSONObject(episodesResp).getString("result")
+
+            callback.invoke(
+                newExtractorLink(
+                    "episodesHtml",
+                    "episodesHtml",
+                    episodesHtml,
+                )
+            )
+
+            val episodesObj = parseHtml(episodesHtml)
+
+            callback.invoke(
+                newExtractorLink(
+                    "episodesObj",
+                    "episodesObj",
+                    episodesObj.toString(),
+                )
+            )
+
             val seasonObj = episodesObj.optJSONObject(season.toString())
             val episodeObj = seasonObj?.optJSONObject(episode.toString())
             eid = episodeObj?.optString("eid")
