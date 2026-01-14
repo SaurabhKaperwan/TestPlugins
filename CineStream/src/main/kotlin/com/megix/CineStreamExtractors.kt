@@ -242,73 +242,33 @@ object CineStreamExtractors : CineStreamProvider() {
         val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
             ?: return
         val encId = encrypt(contentId)
-        var eid: String? = null
 
-        if (season != null && episode != null) {
-            val episodesUrl = "$YflixAPI/ajax/episodes/list?id=$contentId&_=$encId"
-            val episodesResp = app.get(episodesUrl).text
-            val episodesHtml = JSONObject(episodesResp).getString("result")
-            val episodesObj = parseHtml(episodesHtml)
-            val result = episodesObj.optJSONObject("result")
-            val seasonObj = result?.optJSONObject(season.toString())
-            val episodeObj = seasonObj?.optJSONObject(episode.toString())
-            eid = episodeObj?.optString("eid")
+        val episodesUrl = "$YflixAPI/ajax/episodes/list?id=$contentId&_=$encId"
+        val episodesResp = app.get(episodesUrl).text
+        val episodesHtml = JSONObject(episodesResp).getString("result")
+        val episodesObj = parseHtml(episodesHtml)
+        val result = episodesObj.optJSONObject("result")
+        val seasonObj = result?.optJSONObject(season.toString())
+        val episodeObj = seasonObj?.optJSONObject(episode.toString())
+        val eid = episodeObj?.optString("eid")
 
-            if (eid.isNullOrEmpty()) throw Exception("Episode eid not found")
-        }
+        if (eid.isNullOrEmpty()) return
 
-        val targetId = eid ?: contentId
-        val encTargetId = if (eid != null) encrypt(eid) else encId
-        val serversUrl = "$YflixAPI/ajax/links/list?eid=$targetId&_=$encTargetId"
+        val encTargetId = encrypt(eid)
+        val serversUrl = "$YflixAPI/ajax/links/list?eid=$eid&_=$encTargetId"
         val serversResp = app.get(serversUrl).text
         val serversHtml = JSONObject(serversResp).getString("result")
         val serversObj = parseHtml(serversHtml)
         val servers = extractAllServers(serversObj)
 
-        callback.invoke(
-            newExtractorLink(
-                "servers",
-                "servers",
-                servers.toString(),
-            )
-        )
-
         servers.forEach { server ->
             val lid = server.lid
             val encLid = encrypt(lid)
-
-            callback.invoke(
-                newExtractorLink(
-                    "encLid",
-                    "encLid",
-                    encLid.toString(),
-                )
-            )
-
             val embedUrlReq = "$YflixAPI/ajax/links/view?id=$lid&_=$encLid"
             val embedRespStr = app.get(embedUrlReq).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "embedRespStr",
-                    "embedRespStr",
-                    embedRespStr.toString(),
-                )
-            )
-
             val encryptedEmbed = JSONObject(embedRespStr).getString("result")
-
             if (encryptedEmbed.isEmpty()) return@forEach
             val embed_url = decrypt(encryptedEmbed)
-
-            callback.invoke(
-                newExtractorLink(
-                    "embed_url",
-                    "embed_url",
-                    embed_url.toString(),
-                )
-            )
-
             loadExtractor(embed_url, "Yflix [${server.name}]" ,subtitleCallback, callback)
         }
     }
