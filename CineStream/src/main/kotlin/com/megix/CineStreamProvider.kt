@@ -31,8 +31,6 @@ open class CineStreamProvider : MainAPI() {
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
-    val image_proxy = ""
-    val image_proxy2 = "https://wsrv.nl/?url="
 
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"
@@ -81,6 +79,7 @@ open class CineStreamProvider : MainAPI() {
         const val bollywoodAPI = "https://tga-hd.api.hashhackers.com"
         const val bollywoodBaseAPI = "https://bollywood.eu.org"
         const val vadapavAPI = "https://vadapav.mov"
+        const val YflixAPI = "https://solarmovie.fi"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
@@ -158,16 +157,6 @@ open class CineStreamProvider : MainAPI() {
         "$mainUrl/top/catalog/series/top/skip=###&genre=Crime" to "Top Crime Series",
     )
 
-    private fun getPoster(url: String? = null): String? {
-        if (url.isNullOrBlank()) return null
-
-        if(url.contains("metahub.space")) {
-            return image_proxy + url.replace("/small/", "/large/").replace("/medium/", "/large/")
-        } else {
-            return url
-        }
-    }
-
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
@@ -191,7 +180,7 @@ open class CineStreamProvider : MainAPI() {
                 else TvType.TvSeries
             val title = movie.aliases?.firstOrNull() ?: movie.name ?: ""
             newMovieSearchResponse(title, PassData(movie.id, movie.type).toJson(), type) {
-                this.posterUrl = getPoster(movie.poster)
+                this.posterUrl = movie.poster
                 this.score = Score.from10(movie.imdbRating)
             }
         }
@@ -212,7 +201,7 @@ open class CineStreamProvider : MainAPI() {
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: ""
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
-                        posterUrl = getPoster(it.poster)
+                        posterUrl = it.poster
                         this.score = Score.from10(it.imdbRating)
                     }
                 } ?: emptyList()
@@ -264,8 +253,8 @@ open class CineStreamProvider : MainAPI() {
         val anilistId = if(externalIds != null) externalIds.anilist else null
         val title = movieData?.name.toString()
         val engTitle = movieData?.aliases?.firstOrNull() ?: title
-        val posterUrl = getPoster(movieData?.poster)
-        val logo = getPoster(movieData?.logo)
+        val posterUrl = movieData?.poster
+        val logo = movieData?.logo
         val imdbRating = movieData?.imdbRating?.toDoubleOrNull()
         val year = movieData?.year
         val releaseInfo = movieData?.releaseInfo
@@ -290,7 +279,7 @@ open class CineStreamProvider : MainAPI() {
 
         val country = movieData?.country ?: ""
         val genre = movieData?.genre ?: movieData?.genres ?: emptyList()
-        val background = getPoster(movieData?.background)
+        val background = movieData?.background
         val isCartoon = genre.any { it.contains("Animation", true) }
         var isAnime = (country.contains("Japan", true) ||
             country.contains("China", true)) && isCartoon
