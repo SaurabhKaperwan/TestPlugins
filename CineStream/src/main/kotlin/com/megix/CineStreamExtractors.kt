@@ -216,7 +216,7 @@ object CineStreamExtractors : CineStreamProvider() {
             return list
         }
 
-        fun parseHtml(html: String): JSONObject {
+        suspend fun parseHtml(html: String): JSONObject {
             val jsonBody = """{"text":"$html"}"""
             val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
             val text = app.post(
