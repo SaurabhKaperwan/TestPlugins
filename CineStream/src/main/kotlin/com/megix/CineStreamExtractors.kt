@@ -165,9 +165,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val client = OkHttpClient()
-        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-
         data class ServerItem(val name: String, val lid: String)
 
         suspend fun encrypt(id: String): String {
@@ -189,11 +186,10 @@ object CineStreamExtractors : CineStreamProvider() {
             return json.getJSONObject("result").getString("url")
         }
 
-        fun extractAllServers(root: JSONObject): List<ServerItem> {
+        fun extractAllServers(result: JSONObject): List<ServerItem> {
             val list = mutableListOf<ServerItem>()
 
             try {
-                val result = root.optJSONObject("result")
                 val defaultObj = result?.optJSONObject("default")
 
                 if (defaultObj != null) {
@@ -218,19 +214,13 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         suspend fun parseHtml(html: String): JSONObject {
-            val jsonBody = JSONObject().put("text", html)
-            val request = Request.Builder()
-                .url("$multiDecryptAPI/parse-html")
-                .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-                .build()
-            val resp = client.newCall(request).execute().body?.string() ?: "{}"
-
-            return try {
-                JSONObject(resp)
-            } catch (e: Exception) {
-                val clean = if (resp.startsWith("\"")) resp.substring(1, resp.length - 1).replace("\\\"", "\"") else resp
-                JSONObject(clean)
-            }
+            val jsonBody = """{"text":"$html"}"""
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+            val text = app.post(
+                "$multiDecryptAPI/parse-html",
+                requestBody = requestBody
+            ).text
+            return JSONObject(text).getJSONObject("result")
         }
 
         val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
