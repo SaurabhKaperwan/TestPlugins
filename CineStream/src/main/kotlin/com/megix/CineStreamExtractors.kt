@@ -279,7 +279,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val encTargetId = if (eid != null) encrypt(eid) else encId
         val serversUrl = "$YflixAPI/ajax/links/list?eid=$targetId&_=$encTargetId"
         val serversResp = app.get(serversUrl).text
-        val serversHtml = JSONObject(serversResp)
+        val serversHtml = JSONObject(serversResp).getString("result")
         val serversObj = parseHtml(serversHtml)
 
         callback.invoke(
