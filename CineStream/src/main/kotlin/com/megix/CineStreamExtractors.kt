@@ -229,52 +229,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val findUrl = "https://enc-dec.app/db/flix/find?tmdb_id=$tmdbId"
         val findResp = app.get(findUrl).text
-
-        callback.invoke(
-            newExtractorLink(
-                "findResp",
-                "findResp",
-                findResp,
-            )
-        )
-
         val findJson = JSONArray(findResp)
         if (findJson.length() == 0) return
 
         val contentId = findJson.getJSONObject(0).optJSONObject("info")?.optString("flix_id")
             ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "contentId",
-                "contentId",
-                contentId,
-            )
-        )
-
         val encId = encrypt(contentId)
-
-       callback.invoke(
-            newExtractorLink(
-                "encId",
-                "encId",
-                encId.toString(),
-            )
-        )
-
-       // 3. Get Episodes HTML
         val episodesUrl = "https://solarmovie.fi/ajax/episodes/list?id=$contentId&_=$encId"
         val episodesResp = app.get(episodesUrl).text
         val episodesHtml = JSONObject(episodesResp).getString("result")
-
-        callback.invoke(
-            newExtractorLink(
-                "episodesHtml",
-                "episodesHtml",
-                episodesHtml.toString(),
-            )
-        )
-
         val episodesObj = parseHtml(episodesHtml)
 
         callback.invoke(
@@ -285,35 +248,48 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
-        // val targetId = if(season != null)  eid else contentId
-        // val encTargetId = if (season != null) encrypt(eid) else encrypt(contentId)
+        var eid: String? = null
 
-        // callback.invoke(
-        //     newExtractorLink(
-        //         "encTargetId",
-        //         "encTargetId",
-        //         encTargetId.toString(),
-        //     )
-        // )
+        if (season != null && episode != null) {
+            val seasonObj = episodesObj.optJSONObject(season.toString())
+            val episodeObj = seasonObj?.optJSONObject(episode.toString())
+            eid = episodeObj?.optString("eid")
 
-        // val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
-        // val serversResp = app.get(serversUrl).text
+            if (eid.isNullOrEmpty()) throw Exception("Episode eid not found")
+        }
 
-        // callback.invoke(
-        //     newExtractorLink(
-        //         "serversResp",
-        //         "serversResp",
-        //         serversResp.toString(),
-        //     )
-        // )
-        // val serversRespStr = client.newCall(Request.Builder().url(serversUrl).build()).execute().body?.string()
-        // val serversResp = JSONObject(serversRespStr ?: "{}")
-        // val serversHtml = serversResp.optString("result")
+        val targetId = eid ?: contentId
+        val encTargetId = if (eid != null) encrypt(eid) else encId
 
-        // if (serversHtml.isEmpty()) throw Exception("Missing servers html")
+        callback.invoke(
+            newExtractorLink(
+                "encTargetId",
+                "encTargetId",
+                encTargetId.toString(),
+            )
+        )
 
-        // // 7. Parse Servers HTML
-        // val serversObj = parseHtml(serversHtml)
+        val serversUrl = "https://solarmovie.fi/ajax/links/list?eid=$targetId&_=$encTargetId"
+        val serversResp = app.get(serversUrl).text
+
+        callback.invoke(
+            newExtractorLink(
+                "serversResp",
+                "serversResp",
+                serversResp.toString(),
+            )
+        )
+
+        val serversHtml = JSONObject(serversResp).getString("result")
+        val serversObj = parseHtml(serversHtml)
+
+        callback.invoke(
+            newExtractorLink(
+                "serversObj",
+                "serversObj",
+                serversObj.toString(),
+            )
+        )
 
         // // 8. Extract Link ID (lid)
         // // JS Logic: serversObj?.default?.['1']?.lid || find first lid in values

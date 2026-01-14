@@ -31,7 +31,8 @@ open class CineStreamProvider : MainAPI() {
     val kitsu_url = "https://anime-kitsu.strem.fun"
     val haglund_url = "https://arm.haglund.dev/api/v2"
     val aiometa_url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
-    val image_proxy = "https://wsrv.nl/?url="
+    val image_proxy = ""
+    val image_proxy2 = "https://wsrv.nl/?url="
 
     companion object {
         const val malsyncAPI = "https://api.malsync.moe"

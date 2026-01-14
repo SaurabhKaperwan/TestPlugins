@@ -43,7 +43,8 @@ class CineSimklProvider: MainAPI() {
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
     private val haglund_url = "https://arm.haglund.dev/api/v2"
-    private val image_proxy = "https://wsrv.nl/?url="
+    private val image_proxy = ""
+    private val image_proxy2 = "https://wsrv.nl/?url="
     private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
