@@ -189,10 +189,11 @@ object CineStreamExtractors : CineStreamProvider() {
             return json.getJSONObject("result").getString("url")
         }
 
-        fun extractAllServers(result: JSONObject): List<ServerItem> {
+        fun extractAllServers(root: JSONObject): List<ServerItem> {
             val list = mutableListOf<ServerItem>()
 
             try {
+                val result = root.optJSONObject("result")
                 val defaultObj = result?.optJSONObject("default")
 
                 if (defaultObj != null) {
@@ -278,7 +279,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val encTargetId = if (eid != null) encrypt(eid) else encId
         val serversUrl = "$YflixAPI/ajax/links/list?eid=$targetId&_=$encTargetId"
         val serversResp = app.get(serversUrl).text
-        val serversHtml = JSONObject(serversResp).getString("result")
+        val serversHtml = JSONObject(serversResp)
         val serversObj = parseHtml(serversHtml)
 
         callback.invoke(
