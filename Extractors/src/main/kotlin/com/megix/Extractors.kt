@@ -372,7 +372,6 @@ open class VCloud : ExtractorApi() {
                         redirectUrl = response.headers["location"]
 
                         if (redirectUrl == null) {
-                            Log.e(tag, "10Gbps: No redirect")
                             return@forEach
                         }
 
