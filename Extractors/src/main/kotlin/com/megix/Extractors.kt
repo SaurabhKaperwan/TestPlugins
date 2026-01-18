@@ -361,33 +361,33 @@ open class VCloud : ExtractorApi() {
                         }
                     )
                 }
-                else if (text.contains("Server : 10Gbps")) {
-                    val dlink = app.get(link).document.select("a#vd").attr("href")
-                    callback.invoke(
-                        newExtractorLink(
-                            "$name[Download]",
-                            "$name[Download] $header[$size]",
-                            dlink,
-                        ) {
-                            this.quality = quality
-                            this.headers = VIDEO_HEADERS
-                        }
-                    )
-                }
+                // else if (text.contains("Server : 10Gbps")) {
+                //     val dlink = app.get(link).document.select("a#vd").attr("href")
+                //     callback.invoke(
+                //         newExtractorLink(
+                //             "$name[Download]",
+                //             "$name[Download] $header[$size]",
+                //             dlink,
+                //         ) {
+                //             this.quality = quality
+                //             this.headers = VIDEO_HEADERS
+                //         }
+                //     )
+                // }
                 else
                 {
-                    if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
-                        callback.invoke(
-                            newExtractorLink(
-                                "$name",
-                                "$name $header[$size]",
-                                link,
-                            ) {
-                                this.quality = quality
-                                this.headers = VIDEO_HEADERS
-                            }
-                        )
-                    }
+                    // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
+                    //     callback.invoke(
+                    //         newExtractorLink(
+                    //             "$name",
+                    //             "$name $header[$size]",
+                    //             link,
+                    //         ) {
+                    //             this.quality = quality
+                    //             this.headers = VIDEO_HEADERS
+                    //         }
+                    //     )
+                    // }
                 }
             }
         }
@@ -532,33 +532,33 @@ open class HubCloud : ExtractorApi() {
                     }
                 )
             }
-            else if (text.contains("Server : 10Gbps")) {
-                val dlink = app.get(link).document.select("a#vd").attr("href")
-                callback.invoke(
-                    newExtractorLink(
-                        "$name[Download]",
-                        "$name[Download] $header[$size]",
-                        dlink,
-                    ) {
-                        this.quality = quality
-                        this.headers = VIDEO_HEADERS
-                    }
-                )
-            }
+            // else if (text.contains("Server : 10Gbps")) {
+            //     val dlink = app.get(link).document.select("a#vd").attr("href")
+            //     callback.invoke(
+            //         newExtractorLink(
+            //             "$name[Download]",
+            //             "$name[Download] $header[$size]",
+            //             dlink,
+            //         ) {
+            //             this.quality = quality
+            //             this.headers = VIDEO_HEADERS
+            //         }
+            //     )
+            // }
             else
             {
-                if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
-                    callback.invoke(
-                        newExtractorLink(
-                            "$name",
-                            "$name $header[$size]",
-                            link,
-                        ) {
-                            this.quality = quality
-                            this.headers = VIDEO_HEADERS
-                        }
-                    )
-                }
+                // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
+                //     callback.invoke(
+                //         newExtractorLink(
+                //             "$name",
+                //             "$name $header[$size]",
+                //             link,
+                //         ) {
+                //             this.quality = quality
+                //             this.headers = VIDEO_HEADERS
+                //         }
+                //     )
+                // }
             }
         }
     }
