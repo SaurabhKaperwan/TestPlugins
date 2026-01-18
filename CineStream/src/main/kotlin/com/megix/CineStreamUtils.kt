@@ -1161,12 +1161,7 @@ suspend fun getGojoStreams(
 
         for (i in 0 until sourcesArray.length()) {
             val source = sourcesArray.optJSONObject(i) ?: continue
-            val rawUrl = source.optString("url", null) ?: continue
-
-            val fullUrl = rawUrl.substringAfterLast("https:", "")
-            if (fullUrl.isBlank()) continue
-
-            val url = "https:$fullUrl"
+            val url = source.optString("url", null) ?: continue
             val videoType = source.optString("type", "m3u8")
             val quality = source.optString("quality").replace("p", "").toIntOrNull()
 
@@ -1175,6 +1170,7 @@ suspend fun getGojoStreams(
                     "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
                     "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
                     url,
+                    type = if (videoType == "mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
                 ) {
                     this.quality = quality ?: Qualities.P1080.value
                     this.referer = gojoBaseAPI
