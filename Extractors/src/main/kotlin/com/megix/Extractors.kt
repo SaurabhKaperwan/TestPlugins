@@ -361,19 +361,39 @@ open class VCloud : ExtractorApi() {
                         }
                     )
                 }
-                // else if (text.contains("Server : 10Gbps")) {
-                //     val dlink = app.get(link).document.select("a#vd").attr("href")
-                //     callback.invoke(
-                //         newExtractorLink(
-                //             "$name[Download]",
-                //             "$name[Download] $header[$size]",
-                //             dlink,
-                //         ) {
-                //             this.quality = quality
-                //             this.headers = VIDEO_HEADERS
-                //         }
-                //     )
-                // }
+                else if (text.contains("Server : 10Gbps")) {
+                    var currentLink = link
+                    var redirectUrl: String?
+                    var redirectCount = 0
+                    val maxRedirects = 3
+
+                    while (redirectCount < maxRedirects) {
+                        val response = app.get(currentLink, allowRedirects = false)
+                        redirectUrl = response.headers["location"]
+
+                        if (redirectUrl == null) {
+                            Log.e(tag, "10Gbps: No redirect")
+                            return@forEach
+                        }
+
+                        if ("link=" in redirectUrl) {
+                            val finalLink = redirectUrl.substringAfter("link=")
+                            callback.invoke(
+                                newExtractorLink(
+                                    "$name[Download]",
+                                    "$name[Download] $header[$size]",
+                                    finalLink
+                                ) {
+                                    this.quality = quality
+                                    this.headers = VIDEO_HEADERS
+                                }
+                            )
+                        }
+
+                        currentLink = redirectUrl
+                        redirectCount++
+                    }
+                }
                 else
                 {
                     // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
@@ -532,19 +552,38 @@ open class HubCloud : ExtractorApi() {
                     }
                 )
             }
-            // else if (text.contains("Server : 10Gbps")) {
-            //     val dlink = app.get(link).document.select("a#vd").attr("href")
-            //     callback.invoke(
-            //         newExtractorLink(
-            //             "$name[Download]",
-            //             "$name[Download] $header[$size]",
-            //             dlink,
-            //         ) {
-            //             this.quality = quality
-            //             this.headers = VIDEO_HEADERS
-            //         }
-            //     )
-            // }
+            else if (text.contains("Server : 10Gbps")) {
+                var currentLink = link
+                var redirectUrl: String?
+                var redirectCount = 0
+                val maxRedirects = 3
+
+                while (redirectCount < maxRedirects) {
+                    val response = app.get(currentLink, allowRedirects = false)
+                    redirectUrl = response.headers["location"]
+
+                    if (redirectUrl == null) {
+                        return@forEach
+                    }
+
+                    if ("link=" in redirectUrl) {
+                        val finalLink = redirectUrl.substringAfter("link=")
+                        callback.invoke(
+                            newExtractorLink(
+                                "$name[Download]",
+                                "$name[Download] $header[$size]",
+                                finalLink
+                            ) {
+                                this.quality = quality
+                                this.headers = VIDEO_HEADERS
+                            }
+                        )
+                    }
+
+                    currentLink = redirectUrl
+                    redirectCount++
+                }
+            }
             else
             {
                 // if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) {
