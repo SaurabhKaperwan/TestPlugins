@@ -515,7 +515,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
                     subtitleCallback.invoke(
                         newSubtitleFile(
-                            getLanguage(language),
+                            getLanguage(language) ?: language,
                             source
                         )
                     )
@@ -864,7 +864,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if(lang != null && fileUrl != null) {
                         subtitleCallback.invoke(
                             newSubtitleFile(
-                                getLanguage(lang),
+                                getLanguage(lang) ?: lang,
                                 fileUrl,
                             )
                         )
@@ -954,7 +954,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val label = sub.getJSONObject("SubtitlesName").getString("name")
             subtitleCallback.invoke(
                 newSubtitleFile(
-                    getLanguage(label),
+                    getLanguage(label) ?: label,
                     file
                 )
             )
@@ -2493,10 +2493,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val data = parseJson<ArrayList<WYZIESubtitle>>(json)
 
         data.forEach {
-            val lang = it.display ?: it.language ?: "Unknown"
+            val lang = it.display ?: it.language
             subtitleCallback.invoke(
                 newSubtitleFile(
-                    getLanguage(lang),
+                    getLanguage(lang) ?: return@forEach,
                     it.url
                 )
             )
@@ -2807,7 +2807,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val subtitles = document.select("track").map {
             subtitleCallback.invoke(
                 newSubtitleFile(
-                    getLanguage(it.attr("label")),
+                    getLanguage(it.attr("label")) ?: it.attr("label"),
                     it.attr("src")
                 )
             )
@@ -2986,7 +2986,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                         server.subtitles?.forEach { sub ->
                                             val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
-                                            subtitleCallback(newSubtitleFile(getLanguage(lang), httpsify(src)))
+                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: src, httpsify(src)))
                                         }
                                     }
                                 }

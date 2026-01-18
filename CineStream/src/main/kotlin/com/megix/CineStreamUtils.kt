@@ -1191,7 +1191,7 @@ suspend fun getGojoStreams(
             val lang = item.optString("lang", null) ?: continue
             subtitleCallback.invoke(
                 newSubtitleFile(
-                    getLanguage(lang),
+                    getLanguage(lang) ?: lang,
                     url
                 )
             )
