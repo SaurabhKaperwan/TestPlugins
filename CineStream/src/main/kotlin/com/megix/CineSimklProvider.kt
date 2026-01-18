@@ -33,11 +33,13 @@ class CineSimklProvider: MainAPI() {
     )
     override var lang = "en"
     override val hasMainPage = true
-    override val hasQuickSearch = false
+    override val hasQuickSearch = true
+    override val providerType = ProviderType.MetaProvider
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private final val mediaLimit = 10
-    private val auth = BuildConfig.SIMKL_API
+    private val auth = com.lagradost.cloudstream3.BuildConfig.SIMKL_CLIENT_ID
+    private val auth2 = BuildConfig.SIMKL_API
     private val headers = mapOf("Content-Type" to "application/json")
     private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
@@ -176,13 +178,15 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            return "https://images.metahub.space/background/large/$id/img"
+            return "https://images.metahub.space/background/medium/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
             return "$baseUrl/fanart/${id}_medium.webp"
         }
     }
+
+    override suspend fun quickSearch(query: String): List<SearchResponse>? = search(query,1)?.items
 
     override suspend fun search(query: String, page: Int): SearchResponseList? = coroutineScope {
 
@@ -263,7 +267,7 @@ class CineSimklProvider: MainAPI() {
 
      override suspend fun load(url: String): LoadResponse {
         val simklId = getSimklId(url)
-        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth&extended=full", headers = headers).text
+        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth2&extended=full", headers = headers).text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it.toString() }
         val tvType = json.type.orEmpty()
@@ -298,9 +302,9 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            getPosterUrl(json.fanart, "fanart")
+            getPosterUrl(imdbId, "imdb:bg")
+            ?: getPosterUrl(json.fanart, "fanart")
             ?: aio_meta?.optString("background", null)
-            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
@@ -360,7 +364,7 @@ class CineSimklProvider: MainAPI() {
                 this.addTrailer(trailerLink)
             }
         } else {
-            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth&extended=full", headers = headers).text
+            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(

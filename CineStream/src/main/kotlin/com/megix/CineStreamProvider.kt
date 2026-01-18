@@ -25,6 +25,7 @@ open class CineStreamProvider : MainAPI() {
     override var name = "CineStream"
     override val hasMainPage = true
     override var lang = "en"
+    override val providerType = ProviderType.MetaProvider
     override val hasDownloadSupport = true
     private val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
@@ -80,6 +81,7 @@ open class CineStreamProvider : MainAPI() {
         const val bollywoodBaseAPI = "https://bollywood.eu.org"
         const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
+        const val notorrentAPI = "https://addon-osvh.onrender.com"
 
         private val apiConfig by lazy {
             runBlocking(Dispatchers.IO) {
