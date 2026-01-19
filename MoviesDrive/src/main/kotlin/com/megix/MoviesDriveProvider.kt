@@ -81,16 +81,16 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val text = app.get("$mainUrl/searchapi.php?q=$query&page=$page", interceptor = CloudflareKiller()).text
+        val text = app.get("$mainUrl/searchapi.php?q=$query", interceptor = CloudflareKiller()).text
         val response = parseJson<MSearchResponse>(text)
-        val hasNext = response.hits.isNotEmpty()
+        // val hasNext = response.hits.isNotEmpty()
         val results = response.hits.map { hit ->
             val doc = hit.document
             newMovieSearchResponse(doc.postTitle, mainUrl + doc.permalink, TvType.Movie) {
                 this.posterUrl = doc.postThumbnail
             }
         }
-        return newSearchResponseList(results, hasNext)
+        return newSearchResponseList(results, false)
     }
 
     override suspend fun load(url: String): LoadResponse? {
