@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import com.google.gson.annotations.SerializedName
+import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.forum"
@@ -80,7 +81,7 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val text = app.get("$mainUrl/searchapi.php?q=$query&page=$page").text
+        val text = app.get("$mainUrl/searchapi.php?q=$query&page=$page", interceptor = CloudflareKiller()).text
         val response = parseJson<MSearchResponse>(text)
         val hasNext = response.hits.isNotEmpty()
         val results = response.hits.map { hit ->
@@ -89,7 +90,6 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
                 this.posterUrl = doc.postThumbnail
             }
         }
-
         return newSearchResponseList(results, hasNext)
     }
 
