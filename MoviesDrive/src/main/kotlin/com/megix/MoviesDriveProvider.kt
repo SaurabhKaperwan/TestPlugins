@@ -11,8 +11,9 @@ import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import com.lagradost.cloudstream3.network.CloudflareKiller
+// import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class MoviesDriveProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://moviesdrive.forum"
@@ -81,16 +82,20 @@ class MoviesDriveProvider : MainAPI() { // all providers must be an instance of 
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val text = app.get("$mainUrl/searchapi.php?q=$query", interceptor = CloudflareKiller()).text
-        val response = parseJson<MSearchResponse>(text)
-        // val hasNext = response.hits.isNotEmpty()
+        val text = app.get(
+            "$mainUrl/searchapi.php?q=$query&page=$page"
+        ).text
+        val gson = Gson()
+        val response = gson.fromJson(text, MSearchResponse::class.java)
+        //val response = parseJson<MSearchResponse>(text)
+        val hasNext = response.hits.isNotEmpty()
         val results = response.hits.map { hit ->
             val doc = hit.document
             newMovieSearchResponse(doc.postTitle, mainUrl + doc.permalink, TvType.Movie) {
                 this.posterUrl = doc.postThumbnail
             }
         }
-        return newSearchResponseList(results, false)
+        return newSearchResponseList(results, hasNext)
     }
 
     override suspend fun load(url: String): LoadResponse? {
