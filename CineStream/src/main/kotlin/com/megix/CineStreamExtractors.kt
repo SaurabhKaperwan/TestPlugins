@@ -2584,7 +2584,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val doc = hit.getJSONObject("document")
             val currentImdbId = doc.optString("imdb_id")
             if(imdbId == currentImdbId) {
-                val document = app.get(MovieDrive_API + document.optString("permalink"), interceptor = wpRedisInterceptor).document
+                val document = app.get(MovieDrive_API + doc.optString("permalink"), interceptor = wpRedisInterceptor).document
                 if (season == null) {
                     document.select("h5 > a").amap {
                         val href = it.attr("href")
