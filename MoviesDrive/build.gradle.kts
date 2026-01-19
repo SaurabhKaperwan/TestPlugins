@@ -1,10 +1,10 @@
-version = 83
+version = 27
 
 cloudstream {
-    //language = "hi"
+    language = "hi"
     // All of these properties are optional, you can safely remove them
 
-    description = "Must Install(For other extensions to work properly)"
+    description = "High Quality Movies and TV Shows"
      authors = listOf("megix")
 
     /**
@@ -22,5 +22,5 @@ cloudstream {
         "Anime"
     )
 
-    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/Extractors/icon.png"
+    iconUrl = "https://github.com/SaurabhKaperwan/CSX/raw/refs/heads/master/MoviesDrive/icon.png"
 }
