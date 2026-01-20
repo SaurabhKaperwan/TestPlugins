@@ -535,14 +535,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
         val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
 
-        callback.invoke(
-            newExtractorLink(
-                "Mapple",
-                "Mapple",
-                "$sessionId    $nextAction",
-            )
-        )
-
         var mediaType = ""
         var tv_slug = ""
         var url = ""
@@ -594,14 +586,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 requestBody = requestBody,
                 headers = headers
             ).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "Mapple[json]",
-                    "Mapple[json]",
-                    json.toString(),
-                )
-            )
 
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
@@ -1274,15 +1258,6 @@ object CineStreamExtractors : CineStreamProvider() {
         val playerScript = app.get("https://allmovieland.link/player.js?v=60%20128").toString()
         val domainRegex = Regex("const AwsIndStreamDomain.*'(.*)';")
         val host = domainRegex.find(playerScript)?.groupValues?.getOrNull(1) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "host",
-                "host",
-                host
-            )
-        )
-
         val referer = "$allmovielandAPI/"
 
         val res =
@@ -1294,15 +1269,6 @@ object CineStreamExtractors : CineStreamProvider() {
                         ?.substringBefore(";")
                         ?.substringBefore(")")
         val json = tryParseJson<AllMovielandPlaylist>("{${res ?: return}")
-
-        callback.invoke(
-            newExtractorLink(
-                "json",
-                "json",
-                json.toString(),
-            )
-        )
-
         val headers = mapOf("X-CSRF-TOKEN" to "${json?.key}")
 
         val serverRes =
@@ -1332,6 +1298,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 }
 
+        callback.invoke(
+            newExtractorLink(
+                "servers",
+                "servers",
+                servers.toString(),
+            )
+        )
+
         servers?.amap { (server, lang) ->
             val path =
                     app.post(
@@ -1339,6 +1313,14 @@ object CineStreamExtractors : CineStreamProvider() {
                         headers = headers,
                         referer = referer
                     ).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "path",
+                    "path",
+                    path.toString(),
+                )
+            )
             M3u8Helper.generateM3u8("Allmovieland [$lang]", path, referer).forEach(callback)
         }
     }
@@ -3226,6 +3208,15 @@ object CineStreamExtractors : CineStreamProvider() {
         val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 60).parsedSafe<CinemaOSReponse>()
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data,)
         val json = parseCinemaOSSources(decryptedJson.toString())
+
+        callback.invoke(
+            newExtractorLink(
+                "CinemaOS",
+                "CinemaOS",
+                json.toString(),
+            )
+        )
+
         json.forEach {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
             val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value}
