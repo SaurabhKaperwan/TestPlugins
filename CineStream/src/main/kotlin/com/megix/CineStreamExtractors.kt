@@ -834,7 +834,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val doc = app.get(animezAPI + it.attr("href")).document
             val titles = doc.select("ul.InfoList > li").text().replace(" -Dub", "")
 
-            if(!titles == title) return@amap
+            if(titles != title) return@amap
 
             val ep = episode ?: 1
             val links  = doc.select("li.wp-manga-chapter > a")
