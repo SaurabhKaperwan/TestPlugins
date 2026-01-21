@@ -706,9 +706,7 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
                     english
                     romaji
                 }
-                coverImage {
-                    extraLarge
-                }
+                bannerImage
             }
         }
     """.trimIndent()
@@ -728,13 +726,13 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
         val responseBody = response.body?.string() ?: return null
         val json = JSONObject(responseBody)
         val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
-        val rawPoster = media.optJSONObject("coverImage")?.optString("extraLarge")
-        val finalPoster = rawPoster?.takeUnless { it.isBlank() || it == "null" }
+        val rawBanner = media.optString("bannerImage")
+        val finalBanner = rawBanner.takeUnless { it.isBlank() || it == "null" }
         val titleObj = media.optJSONObject("title")
         val english = titleObj?.optString("english")
         //val romaji = titleObj?.optString("romaji")
         val finalTitle = english?.takeUnless { it.isBlank() || it == "null" }
-        return AnimeInfo(finalTitle, finalPoster)
+        return AnimeInfo(finalTitle, finalBanner)
     }
 }
 

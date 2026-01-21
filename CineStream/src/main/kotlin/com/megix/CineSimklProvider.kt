@@ -169,8 +169,8 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            val res = app.head("https://images.metahub.space/background/medium/$id/img")
-            return if(res.code == 200) "${image_proxy}https://images.metahub.space/background/medium/$id/img"
+            val res = app.head("https://images.metahub.space/background/large/$id/img")
+            return if(res.code == 200) "${image_proxy}https://images.metahub.space/background/large/$id/img"
             else null
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
