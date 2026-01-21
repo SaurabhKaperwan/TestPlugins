@@ -90,16 +90,6 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private suspend fun extractMetaAIO(malId: Int): JSONObject? {
-        return try {
-            val jsonString = app.get("$aio_meta/meta/series/mal%3A${malId}.json").text
-            val root = JSONObject(jsonString)
-            root.optJSONObject("meta")
-        } catch (e: Exception) {
-            null
-        }
-    }
-
    private suspend fun extractImdbInfo(
         kitsuId: String? = null,
         season: Int? = null,
@@ -165,7 +155,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private fun getPosterUrl(
+    private suspend fun getPosterUrl(
         id: String? = null,
         type: String,
      ): String? {
@@ -179,7 +169,9 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            return "${image_proxy}https://images.metahub.space/background/large/$id/img"
+            val res = app.head("https://images.metahub.space/background/medium/$id/img")
+            return if(res.code == 200) "${image_proxy}https://images.metahub.space/background/medium/$id/img"
+            else null
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
@@ -286,10 +278,10 @@ class CineSimklProvider: MainAPI() {
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
 
-        val aio_meta = if(malId != null) extractMetaAIO(malId) else null
+        val anilist_meta = if(anilistId != null) getAniListInfo(anilistId) else null
 
         val enTitle =
-            aio_meta?.optString("name", null)
+            anilist_meta?.title
             ?: json.en_title
             ?: json.title
 
@@ -305,7 +297,7 @@ class CineSimklProvider: MainAPI() {
         val backgroundPosterUrl =
             getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(json.fanart, "fanart")
-            ?: aio_meta?.optString("background", null)
+            ?: anilist_meta?.posterUrl
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
