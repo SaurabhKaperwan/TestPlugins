@@ -1307,6 +1307,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = ExtractorLinkType.M3U8
                 ) {
                     this.referer = referer
+                    this.quality = Qualities.P1080.value
                 }
             )
         }
@@ -3825,6 +3826,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val detailObj = JSONObject(detailResponseString)
             val detailInfo = unwrapData(detailObj)
+
+            callback.invoke(
+                newExtractorLink(
+                    "detailInfo",
+                    "detailInfo",
+                    detailInfo.toString(),
+                )
+            )
+
             val detailSubject = detailInfo.optJSONObject("subject")
             val detailPath = detailSubject?.optString("detailPath") ?: ""
             val params = StringBuilder("subjectId=$subjectId")
