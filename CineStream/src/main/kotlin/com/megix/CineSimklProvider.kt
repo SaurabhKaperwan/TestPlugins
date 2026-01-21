@@ -169,7 +169,7 @@ class CineSimklProvider: MainAPI() {
         id: String? = null,
         type: String,
      ): String? {
-        val baseUrl = "${image_proxy}https://simkl.in"
+        val baseUrl = "https://simkl.in"
         if(id == null) {
             return null
         } else if(type == "imdb:lg") {
@@ -179,7 +179,7 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            return "${image_proxy}https://images.metahub.space/background/medium/$id/img"
+            return "${image_proxy}https://images.metahub.space/background/large/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {

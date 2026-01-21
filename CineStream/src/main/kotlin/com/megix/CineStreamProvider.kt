@@ -174,7 +174,8 @@ open class CineStreamProvider : MainAPI() {
         url: String? = null,
      ): String? {
         if (url == null) return null
-        return image_proxy + url
+        if(url.contains("metahub.space")) return image_proxy + url
+        return url
     }
 
     override suspend fun getMainPage(
