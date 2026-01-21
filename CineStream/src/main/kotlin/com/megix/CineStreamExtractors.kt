@@ -3006,7 +3006,7 @@ object CineStreamExtractors : CineStreamProvider() {
                                         server.subtitles?.forEach { sub ->
                                             val lang = SubtitleHelper.fromTagToEnglishLanguageName(sub.lang ?: "") ?: sub.lang.orEmpty()
                                             val src = sub.src ?: return@forEach
-                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: src, httpsify(src)))
+                                            subtitleCallback(newSubtitleFile(getLanguage(lang) ?: "", httpsify(src)))
                                         }
                                     }
                                 }
@@ -3826,15 +3826,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val detailObj = JSONObject(detailResponseString)
             val detailInfo = unwrapData(detailObj)
-
-            callback.invoke(
-                newExtractorLink(
-                    "detailInfo",
-                    "detailInfo",
-                    detailInfo.toString(),
-                )
-            )
-
             val detailSubject = detailInfo.optJSONObject("subject")
             val detailPath = detailSubject?.optString("detailPath") ?: ""
             val params = StringBuilder("subjectId=$subjectId")
@@ -3860,15 +3851,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val sourceObj = JSONObject(downloadResponseString)
             val sourceData = unwrapData(sourceObj)
-
-            callback.invoke(
-                newExtractorLink(
-                    "sourceData",
-                    "sourceData",
-                    sourceData.toString(),
-                )
-            )
-
             val downloads = sourceData.optJSONArray("downloads")
 
             if (downloads == null || downloads.length() == 0) return@forEach
@@ -3893,6 +3875,23 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
             }
+
+            val subtitles = sourceData.optJSONArray("captions")
+
+            for (i in 0 until subtitles.length()) {
+                val s = subtitles.getJSONObject(i)
+                val slink = s.optString("url")
+                if (slink.isNotEmpty()) {
+                    val lan = s.optString("lan")
+                    subtitleCallback.invoke(
+                        newSubtitleFile(
+                            getLanguage(lan) ?: lan,
+                            slink
+                        )
+                    )
+                }
+            }
+
         }
     }
 
