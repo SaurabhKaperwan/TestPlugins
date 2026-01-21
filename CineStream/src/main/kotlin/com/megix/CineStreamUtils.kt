@@ -696,7 +696,7 @@ suspend fun bypassHrefli(url: String): String? {
     return fixUrl(path, getBaseUrl(driveUrl))
 }
 
-fun getAniListInfo(animeId: String): AnimeInfo? {
+fun getAniListInfo(animeId: Int): AnimeInfo? {
     val client = OkHttpClient()
 
     val query = """

@@ -189,8 +189,9 @@ class CineSimklProvider: MainAPI() {
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
+                    val poster = getPosterUrl(it.poster, "poster")
                     newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
-                        posterUrl = getPosterUrl(it.poster, "poster")
+                        posterUrl = poster
                         this.score = Score.from10(score)
                     }
                 }
@@ -242,8 +243,9 @@ class CineSimklProvider: MainAPI() {
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
+                    val poster = getPosterUrl(it.poster, "poster")
                     newMovieSearchResponse("${it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
-                        this.posterUrl = getPosterUrl(it.poster, "poster")
+                        this.posterUrl = poster
                         this.score = Score.from10(score)
                     }
                 } ?: return null
@@ -265,6 +267,7 @@ class CineSimklProvider: MainAPI() {
         val genres = json.genres?.map { it.toString() }
         val tvType = json.type.orEmpty()
         val country = json.country.orEmpty()
+        val poster = getPosterUrl(json.poster, "poster")
         val isAnime = tvType == "anime"
         val isBollywood = country == "IN"
         val isCartoon = genres?.contains("Animation") == true
@@ -301,14 +304,16 @@ class CineSimklProvider: MainAPI() {
             ?: getPosterUrl(firstTrailerId, "youtube")
 
         val users_recommendations = json.users_recommendations?.map {
+            val rec_poster = getPosterUrl(it.poster, "poster")
             newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
-                this.posterUrl = getPosterUrl(it.poster, "poster")
+                this.posterUrl = poster
             }
         } ?: emptyList()
 
         val relations = json.relations?.map {
+            val rec_poster = getPosterUrl(it.poster, "poster")
             newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids?.simkl}") {
-                this.posterUrl = getPosterUrl(it.poster, "poster")
+                this.posterUrl = rec_poster
             }
         } ?: emptyList()
 
@@ -339,7 +344,7 @@ class CineSimklProvider: MainAPI() {
                 isCartoon
             ).toJson()
             return newMovieLoadResponse("${enTitle}", url, if(isAnime) TvType.AnimeMovie  else TvType.Movie, data) {
-                this.posterUrl = getPosterUrl(json.poster, "poster")
+                this.posterUrl = poster
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
@@ -360,6 +365,7 @@ class CineSimklProvider: MainAPI() {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
+                val ep_poster = getPosterUrl(it.img, "episode")
                 newEpisode(
                     LoadLinksData(
                         json.title,
@@ -386,14 +392,14 @@ class CineSimklProvider: MainAPI() {
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
-                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
+                    this.posterUrl = ep_poster ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
                 }
             }
 
             return newAnimeLoadResponse("${enTitle}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
                 addEpisodes(DubStatus.Subbed, episodes)
-                this.posterUrl = getPosterUrl(json.poster, "poster")
+                this.posterUrl = poster
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
