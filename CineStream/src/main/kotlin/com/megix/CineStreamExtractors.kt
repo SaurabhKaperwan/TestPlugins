@@ -3860,6 +3860,15 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val sourceObj = JSONObject(downloadResponseString)
             val sourceData = unwrapData(sourceObj)
+
+            callback.invoke(
+                newExtractorLink(
+                    "sourceData",
+                    "sourceData",
+                    sourceData.toString(),
+                )
+            )
+
             val downloads = sourceData.optJSONArray("downloads")
 
             if (downloads == null || downloads.length() == 0) return@forEach
