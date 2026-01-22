@@ -182,9 +182,13 @@ object CineStreamExtractors : CineStreamProvider() {
             "Referer" to "https://smashystream.xyz/"
         )
 
+        // val servers = listOf(
+        //     "videosmashyi", "smashystream",
+        //     "short2embed", "videoophim", "videofsh"
+        // )
+
         val servers = listOf(
-            "videosmashyi", "smashystream",
-            "short2embed", "videoophim", "videofsh"
+            "videosmashyi"
         )
 
         servers.amap { server ->
@@ -202,6 +206,15 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val data_json = app.get(url, headers = headers).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "data_json",
+                    "data_json",
+                    data_json.toString()
+                )
+            )
+
             val dataString = JSONObject(data_json).getString("data")
 
             if(dataString.isEmpty()) return@amap
@@ -215,8 +228,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
             callback.invoke(
                 newExtractorLink(
-                    "vidstack",
-                    "vidstack",
+                    "encrypted",
+                    "encrypted",
                     encrypted.toString()
                 )
             )
@@ -232,8 +245,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
             callback.invoke(
                 newExtractorLink(
-                    "vidstack 2",
-                    "vidstack 2",
+                    "decrypted",
+                    "decrypted",
                     decrypted.toString()
                 )
             )
