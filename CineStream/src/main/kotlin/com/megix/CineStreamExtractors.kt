@@ -67,7 +67,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeDramadrip(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId ,res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -75,6 +74,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeVadapav(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -158,6 +158,74 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeVidstack(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val json = app.get("$multiDecryptAPI/enc-vidstack").text
+        val result = JSONObject(json).getJSONObject("result")
+        val token = result.getString("token")
+        val user_id = result.getString("user_id")
+
+        if(token.isEmpty()) return
+
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Referer" to "https://smashystream.xyz/"
+        )
+
+        val servers = listOf("videosmashyi")
+
+        servers.amap { server ->
+
+            val url = if(season == null) {
+                "$vidstackAPI/$server/$imdbId?token=$token&user_id=$user_id"
+            } else {
+                "$vidstackAPI/$server/$imdbId/$season/$episode?token=$token&user_id=$user_id"
+            }
+
+            val data_json = app.get(url, headers = headers).text
+            val dataString = JSONObject(data_json).getString("data")
+
+            if(dataString.isEmpty()) return@amap
+
+            val parts = dataString.split("/#")
+            if (parts.size < 2) return@amap
+            val host = parts[0]
+            val id = parts[1]
+
+            val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "vidstack",
+                    "vidstack",
+                    encrypted.toString()
+                )
+            )
+
+            val jsonBody = JsonObject().apply {
+                addProperty("text", encrypted)
+                addProperty("type", "1")
+            }
+
+            val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
+            val requestBody = jsonBody.toString().toRequestBody(mediaTypeJson)
+            val decrypted = app.post("$multiDecryptAPI/dec-vidstack", requestBody = requestBody).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "vidstack 2",
+                    "vidstack 2",
+                    decrypted.toString()
+                )
+            )
+        }
     }
 
     suspend fun invokeYflix(
@@ -689,52 +757,6 @@ object CineStreamExtractors : CineStreamProvider() {
         ).forEach(callback)
     }
 
-    suspend fun invokeDramadrip(
-        imdbId: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val link = app.get("$dramadripAPI/?s=$imdbId").document.selectFirst("article > a")?.attr("href") ?: return
-        val document = app.get(link).document
-        if(season != null && episode != null) {
-            val seasonLink = document.select("div.file-spoiler h2").filter { element ->
-                val text = element.text().trim().lowercase()
-                    "season $season ".lowercase() in text && "zip" !in text
-            }.flatMap { h2 ->
-                val sibling = h2.nextElementSibling()
-                sibling?.select("a")?.mapNotNull { it.attr("href") } ?: emptyList()
-            }
-
-            seasonLink.amap {
-                val bypassUrl = cinematickitloadBypass(it) ?: return@amap
-                val doc = app.get(bypassUrl).document
-                var sourceUrl = doc.select("div.series_btn > a")
-                    .getOrNull(episode-1)?.attr("href")
-                    ?: return@amap
-                sourceUrl = cinematickitBypass(sourceUrl) ?: return@amap
-
-                loadSourceNameExtractor("Dramadrip", sourceUrl, "", subtitleCallback, callback)
-            }
-        } else {
-            document.select("div.file-spoiler a").amap {
-                val bypassUrl = cinematickitloadBypass(it.attr("href")) ?: return@amap
-                val doc = app.get(bypassUrl).document
-                doc.select("a.wp-element-button").amap { source ->
-                    val sourceUrl = cinematickitBypass(source.attr("href")) ?: return@amap
-                    loadSourceNameExtractor(
-                        "Dramadrip",
-                        sourceUrl,
-                        "",
-                        subtitleCallback,
-                        callback
-                    )
-                }
-            }
-        }
-    }
-
     suspend fun invokeXDmovies(
         title: String? = null,
         tmdbId: Int? = null,
@@ -846,7 +868,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val subsUrls = listOf(
             // "https://3b4bbf5252c4-aio-streaming.baby-beamup.club/stremio/languages=english,hindi,spanish,arabic,mandarin,bengali,portuguese,russian,japanese,lahnda,thai,turkish,french,german,korean,telugu,marathi,tamil,urdu,italian",
             // "https://subsource.strem.bar/ZW5nbGlzaCxoaW5kaSxzcGFuaXNoLGFyYWJpYyxtYW5kYXJpbixiZW5nYWxpLHBvcnR1Z3Vlc2UscnVzc2lhbixqYXBhbmVzZSxsYWhuZGEsdGhhaSx0dXJraXNoLGZyZW5jaCxnZXJtYW4sa29yZWFuLHRlbHVndSxtYXJhdGhpLHRhbWlsLHVyZHUsaXRhbGlhbi9oaUluY2x1ZGUv",
-            "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true"
+            "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true",
+            """https://subsense.nepiraw.com/gpqq9k22-{"languages":["en","hi","ta","es","ar"],"maxSubtitles":10}"""
         )
 
         subsUrls.amap { subUrl ->
@@ -1314,21 +1337,19 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeHindmoviez(
-        source: String,
         id: String? = null,
         title: String? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val api = if(source == "HindMoviez") hindMoviezAPI else jaduMoviesAPI
-        app.get("$api/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
+        app.get("$hindMoviezAPI/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
             val doc = app.get(it.attr("href"), timeout = 50L).document
             if(episode == null) {
                 doc.select("a.maxbutton").amap {
                     val res = app.get(it.attr("href"), timeout = 50L).document
                     val link = res.select("a.get-link-btn").attr("href")
-                    getHindMoviezLinks(source, link, callback)
+                    getHindMoviezLinks("HindMoviez", link, callback)
                 }
             }
             else {
@@ -1337,7 +1358,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if(text.contains("Season $season")) {
                         val res = app.get(it.attr("href"), timeout = 50L).document
                         res.select("h3 > a").getOrNull(episode-1)?.let { link ->
-                            getHindMoviezLinks(source, link.attr("href"), callback)
+                            getHindMoviezLinks("HindMoviez", link.attr("href"), callback)
                         }
                     }
                 }
