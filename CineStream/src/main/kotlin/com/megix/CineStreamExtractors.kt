@@ -84,7 +84,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeTorrentio(res.imdbId, res.season, res.episode, callback) },
             { invokeTorrentsDB(res.imdbId, res.season, res.episode, callback) },
-            { if (!res.isBollywood) invokeHindmoviez("HindMoviez", res.imdbId, res.title, res.season, res.episode, callback) },
+            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeKatMovieHd("KatMovieHd", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { if (res.isBollywood) invokeKatMovieHd("Moviesbaba", res.imdbId, res.season, res.episode, subtitleCallback ,callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
@@ -138,6 +138,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -1338,7 +1339,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeHindmoviez(
         id: String? = null,
-        title: String? = null,
         season: Int? = null,
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
