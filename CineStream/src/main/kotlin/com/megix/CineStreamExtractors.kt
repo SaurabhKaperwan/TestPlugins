@@ -179,7 +179,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Referer" to "https://smashystream.xyz/"
+            "Referer" to "https://smashyplayer.top/"
         )
 
         // val servers = listOf(
@@ -188,8 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // )
 
         val servers = listOf(
-            "videosmashyi",
-            "smashystream"
+            "videosmashyi"
         )
 
         servers.forEach { server ->
@@ -207,15 +206,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val data_json = app.get(url, headers = headers).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "data_json",
-                    "data_json",
-                    data_json.toString()
-                )
-            )
-
             val dataString = JSONObject(data_json).getString("data")
 
             if(dataString.isEmpty()) return@forEach
@@ -224,16 +214,7 @@ object CineStreamExtractors : CineStreamProvider() {
             if (parts.size < 2) return@forEach
             val host = parts[0]
             val id = parts[1]
-
             val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "encrypted",
-                    "encrypted",
-                    encrypted.toString()
-                )
-            )
 
             val jsonBody = JsonObject().apply {
                 addProperty("text", encrypted)
@@ -243,21 +224,12 @@ object CineStreamExtractors : CineStreamProvider() {
             val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
             val requestBody = jsonBody.toString().toRequestBody(mediaTypeJson)
             val decrypted = app.post("$multiDecryptAPI/dec-vidstack", requestBody = requestBody).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "decrypted",
-                    "decrypted",
-                    decrypted.toString()
-                )
-            )
-
             val m3u8 = JSONObject(decrypted).getJSONObject("result").getString("source")
 
             M3u8Helper.generateM3u8(
                 "Vidstack",
                 m3u8,
-                "https://smashystream.xyz/"
+                "https://smashyplayer.top/"
             ).forEach(callback)
         }
     }
