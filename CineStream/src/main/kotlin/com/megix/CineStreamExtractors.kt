@@ -188,10 +188,11 @@ object CineStreamExtractors : CineStreamProvider() {
         // )
 
         val servers = listOf(
-            "videosmashyi"
+            "videosmashyi",
+            "smashystream"
         )
 
-        servers.amap { server ->
+        servers.forEach { server ->
 
             val type = if(server == "videosmashyi" || server == "smashystream") {
                 "1"
@@ -217,10 +218,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val dataString = JSONObject(data_json).getString("data")
 
-            if(dataString.isEmpty()) return@amap
+            if(dataString.isEmpty()) return@forEach
 
             val parts = dataString.split("/#")
-            if (parts.size < 2) return@amap
+            if (parts.size < 2) return@forEach
             val host = parts[0]
             val id = parts[1]
 
@@ -250,6 +251,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     decrypted.toString()
                 )
             )
+
+            val m3u8 = JSONObject(decrypted).getJSONObject("result").getString("source")
+
+            M3u8Helper.generateM3u8(
+                "Vidstack",
+                m3u8,
+                "https://smashystream.xyz/"
+            ).forEach(callback)
         }
     }
 
