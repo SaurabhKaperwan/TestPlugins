@@ -248,7 +248,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val fullUrl = "$vidstackBaseAPI$relativePath"
 
                     subtitleCallback.invoke(
-                        newSubtitle(
+                        newSubtitleFile(
                             getLanguage(languageName) ?: languageName,
                             fullUrl
                         )
