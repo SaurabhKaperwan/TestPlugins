@@ -182,9 +182,18 @@ object CineStreamExtractors : CineStreamProvider() {
             "Referer" to "https://smashystream.xyz/"
         )
 
-        val servers = listOf("videosmashyi")
+        val servers = listOf(
+            "videosmashyi", "smashystream",
+            "short2embed", "videoophim", "videofsh"
+        )
 
         servers.amap { server ->
+
+            val type = if(server == "videosmashyi" || server == "smashystream") {
+                "1"
+            } else {
+                "2"
+            }
 
             val url = if(season == null) {
                 "$vidstackAPI/$server/$imdbId?token=$token&user_id=$user_id"
@@ -214,7 +223,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val jsonBody = JsonObject().apply {
                 addProperty("text", encrypted)
-                addProperty("type", "1")
+                addProperty("type", type)
             }
 
             val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
@@ -264,7 +273,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val json = app.get(url).text
         val regex = """\"file":"(.*?)\"""".toRegex()
-        val match = regex.find(jsonString)
+        val match = regex.find(json)
         val rawUrl = match?.groupValues?.get(1)
         val m3u8 = rawUrl?.replace("\\u0026", "&")
 
