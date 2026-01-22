@@ -179,7 +179,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Referer" to "https://smashyplayer.top/"
+            "Referer" to vidstackBaseAPI
         )
 
         // val servers = listOf(
@@ -224,13 +224,37 @@ object CineStreamExtractors : CineStreamProvider() {
             val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
             val requestBody = jsonBody.toString().toRequestBody(mediaTypeJson)
             val decrypted = app.post("$multiDecryptAPI/dec-vidstack", requestBody = requestBody).text
-            val m3u8 = JSONObject(decrypted).getJSONObject("result").getString("source")
+            val resultObject = JSONObject(decrypted).getJSONObject("result")
+            val m3u8 = resultObject.getString("source")
 
-            M3u8Helper.generateM3u8(
-                "Vidstack",
-                m3u8,
-                "https://smashyplayer.top/"
-            ).forEach(callback)
+            callback.invoke(
+                newExtractorLink(
+                    "Vidstack",
+                    "Vidstack",
+                    m3u8,
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.headers = headers
+                }
+            )
+
+            if (resultObject.has("subtitle")) {
+                val subtitleObject = resultObject.getJSONObject("subtitle")
+                val keysIterator = subtitleObject.keys()
+
+                while (keysIterator.hasNext()) {
+                    val languageName = keysIterator.next()
+                    val relativePath = subtitleObject.getString(languageName)
+                    val fullUrl = "$vidstackBaseAPI$relativePath"
+
+                    subtitleCallback.invoke(
+                        newSubtitle(
+                            getLanguage(languageName) ?: languageName,
+                            fullUrl
+                        )
+                    )
+                }
+            }
         }
     }
 

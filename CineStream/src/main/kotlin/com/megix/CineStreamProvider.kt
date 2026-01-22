@@ -83,8 +83,10 @@ open class CineStreamProvider : MainAPI() {
         const val vadapavAPI = "https://vadapav.mov"
         const val YflixAPI = "https://solarmovie.fi"
         const val vidstackAPI = "https://api.smashystream.top/api/v1"
+        const val vidstackBaseAPI = "https://smashyplayer.top"
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
+
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
         IiLCJ0bWRiIjoiIiwic29ydCI6ImJhbGFuY2VkIiwiYWlvc3RyZWFtc19tb2RlIj
