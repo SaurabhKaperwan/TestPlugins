@@ -73,6 +73,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
+            { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
@@ -226,6 +228,52 @@ object CineStreamExtractors : CineStreamProvider() {
                     decrypted.toString()
                 )
             )
+        }
+    }
+
+    suspend fun invokeMadplayCDN(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val m3u8 = if(season == null) {
+            "https://cdn.madplay.site/api/hls/unknown/${tmdbId}/master.m3u8"
+        } else {
+            "https://cdn.madplay.site/api/hls/unknown/${tmdbId}/season_${season}/episode_${episode}/master.m3u8"
+        }
+
+        M3u8Helper.generateM3u8(
+            "Madplay[CDN]",
+            m3u8,
+            "",
+        ).forEach(callback)
+    }
+
+    suspend fun invokeXpass(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$xpassAPI/feb/${tmdbId}/0/0/0/playlist.json"
+        } else {
+            "$xpassAPI/meg/tv/${tmdbId}/${season}/${episode}/playlist.json"
+        }
+
+        val json = app.get(url).text
+        val regex = """\"file":"(.*?)\"""".toRegex()
+        val match = regex.find(jsonString)
+        val rawUrl = match?.groupValues?.get(1)
+        val m3u8 = rawUrl?.replace("\\u0026", "&")
+
+        if (m3u8 != null) {
+            M3u8Helper.generateM3u8(
+                "Xpass",
+                m3u8,
+                "$xpassAPI/",
+            ).forEach(callback)
         }
     }
 
