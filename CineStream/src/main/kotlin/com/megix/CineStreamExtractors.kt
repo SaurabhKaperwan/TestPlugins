@@ -201,7 +201,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
 
-            streamPattern.findAll(rawScript).forEach { match ->
+            streamPattern.findAll(doc.toString()).forEach { match ->
                 val service = match.groupValues[1]
                 val id = match.groupValues[2]
 
