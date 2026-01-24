@@ -184,9 +184,19 @@ object CineStreamExtractors : CineStreamProvider() {
             else return null
         }
 
-        if(season != null) return
+        fun extractLinkByRegex(html: String, key: String, episode: Int): String? {
+            val skipCount = episode - 1
+            val pattern = if (skipCount > 0) {
+                Regex("""\\"$key\\":\\"(?:[^,"]+,){$skipCount}([^,"]+)""")
+            } else {
+                Regex("""\\"$key\\":\\"([^,"]+)""")
+            }
+            val match = pattern.find(html)
+            return match?.groupValues?.get(1)
+        }
 
-        val url = "$rtallyAPI/post/${title.createSlug()}"
+        val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
+        val url = "$rtallyAPI/post/$slugTitle"
         val doc = app.get(url).document
 
         if(season == null) {
@@ -208,6 +218,24 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (id != "null") {
                     val eurl = getStreamUrl(id, service) ?: return@forEach
                     loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
+                }
+            }
+        } else {
+            val keys = listOf(
+                "large_single",
+                "medium_single",
+                "lulustreamMultiUrl",
+                "strmupMultiUrl",
+                "multiLinksDl",
+                "vidstreamUrl",
+                "vidhideUrl",
+                "streamwishMultiUrl"
+            )
+
+            keys.forEach { key ->
+                val result = extractLinkByRegex(doc.toString(), key, episode ?: 1)
+                if (result != null) {
+                    loadSourceNameExtractor("Rtally", result, "", subtitleCallback, callback)
                 }
             }
         }
@@ -2927,15 +2955,6 @@ object CineStreamExtractors : CineStreamProvider() {
             url = "$api/search/$id $season"
         }
         var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
-
-        callback.invoke(
-            newExtractorLink(
-                "href",
-                "href",
-                href.toString(),
-            )
-        )
-
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
@@ -2948,14 +2967,6 @@ object CineStreamExtractors : CineStreamProvider() {
             val text = element.text()
             !text.contains("MoviesMod", true)
         }
-
-        callback.invoke(
-            newExtractorLink(
-                "entries",
-                "entries",
-                entries.toString(),
-            )
-        )
 
         entries.amap { it ->
             var link =
