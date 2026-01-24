@@ -63,6 +63,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeTopMovies(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -95,7 +96,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-            { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
@@ -161,6 +162,55 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeRtally(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        fun getStreamUrl(
+            id: String,
+            service: String
+        ): String? {
+            if(service == "vidhide") return "https://vidhideplus.com/v/$id"
+            else if(service == "lulustream") return "https://lulustream.com/e/$id"
+            else if(service == "filemoon") return "https://filemoon.sx/e/$id"
+            else if(service == "streamwish") return "https://playerwish.com/e/$id"
+            else if(service == "strmup") return "https://strmup.cc/$id"
+            else return null
+        }
+
+        if(season != null) return
+
+        val url = "$rtallyAPI/post/${title.createSlug()}"
+        val doc = app.get(url).document
+
+        if(season == null) {
+            val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
+
+            linkPattern.findAll(doc.toString()).forEach { match ->
+                val quality = match.groupValues[1]
+                val durl = match.groupValues[2]
+
+                loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
+            }
+
+            val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
+
+            streamPattern.findAll(rawScript).forEach { match ->
+                val service = match.groupValues[1]
+                val id = match.groupValues[2]
+
+                if (id != "null") {
+                    val eurl = getStreamUrl(id, service) ?: return@forEach
+                    loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
+                }
+            }
+        }
     }
 
     suspend fun invokeVidstack(
@@ -235,6 +285,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     ExtractorLinkType.M3U8
                 ) {
                     this.headers = headers
+                    this.quality = Qualities.P1080.value
                 }
             )
 
@@ -2876,18 +2927,36 @@ object CineStreamExtractors : CineStreamProvider() {
             url = "$api/search/$id $season"
         }
         var href = app.get(url).document.selectFirst("#content_box article > a")?.attr("href")
+
+        callback.invoke(
+            newExtractorLink(
+                "href",
+                "href",
+                href.toString(),
+            )
+        )
+
         val hTag = if (season == null) "h4" else "h3"
         val aTag = if (season == null) "Download" else "Episode"
         val sTag = if (season == null) "" else "(S0$season|Season $season)"
         val res = app.get(
             href ?: return,
         ).document
-        val entries =
-            res.select("div.thecontent $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
-                .filter { element ->
-                    !element.text().contains("MoviesMod", true) && !element.text()
-                        .contains("1080p", true) || !element.text().contains("720p", true)
-                }
+
+        val entries = res.select("div.thecontent $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
+        .filter { element ->
+            val text = element.text()
+            !text.contains("MoviesMod", true)
+        }
+
+        callback.invoke(
+            newExtractorLink(
+                "entries",
+                "entries",
+                entries.toString(),
+            )
+        )
+
         entries.amap { it ->
             var link =
                 it.nextElementSibling()?.select("a:contains($aTag)")?.attr("href")
@@ -3143,59 +3212,58 @@ object CineStreamExtractors : CineStreamProvider() {
         serverList?.servers?.forEach {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
-            loadSourceNameExtractor("PrimeWire${if(it.fileName.isNullOrEmpty()) "" else " (${it.fileName}) "}", jsonObject.optString("link",""),PrimeSrcApi, subtitleCallback, callback,null,it.fileSize?:"")
+            loadSourceNameExtractor("""PrimeWire${if(it.fileName.isNullOrEmpty()) "" else " (${it.fileName}) "}""", jsonObject.optString("link",""),PrimeSrcApi, subtitleCallback, callback,null,it.fileSize?:"")
         }
 
     }
 
-    // only for movies
-    suspend fun invokeMp4Moviez(
-        title: String?,
-        season: Int?,
-        episode: Int?,
-        year: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        if (season == null) {
-            val doc = app.get("$mp4MoviezAPI/search/$title.html", allowRedirects = true, timeout = 30).document
-            val searchResponse = doc.select(".fl")
-            searchResponse.forEach {
-                val url = mp4MoviezAPI + it.select("a").attr("href")
-                val name = it.select("img").attr("alt")
-                val doc = app.get(url, allowRedirects = true, timeout = 30).document
-                val link = mp4MoviezAPI + doc.select("div[style=\"text-align:left;\"] a").attr("href")
-                if(name.contains(title.toString()) == true && name.contains(year.toString()))
-                {
-                    val cleanName =  name.replace("download","",true).replace("full","",true).replace("movie","",true).trim()
-                    val doc = app.get(link).document
-                    val links = doc.select("div[style=\"text-align:left;\"]")
-                    links.forEach { item ->
-                        val link = item.select("a").attr("href")
-                        if (!link.contains("links4mad.online")) {
-                            callback.invoke(
-                                newExtractorLink(
-                                    "Mp4Moviez [${cleanName}]",
-                                    "Mp4Moviez [${cleanName}]",
-                                    url = link,
-                                ) {
-                                    quality = getVideoQuality(link)
-                                }
-                            )
-                        } else if (link.contains("links4mad.online")) {
-                            val shortLinkUrl = item.select("a").attr("href")
-                            val sDoc = app.post(shortLinkUrl).document
-                            val links1 = sDoc.select(".col-sm-8.col-sm-offset-2.well.view-well a")
-                            links1.forEach {
-                                loadExtractor(it.attr("href"), subtitleCallback, callback)
-                            }
-                        }
-                    }
-                }
-            }
+    // suspend fun invokeMp4Moviez(
+    //     title: String?,
+    //     season: Int?,
+    //     episode: Int?,
+    //     year: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     if (season == null) {
+    //         val doc = app.get("$mp4MoviezAPI/search/$title.html", allowRedirects = true, timeout = 30).document
+    //         val searchResponse = doc.select(".fl")
+    //         searchResponse.forEach {
+    //             val url = mp4MoviezAPI + it.select("a").attr("href")
+    //             val name = it.select("img").attr("alt")
+    //             val doc = app.get(url, allowRedirects = true, timeout = 30).document
+    //             val link = mp4MoviezAPI + doc.select("div[style=\"text-align:left;\"] a").attr("href")
+    //             if(name.contains(title.toString()) == true && name.contains(year.toString()))
+    //             {
+    //                 val cleanName =  name.replace("download","",true).replace("full","",true).replace("movie","",true).trim()
+    //                 val doc = app.get(link).document
+    //                 val links = doc.select("div[style=\"text-align:left;\"]")
+    //                 links.forEach { item ->
+    //                     val link = item.select("a").attr("href")
+    //                     if (!link.contains("links4mad.online")) {
+    //                         callback.invoke(
+    //                             newExtractorLink(
+    //                                 "Mp4Moviez [${cleanName}]",
+    //                                 "Mp4Moviez [${cleanName}]",
+    //                                 url = link,
+    //                             ) {
+    //                                 quality = getVideoQuality(link)
+    //                             }
+    //                         )
+    //                     } else if (link.contains("links4mad.online")) {
+    //                         val shortLinkUrl = item.select("a").attr("href")
+    //                         val sDoc = app.post(shortLinkUrl).document
+    //                         val links1 = sDoc.select(".col-sm-8.col-sm-offset-2.well.view-well a")
+    //                         links1.forEach {
+    //                             loadExtractor(it.attr("href"), subtitleCallback, callback)
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
 
-        }
-    }
+    //     }
+    // }
 
     // For rare movies
     suspend fun invokeFilm1k(
