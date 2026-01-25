@@ -189,15 +189,19 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.data()
             ?: return
 
-        val playerJson = base64Decode(
-            scriptData.substringAfter("atob(\"").substringBefore("\")")
-        ).substringAfter("new Playerjs(").substringBeforeLast(");")
+        val playerJson = JSONObject(
+            base64Decode(
+                scriptData.substringAfter("atob(\"").substringBefore("\")")
+            ).substringAfter("new Playerjs(").substringBeforeLast(");")
+        )
+
+        val fileArray = JSONArray(playerJson.getString("file"))
 
         callback.invoke(
             newExtractorLink(
                 "Cinemacity",
                 "Cinemacity",
-                playerJson.toString()
+                fileArray.toString()
             )
         )
     }
@@ -793,6 +797,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$mappleAPI/",
+            "Content-Type" to "application/json"
         )
 
         sources.amap { source ->
@@ -807,13 +812,23 @@ object CineStreamExtractors : CineStreamProvider() {
                     }
                 ]
             """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+
+            val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
 
             val json = app.post(
                 url,
                 requestBody = requestBody,
                 headers = headers
             ).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "json $source",
+                    "json $source",
+                    json,
+                )
+            )
+
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
 
