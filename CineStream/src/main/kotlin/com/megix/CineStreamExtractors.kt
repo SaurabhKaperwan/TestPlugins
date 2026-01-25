@@ -165,56 +165,6 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeRtally(
-        title: String? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-
-        fun getStreamUrl(
-            id: String,
-            service: String
-        ): String? {
-            if(service == "vidhide") return "https://vidhideplus.com/v/$id"
-            else if(service == "lulustream") return "https://lulustream.com/e/$id"
-            else if(service == "filemoon") return "https://filemoon.sx/e/$id"
-            else if(service == "streamwish") return "https://playerwish.com/e/$id"
-            else if(service == "strmup") return "https://strmup.cc/$id"
-            else return null
-        }
-
-        if(season != null) return
-
-        val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
-        val url = "$rtallyAPI/post/$slugTitle"
-        val doc = app.get(url).document
-
-        if(season == null) {
-            val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
-
-            linkPattern.findAll(doc.toString()).forEach { match ->
-                val quality = match.groupValues[1]
-                val durl = match.groupValues[2]
-
-                loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
-            }
-
-            val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
-
-            streamPattern.findAll(doc.toString()).forEach { match ->
-                val service = match.groupValues[1]
-                val id = match.groupValues[2]
-
-                if (id != "null") {
-                    val eurl = getStreamUrl(id, service) ?: return@forEach
-                    loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
-                }
-            }
-        }
-    }
-
     suspend fun invokeCinemacity(
         imdbId: String? = null,
         season: Int? = null,
@@ -239,11 +189,15 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.data()
             ?: return
 
+        val playerJson = base64Decode(
+            scriptData.substringAfter("atob(\"").substringBefore("\")")
+        ).substringAfter("new Playerjs(").substringBeforeLast(");")
+
         callback.invoke(
             newExtractorLink(
                 "Cinemacity",
                 "Cinemacity",
-                scriptData.toString()
+                playerJson.toString()
             )
         )
     }
@@ -387,6 +341,56 @@ object CineStreamExtractors : CineStreamProvider() {
                 m3u8,
                 "$xpassAPI/",
             ).forEach(callback)
+        }
+    }
+
+    suspend fun invokeRtally(
+        title: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        fun getStreamUrl(
+            id: String,
+            service: String
+        ): String? {
+            if(service == "vidhide") return "https://vidhideplus.com/v/$id"
+            else if(service == "lulustream") return "https://lulustream.com/e/$id"
+            else if(service == "filemoon") return "https://filemoon.sx/e/$id"
+            else if(service == "streamwish") return "https://playerwish.com/e/$id"
+            else if(service == "strmup") return "https://strmup.cc/$id"
+            else return null
+        }
+
+        if(season != null) return
+
+        val slugTitle = if(season == null) title.createSlug() else "${title.createSlug()}-season-$season"
+        val url = "$rtallyAPI/post/$slugTitle"
+        val doc = app.get(url).document
+
+        if(season == null) {
+            val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
+
+            linkPattern.findAll(doc.toString()).forEach { match ->
+                val quality = match.groupValues[1]
+                val durl = match.groupValues[2]
+
+                loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
+            }
+
+            val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
+
+            streamPattern.findAll(doc.toString()).forEach { match ->
+                val service = match.groupValues[1]
+                val id = match.groupValues[2]
+
+                if (id != "null") {
+                    val eurl = getStreamUrl(id, service) ?: return@forEach
+                    loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
+                }
+            }
         }
     }
 
@@ -761,11 +765,6 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         callback: (ExtractorLink) -> Unit
     ) {
-        val text = app.get("$multiDecryptAPI/enc-mapple").text
-        val jsonObj = JSONObject(text)
-        val sessionId = jsonObj.getJSONObject("result").getString("sessionId")
-        val nextAction = jsonObj.getJSONObject("result").getString("nextAction")
-
         var mediaType = ""
         var tv_slug = ""
         var url = ""
@@ -794,7 +793,6 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
             "Connection" to "keep-alive",
             "Referer" to "$mappleAPI/",
-            "Next-Action" to nextAction
         )
 
         sources.amap { source ->
@@ -805,8 +803,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         "mediaId": "$tmdbId",
                         "mediaType": "$mediaType",
                         "tv_slug": "$tv_slug",
-                        "source": "$source",
-                        "sessionId": "$sessionId"
+                        "source": "$source"
                     }
                 ]
             """.trimIndent()
@@ -817,7 +814,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 requestBody = requestBody,
                 headers = headers
             ).text
-
             val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
             val video_link =  regex.find(json)?.groupValues?.get(1)
 
