@@ -40,6 +40,7 @@ open class CineStreamProvider : MainAPI() {
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
         const val MostraguardaAPI = "https://mostraguarda.stream"
         const val CONSUMET_API = BuildConfig.CONSUMET_API
+        const val CC_COOKIE = BuildConfig.CC_COOKIE
         const val animepaheAPI = "https://animepahe.si"
         const val allmovielandAPI = "https://allmovieland.io"
         const val torrentioAPI = "https://torrentio.strem.fun"
@@ -86,6 +87,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidstackBaseAPI = "https://smashyplayer.top"
         const val notorrentAPI = "https://addon-osvh.onrender.com"
         const val xpassAPI = "https://play.xpass.top"
+        const val cinemacityAPI = "https://cinemacity.cc"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
