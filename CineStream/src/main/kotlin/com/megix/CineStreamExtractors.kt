@@ -218,7 +218,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     files,
                     INFER_TYPE
                 ) {
-                    referer = pageUrl
+                    referer = movieUrl
                     quality = extractQuality(files)
                 }
             )
