@@ -879,24 +879,44 @@ suspend fun fetchTmdbLogoUrl(
 
 suspend fun filepressExtractor(
     source: String,
-    url: String,
+    filepressID : String,
     referer: String?,
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ) {
-    val segments = url.split("/")
-    val filepressID = segments.lastOrNull()
-    val filepressBaseUrl = segments.dropLast(2).joinToString("/")
+    val filepressBaseUrl = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString("filepress")
 
-    callback.invoke(
-        newExtractorLink(
-            "Filepress",
-            "Filepress",
-            "$segments $filepressID $filepressBaseUrl",
-        )
-    )
+    if(filepressBaseUrl.isNullOrEmpty()) return
 
     val client = OkHttpClient()
+    val request = Request.Builder()
+        .url("$filepressBaseUrl/api/file/get/$filepressID")
+        .addHeader("Referer", filepressBaseUrl)
+        .get()
+        .build()
+
+    val response = client.newCall(request).execute()
+    val responseBody = response.body?.string() ?: return
+    val json = JSONObject(responseBody)
+    if(json.optBoolean("status") == false) return
+    val data = json.optJSONObject("data")
+
+    val fileName = data?.optString("name") ?: ""
+    val extracted = extractSpecs(fileName)
+    val extractedSpecs = buildExtractedTitle(extracted)
+
+    val size = data?.optString("size")?.toLongOrNull() ?: 0
+
+    val formattedSize = if (size < 1024L * 1024 * 1024) {
+        val sizeInMB = size.toDouble() / (1024 * 1024)
+        "%.2f MB".format(sizeInMB)
+    } else {
+        val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
+        "%.2f GB".format(sizeInGB)
+    }
+
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     val payload1 = JSONObject().apply {
@@ -940,9 +960,11 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "$source[Filepress]",
+                "$source[Filepress] $extractedSpecs[$formattedSize]",
                 finalLink,
-            )
+            ) {
+                this.quality = getIndexQuality(fileName)
+            }
         )
     }
 }
@@ -1101,9 +1123,15 @@ suspend fun getProtonStream(
                 )
             )
 
-            JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
+            val ppd = JSONObject(idRes).getJSONObject("ppd")
+
+            ppd?.getJSONObject("gofile.io")?.optString("link")?.let {
                 val source = it.replace("\\/", "/")
                 gofileExtractor("Protonmovies", source, "", subtitleCallback, callback)
+            }
+
+            ppd?.getJSONObject("filepress")?.optString("link")?.let {
+                filepressExtractor("Protonmovies", it, "", subtitleCallback, callback)
             }
         }
     }
