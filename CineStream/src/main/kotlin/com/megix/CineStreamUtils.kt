@@ -953,17 +953,8 @@ suspend fun filepressExtractor(
 
         val response2 = client.newCall(request2).execute()
         val responseBody2 = response2.body?.string() ?: return
-
-        callback.invoke(
-        newExtractorLink(
-            "responseBody2",
-            "responseBody2",
-            responseBody2.toString()
-        )
-    )
-
         val json2 = JSONObject(responseBody2)
-        val finalLink = json2.optJSONObject("data")?.optString(0) ?: return
+        val finalLink = json2.optJSONArray("data")?.optString(0) ?: return
 
         callback.invoke(
             newExtractorLink(
