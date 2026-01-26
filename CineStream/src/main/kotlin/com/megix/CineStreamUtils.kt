@@ -900,6 +900,15 @@ suspend fun filepressExtractor(
     val response = client.newCall(request).execute()
     val responseBody = response.body?.string() ?: return
     val json = JSONObject(responseBody)
+
+    callback.invoke(
+        newExtractorLink(
+            "json",
+            "json",
+            json.toString()
+        )
+    )
+
     if(json.optBoolean("status") == false) return
     val data = json.optJSONObject("data")
 
@@ -933,6 +942,15 @@ suspend fun filepressExtractor(
 
     val response1 = client.newCall(request1).execute()
     val responseBody1 = response1.body?.string() ?: return
+
+    callback.invoke(
+        newExtractorLink(
+            "responseBody1",
+            "responseBody1",
+            responseBody1.toString()
+        )
+    )
+
     val json1 = JSONObject(responseBody1)
     val status = json1.optBoolean("status")
 
@@ -952,6 +970,14 @@ suspend fun filepressExtractor(
 
         val response2 = client.newCall(request2).execute()
         val responseBody2 = response2.body?.string() ?: return
+
+        callback.invoke(
+        newExtractorLink(
+            "responseBody2",
+            "responseBody2",
+            responseBody2.toString()
+        )
+    )
 
         val json2 = JSONObject(responseBody2)
         val dataArray = json2.optJSONObject("data")?.optJSONArray("data")
@@ -1114,14 +1140,6 @@ suspend fun getProtonStream(
                 "$protonmoviesAPI/tmp/$idData",
                 headers = headers
             ).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "idRes",
-                    "idRes",
-                    idRes.toString()
-                )
-            )
 
             val ppd = JSONObject(idRes).getJSONObject("ppd")
 
