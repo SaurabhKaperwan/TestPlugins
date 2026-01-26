@@ -50,7 +50,6 @@ import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 
-
 val M3U8_HEADERS = mapOf(
     "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
     "Accept" to "*/*",
@@ -878,6 +877,76 @@ suspend fun fetchTmdbLogoUrl(
     return logoUrlAt(0)
 }
 
+suspend fun filepressExtractor(
+    source: String,
+    url: String,
+    referer: String?,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+) {
+    val segments = url.split("/")
+    val filepressID = segments.lastOrNull()
+    val filepressBaseUrl = segments.dropLast(2).joinToString("/")
+
+    callback.invoke(
+        newExtractorLink(
+            "Filepress",
+            "Filepress",
+            "$segments $filepressID $filepressBaseUrl",
+        )
+    )
+
+    val client = OkHttpClient()
+    val jsonMediaType = "application/json; charset=utf-8".toMediaType()
+
+    val payload1 = JSONObject().apply {
+        put("id", filepressID)
+        put("method", "indexDownlaod")
+        put("captchaValue", JSONObject.NULL)
+    }
+
+    val request1 = Request.Builder()
+        .url("$filepressBaseUrl/api/file/downlaod/")
+        .post(payload1.toString().toRequestBody(jsonMediaType))
+        .addHeader("Referer", filepressBaseUrl)
+        .build()
+
+    val response1 = client.newCall(request1).execute()
+    val responseBody1 = response1.body?.string() ?: return
+    val json1 = JSONObject(responseBody1)
+    val status = json1.optBoolean("status")
+
+    if (status) {
+        val filepressToken = json1.optJSONObject("data")?.toString() ?: json1.optString("data")
+        val payload2 = JSONObject().apply {
+            put("id", filepressToken)
+            put("method", "indexDownlaod")
+            put("captchaValue", JSONObject.NULL)
+        }
+
+        val request2 = Request.Builder()
+            .url("$filepressBaseUrl/api/file/downlaod2/")
+            .post(payload2.toString().toRequestBody(jsonMediaType))
+            .addHeader("Referer", filepressBaseUrl)
+            .build()
+
+        val response2 = client.newCall(request2).execute()
+        val responseBody2 = response2.body?.string() ?: return
+
+        val json2 = JSONObject(responseBody2)
+        val dataArray = json2.optJSONObject("data")?.optJSONArray("data")
+        val finalLink = json2.optJSONObject("data")?.optJSONArray("data")?.optString(0) ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "Filepress",
+                "$source[Filepress]",
+                finalLink,
+            )
+        )
+    }
+}
+
 suspend fun gofileExtractor(
     source: String,
     url: String,
@@ -1023,6 +1092,14 @@ suspend fun getProtonStream(
                 "$protonmoviesAPI/tmp/$idData",
                 headers = headers
             ).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "idRes",
+                    "idRes",
+                    idRes.toString()
+                )
+            )
 
             JSONObject(idRes).getJSONObject("ppd")?.getJSONObject("gofile.io")?.optString("link")?.let {
                 val source = it.replace("\\/", "/")

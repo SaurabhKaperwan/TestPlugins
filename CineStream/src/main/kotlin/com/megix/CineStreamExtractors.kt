@@ -632,7 +632,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "[$sourceName] " + name,
+                    "[$sourceName] " + " $title",
                     streamUrl,
                     type,
                 ) {
@@ -2398,11 +2398,21 @@ object CineStreamExtractors : CineStreamProvider() {
          for (it in sorted) {
             val title = it.title ?: ""
             val s = it.seeders ?: 0
+            if (s < 20) continue
             val l = it.leechers ?: 0
             val magnet = it.magnetUri ?: ""
             val size = it.totalSize?.toLongOrNull() ?: 0L
             val sizeStr = formatSize(size)
-            val type = if(title.contains("Dual Audio", ignoreCase = true)) "[DUB]" else "[SUB]"
+            val type = if(
+                title.contains("Dual", ignoreCase = true)
+                || title.contains("DUB", ignoreCase = true)
+            ) {
+                "DUB"
+            }
+            else {
+                "SUB"
+            }
+
             val displayTitle = "[Animetosho[$type]🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(

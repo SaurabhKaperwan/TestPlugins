@@ -360,7 +360,7 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
-                // this.addKitsuId(kitsuId?.toIntOrNull())
+                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
                 this.addTrailer(trailerLink)
             }
         } else {
@@ -416,7 +416,7 @@ class CineSimklProvider: MainAPI() {
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
-                // this.addKitsuId(kitsuId?.toIntOrNull())
+                // try { addKitsuId(kitsuId) } catch(_:Throwable){}
                 this.addTrailer(trailerLink)
             }
         }
