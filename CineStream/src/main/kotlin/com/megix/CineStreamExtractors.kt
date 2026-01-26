@@ -141,6 +141,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -196,15 +197,74 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val fileArray = JSONArray(playerJson.getString("file"))
+
+        fun extractQuality(url: String): Int {
+            return when {
+                url.contains("2160p") -> Qualities.P2160.value
+                url.contains("1440p") -> Qualities.P1440.value
+                url.contains("1080p") -> Qualities.P1080.value
+                url.contains("720p") -> Qualities.P720.value
+                url.contains("480p") -> Qualities.P480.value
+                url.contains("360p") -> Qualities.P360.value
+                else -> Qualities.Unknown.value
+            }
+        }
+
+        suspend fun emitExtractorLinks(files: String) {
+            callback.invoke(
+                newExtractorLink(
+                    "CineCity",
+                    "CineCity",
+                    files,
+                    INFER_TYPE
+                ) {
+                    referer = pageUrl
+                    quality = extractQuality(files)
+                }
+            )
+        }
+
         val first = fileArray.getJSONObject(0)
 
-        callback.invoke(
-            newExtractorLink(
-                "Cinemacity",
-                "Cinemacity",
-                first.toString()
+        // MOVIE
+        if (!first.has("folder")) {
+            emitExtractorLinks(
+                files = first.getString("file")
             )
-        )
+            return
+        }
+
+        // SERIES
+        for (i in 0 until fileArray.length()) {
+            val seasonJson = fileArray.getJSONObject(i)
+
+            val seasonNumber = Regex("Season\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                .find(seasonJson.optString("title"))
+                ?.groupValues
+                ?.get(1)
+                ?.toIntOrNull()
+                ?: continue
+
+            if (season != null && seasonNumber != season) continue
+
+            val episodes = seasonJson.getJSONArray("folder")
+            for (j in 0 until episodes.length()) {
+                val epJson = episodes.getJSONObject(j)
+
+                val episodeNumber = Regex("Episode\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                    .find(epJson.optString("title"))
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toIntOrNull()
+                    ?: continue
+
+                if (episode != null && episodeNumber != episode) continue
+
+                emitExtractorLinks(
+                    files = epJson.getString("file")
+                )
+            }
+        }
     }
 
     suspend fun invokeVidstack(
@@ -2341,13 +2401,13 @@ object CineStreamExtractors : CineStreamProvider() {
             val l = it.leechers ?: 0
             val magnet = it.magnetUri ?: ""
             val size = it.totalSize?.toLongOrNull() ?: 0L
-
             val sizeStr = formatSize(size)
-            val displayTitle = "[Animetosho🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
+            val type = if(title.contains("Dual Audio", ignoreCase = true)) "[DUB]" else "[SUB]"
+            val displayTitle = "[Animetosho[$type]🧲] $title | ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
                 newExtractorLink(
-                    "Animetosho🧲",
+                    "Animetosho[$type]🧲",
                     displayTitle,
                     magnet,
                     ExtractorLinkType.MAGNET,
