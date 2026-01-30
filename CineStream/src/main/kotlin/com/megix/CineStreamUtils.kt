@@ -961,8 +961,10 @@ suspend fun filepressExtractor(
                 "Filepress",
                 "$source[Filepress] $extractedSpecs[$formattedSize]",
                 finalLink,
+                ExtractorLinkType.VIDEO
             ) {
                 this.quality = getIndexQuality(fileName)
+                this.referer = filepressBaseUrl
             }
         )
     }
@@ -1023,6 +1025,7 @@ suspend fun gofileExtractor(
                 "Gofile",
                 "$source[Gofile] $extractedSpecs[$formattedSize]",
                 link,
+                ExtractorLinkType.VIDEO
             ) {
                 this.quality = getIndexQuality(fileName)
                 this.headers = mapOf(
@@ -1278,7 +1281,6 @@ fun getGojoServers(jsonString: String): List<Pair<String, Boolean>> {
 
     return result
 }
-
 
 suspend fun getGojoStreams(
     json: String,

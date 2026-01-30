@@ -60,6 +60,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
+            { if(!res.isAnime) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
             { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -111,6 +112,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Leviathan", leviathanAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Cine", base64Decode(cineAPI), res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             { if (!res.isBollywood && !res.isAnime) invokeMoviesflix("Moviesflix", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -137,10 +141,13 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
+            { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
@@ -164,6 +171,80 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
+    }
+
+    suspend fun invokeDramafull(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val jsonString = app.get("$dramafullAPI/api/live-search/$title").text
+        val searchTypeId = if(season != null) 1 else 2
+        val searchTitle = if(season == null) {
+            "$title ($year)"
+        } else if(season == 1) {
+            "$title"
+        } else {
+            "$title Season $season"
+        }
+
+        val rootObject = JSONObject(jsonString)
+        val dataArray = rootObject.getJSONArray("data")
+        var matchedObject: JSONObject? = null
+
+        for (i in 0 until dataArray.length()) {
+            val item = dataArray.getJSONObject(i)
+            val name = item.getString("name")
+            val typeId = item.getInt("type_id")
+
+            if (name.equals(searchTitle, ignoreCase = true) && typeId == searchTypeId) {
+                matchedObject = item
+                break
+            }
+        }
+
+        if(matchedObject == null) return
+
+        val document = app.get("$dramafullAPI/film/${matchedObject.getString("slug")}").document
+
+        val href = if(season != null) {
+            document
+            .selectFirst("div.episode-item a[title*='Episode $episode']")
+            ?.attr("href")
+        } else {
+            document
+            .selectFirst("div.last-episode a")
+            ?.attr("href")
+        }
+
+        val doc = app.get(href).document
+        val script = doc.select("script:containsData(signedUrl)").firstOrNull()?.toString() ?: return false
+        val signedUrl = Regex("""window\.signedUrl\s*=\s*"(.+?)\"""").find(script)?.groupValues?.get(1)?.replace("\\/","/") ?: return false
+        val res = app.get(signedUrl).text
+        val resJson = JSONObject(res)
+        val videoSource = resJson.optJSONObject("video_source") ?: return false
+        val qualities = videoSource.keys().asSequence().toList()
+            .sortedByDescending { it.toIntOrNull() ?: 0 }
+        val bestQualityKey = qualities.firstOrNull() ?: return false
+        val bestQualityUrl = videoSource.optString(bestQualityKey)
+
+        callback(
+            newExtractorLink(
+                "Dramafull",
+                "Dramafull",
+                bestQualityUrl
+            )
+        )
+
+        val subJson = resJson.optJSONObject("sub")
+        subJson?.optJSONArray(bestQualityKey)?.let { array ->
+            for (i in 0 until array.length()) {
+                subtitleCallback(newSubtitleFile("English", dramafullAPI + array.getString(i)))
+            }
+        }
     }
 
     suspend fun invokeCinemacity(
@@ -3924,10 +4005,11 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
+        val titleSlug = title?.replace(" ", ".")
         val url = if (season == null) {
-            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title $year", "UTF-8")}&page=1"""
+            """$bollywoodAPI/files/search?q=${titleSlug}&page=1"""
         } else {
-            """$bollywoodAPI/files/search?q=${URLEncoder.encode("$title  S${seasonSlug}E${episodeSlug}", "UTF-8")}&page=1"""
+            """$bollywoodAPI/files/search?q=${titleSlug}.S${seasonSlug}E${episodeSlug}&page=1"""
         }
 
         val response = app.get(
