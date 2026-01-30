@@ -221,14 +221,14 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val doc = app.get(href ?: return).document
-        val script = doc.select("script:containsData(signedUrl)").firstOrNull()?.toString() ?: return false
-        val signedUrl = Regex("""window\.signedUrl\s*=\s*"(.+?)\"""").find(script)?.groupValues?.get(1)?.replace("\\/","/") ?: return false
+        val script = doc.select("script:containsData(signedUrl)").firstOrNull()?.toString() ?: return
+        val signedUrl = Regex("""window\.signedUrl\s*=\s*"(.+?)\"""").find(script)?.groupValues?.get(1)?.replace("\\/","/") ?: return
         val res = app.get(signedUrl).text
         val resJson = JSONObject(res)
-        val videoSource = resJson.optJSONObject("video_source") ?: return false
+        val videoSource = resJson.optJSONObject("video_source") ?: return
         val qualities = videoSource.keys().asSequence().toList()
             .sortedByDescending { it.toIntOrNull() ?: 0 }
-        val bestQualityKey = qualities.firstOrNull() ?: return false
+        val bestQualityKey = qualities.firstOrNull() ?: return
         val bestQualityUrl = videoSource.optString(bestQualityKey)
 
         callback(
