@@ -220,7 +220,7 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.attr("href")
         }
 
-        val doc = app.get(href).document
+        val doc = app.get(href ?: return).document
         val script = doc.select("script:containsData(signedUrl)").firstOrNull()?.toString() ?: return false
         val signedUrl = Regex("""window\.signedUrl\s*=\s*"(.+?)\"""").find(script)?.groupValues?.get(1)?.replace("\\/","/") ?: return false
         val res = app.get(signedUrl).text
