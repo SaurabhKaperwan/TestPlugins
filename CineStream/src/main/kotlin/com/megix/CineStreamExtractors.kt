@@ -186,7 +186,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val searchTitle = if(season == null) {
             "$title ($year)"
         } else if(season == 1) {
-            "$title"
+            "$title ($year)"
         } else {
             "$title Season $season"
         }
@@ -673,6 +673,15 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val json = app.get(url).text
+
+        callback.invoke(
+            newExtractorLink(
+                sourceName,
+                sourceName,
+                json.toString(),
+            )
+        )
+
         val gson = Gson()
         val data = gson.fromJson(json, StreamifyResponse::class.java)
 
@@ -682,7 +691,8 @@ object CineStreamExtractors : CineStreamProvider() {
             val type = if(
                 title.contains("hls") ||
                 title.contains("m3u8") ||
-                name.contains("Vixsrc")
+                name.contains("Vixsrc") ||
+                sourceName.contains("Castle")
             ) {
                 ExtractorLinkType.M3U8
             } else {
