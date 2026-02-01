@@ -217,7 +217,7 @@ class JioHotstarProvider : MainAPI() {
         )
 
         val playlist = app.get(
-            "$mainUrl/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/",
             cookies = cookies
@@ -239,6 +239,15 @@ class JioHotstarProvider : MainAPI() {
             }
 
             item.tracks?.filter { it.kind == "captions" }?.map { track ->
+
+                callback.invoke(
+                    newExtractorLink(
+                        track.label.toString(),
+                        track.file.toString(),
+                        httpsify(track.file.toString().replace("\\", "")),
+                    )
+                )
+
                 subtitleCallback.invoke(
                     newSubtitleFile(
                         track.label.toString(),
