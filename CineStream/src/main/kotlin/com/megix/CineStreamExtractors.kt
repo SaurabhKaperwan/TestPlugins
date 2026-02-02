@@ -982,7 +982,25 @@ object CineStreamExtractors : CineStreamProvider() {
             ).text
 
             val streamsData = JSONObject(streamsDataText)
+
+            callback.invoke(
+                newExtractorLink(
+                    "streamsData",
+                    "streamsData",
+                    streamsData.toString()
+                )
+            )
+
             val data = streamsData.getJSONObject("data")
+
+            callback.invoke(
+                newExtractorLink(
+                    "data",
+                    "data",
+                    data.toString()
+                )
+            )
+
             val streamUrl = data.getString("stream_url")
 
             callback.invoke(
