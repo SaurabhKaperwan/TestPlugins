@@ -75,7 +75,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            // { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -156,6 +156,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
             { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -907,76 +908,101 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeMapple(
-    //     tmdbId: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit
-    // ) {
-    //     var mediaType = ""
-    //     var tv_slug = ""
-    //     var url = ""
+    suspend fun invokeMapple(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        var mediaType = ""
+        var tv_slug = ""
+        var url = ""
 
-    //     if(season == null) {
-    //       mediaType =  "movie"
-    //       url = "$mappleAPI/watch/movie/$tmdbId"
-    //     } else {
-    //         mediaType = "tv"
-    //         tv_slug = "$season-$episode"
-    //         url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
-    //     }
+        if(season == null) {
+          mediaType =  "movie"
+          url = "$mappleAPI/watch/movie/$tmdbId"
+        } else {
+            mediaType = "tv"
+            tv_slug = "$season-$episode"
+            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+        }
 
-    //     val sources = listOf(
-    //         "mapple",
-    //         "sakura",
-    //         "oak",
-    //         "willow",
-    //         "cherry",
-    //         "pines",
-    //         "magnolia",
-    //         "sequoia"
-    //     )
+        val headers = mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+            "Referer" to "$mappleAPI/",
+        )
 
-    //     val headers = mapOf(
-    //         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    //         "Connection" to "keep-alive",
-    //         "Referer" to "$mappleAPI/",
-    //         "Content-Type" to "application/json"
-    //     )
+        val text = app.get(url, headers = headers).text
+        val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
+        val match = regex.find(text)
+        val token = match?.groupValues?.get(1) ?: return
 
-    //     sources.amap { source ->
+        val sources = listOf(
+            "mapple",
+            "sakura",
+            "oak",
+            "willow",
+            "cherry",
+            "pines",
+            "magnolia",
+            "sequoia"
+        )
 
-    //         val jsonBody = """
-    //             [
-    //                 {
-    //                     "mediaId": "$tmdbId",
-    //                     "mediaType": "$mediaType",
-    //                     "tv_slug": "$tv_slug",
-    //                     "source": "$source"
-    //                 }
-    //             ]
-    //         """.trimIndent()
+        sources.amap { source ->
 
-    //         val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
+            val jsonBody = """
+                {
+                    "data": {
+                        "mediaId": $tmdbId,
+                        "mediaType": "$mediaType",
+                        "tv_slug": "$tv_slug",
+                        "source": "$source"
+                    },
+                    "endpoint": "stream-encrypted"
+                }
+            """.trimIndent()
 
-    //         val json = app.post(
-    //             url,
-    //             requestBody = requestBody,
-    //             headers = headers
-    //         ).text
 
-    //         val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
-    //         val video_link =  regex.find(json)?.groupValues?.get(1)
+            val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
 
-    //         if(video_link != null) {
-    //             M3u8Helper.generateM3u8(
-    //                 "Mapple [${source.uppercase()}]",
-    //                 video_link,
-    //                 "$mappleAPI/",
-    //             ).forEach(callback)
-    //         }
-    //     }
-    // }
+            val encryptResText = app.post(
+                "$mappleAPI/api/encrypt",
+                requestBody = requestBody,
+                headers = headers
+            ).text
+
+            val encryptRes = JSONObject(encryptResText)
+            val streamPath = encryptRes.getString("url")
+
+            val finalUrl = "${mappleAPI}${streamPath}&requestToken=$token"
+
+            val streamsDataText = app.get(
+                finalUrl,
+                headers = headers
+            ).text
+
+            val streamsData = JSONObject(streamsDataText)
+
+            callback.invoke(
+                newExtractorLink(
+                    "mapple",
+                    "mapple",
+                     streamsData.toString()
+                )
+            )
+
+            // val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
+            // val video_link =  regex.find(json)?.groupValues?.get(1)
+
+            // if(video_link != null) {
+            //     M3u8Helper.generateM3u8(
+            //         "Mapple [${source.uppercase()}]",
+            //         video_link,
+            //         "$mappleAPI/",
+            //     ).forEach(callback)
+            // }
+        }
+    }
 
     suspend fun invokeHexa(
         tmdbId: Int? = null,
@@ -3140,7 +3166,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if (season == null) "p a.maxbutton" else "h3 a:matches(Episode $episode)"
 
             if (link.isNotEmpty()) {
-                val source = app.get(link).document.selectFirst(selector)?.attr("href")
+                val source = app.get(link).document.selectFirst(selector)?.attr("href") ?: return@amap
                 val bypassedLink = bypassHrefli(source).toString()
                 loadSourceNameExtractor("Moviesmod", bypassedLink, "", subtitleCallback, callback)
             }
@@ -4212,7 +4238,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             }
 
-            val subtitles = sourceData.optJSONArray("captions") return@forEach
+            val subtitles = sourceData.optJSONArray("captions") ?: return@forEach
 
             for (i in 0 until subtitles.length()) {
                 val s = subtitles.getJSONObject(i)
