@@ -985,13 +985,25 @@ object CineStreamExtractors : CineStreamProvider() {
             val data = streamsData.getJSONObject("data")
             val streamUrl = data.getString("stream_url")
 
-            if(streamUrl.isNotEmpty()) {
-                M3u8Helper.generateM3u8(
+            callback.invoke(
+                newExtractorLink(
+                    "Mapple",
                     "Mapple [${source.uppercase()}]",
                     streamUrl,
-                    "$mappleAPI/",
-                ).forEach(callback)
-            }
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.quality = 1080
+                    this.headers = headers
+                }
+            )
+
+            // if(streamUrl.isNotEmpty()) {
+            //     M3u8Helper.generateM3u8(
+            //         "Mapple [${source.uppercase()}]",
+            //         streamUrl,
+            //         "$mappleAPI/",
+            //     ).forEach(callback)
+            // }
         }
     }
 
