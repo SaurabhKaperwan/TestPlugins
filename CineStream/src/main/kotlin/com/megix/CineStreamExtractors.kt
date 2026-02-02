@@ -938,106 +938,70 @@ object CineStreamExtractors : CineStreamProvider() {
         val token = match?.groupValues?.get(1) ?: return
 
         val sources = listOf(
-            "mapple",
-            "sakura",
-            "oak",
-            "willow",
-            "cherry",
-            "pines",
-            "magnolia",
-            "sequoia"
+            "mapple", "sakura", "oak", "willow",
+            "cherry", "pines", "magnolia", "sequoia"
         )
 
-        sources.map { source ->
+        sources.apmap { source ->
+            try {
+                val jsonBody = """
+                    {
+                        "data": {
+                            "mediaId": ${tmdbId},
+                            "mediaType": "$mediaType",
+                            "tv_slug": "$tv_slug",
+                            "source": "$source"
+                        },
+                        "endpoint": "stream-encrypted"
+                    }
+                """.trimIndent()
 
-            val jsonBody = """
-                {
-                    "data": {
-                        "mediaId": $tmdbId,
-                        "mediaType": "$mediaType",
-                        "tv_slug": "$tv_slug",
-                        "source": "$source"
-                    },
-                    "endpoint": "stream-encrypted"
+                val encryptResText = app.post(
+                    "$mappleAPI/api/encrypt",
+                    json = jsonBody,
+                    headers = headers
+                ).text
+
+                val encryptRes = JSONObject(encryptResText)
+                val streamPath = encryptRes.getString("url")
+                val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
+
+                val streamsDataText = app.get(
+                    finalUrl,
+                    headers = headers
+                ).text
+
+                val streamsData = JSONObject(streamsDataText)
+
+                if (streamsData.optBoolean("success")) {
+                    val data = streamsData.getJSONObject("data")
+                    val streamUrl = data.optString("stream_url")
+
+                    if (streamUrl.isNotEmpty()) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "Mapple",
+                                "Mapple [${source.uppercase()}]",
+                                streamUrl,
+                                ExtractorLinkType.M3U8
+                            ) {
+                                this.quality = 1080
+                                this.headers = headers
+                            }
+                        )
+
+                            // Optional: If you want to parse M3U8 for multiple qualities
+                            // M3u8Helper.generateM3u8(
+                            //     "Mapple [${source.uppercase()}]",
+                            //     streamUrl,
+                            //     "$mappleAPI/",
+                            //     headers = headers
+                            // ).forEach(callback)
+                    }
                 }
-            """.trimIndent()
-
-
-            val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
-
-            val encryptResText = app.post(
-                "$mappleAPI/api/encrypt",
-                requestBody = requestBody,
-                headers = headers
-            ).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "encryptResText",
-                    "encryptResText",
-                    encryptResText.toString()
-                )
-            )
-
-            val encryptRes = JSONObject(encryptResText)
-            val streamPath = encryptRes.getString("url")
-
-            val finalUrl = "${mappleAPI}${streamPath}&requestToken=$token"
-
-            callback.invoke(
-                newExtractorLink(
-                    "finalUrl",
-                    "finalUrl",
-                    finalUrl.toString()
-                )
-            )
-
-            val streamsDataText = app.get(
-                finalUrl,
-                headers = headers
-            ).text
-
-            val streamsData = JSONObject(streamsDataText)
-
-            callback.invoke(
-                newExtractorLink(
-                    "streamsData",
-                    "streamsData",
-                    streamsData.toString()
-                )
-            )
-
-            val data = streamsData.getJSONObject("data")
-
-            callback.invoke(
-                newExtractorLink(
-                    "data",
-                    "data",
-                    data.toString()
-                )
-            )
-
-            val streamUrl = data.getString("stream_url")
-
-            callback.invoke(
-                newExtractorLink(
-                    "Mapple",
-                    "Mapple [${source.uppercase()}]",
-                    streamUrl,
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.quality = 1080
-                    this.headers = headers
-                }
-            )
-
-            // if(streamUrl.isNotEmpty()) {
-            //     M3u8Helper.generateM3u8(
-            //         "Mapple [${source.uppercase()}]",
-            //         streamUrl,
-            //         "$mappleAPI/",
-            //     ).forEach(callback)
-            // }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
