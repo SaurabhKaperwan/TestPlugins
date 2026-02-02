@@ -942,7 +942,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "cherry", "pines", "magnolia", "sequoia"
         )
 
-        sources.apmap { source ->
+        sources.map { source ->
             try {
                 val jsonBody = """
                     {
@@ -990,13 +990,13 @@ object CineStreamExtractors : CineStreamProvider() {
                             }
                         )
 
-                            // Optional: If you want to parse M3U8 for multiple qualities
-                            // M3u8Helper.generateM3u8(
-                            //     "Mapple [${source.uppercase()}]",
-                            //     streamUrl,
-                            //     "$mappleAPI/",
-                            //     headers = headers
-                            // ).forEach(callback)
+                        // Optional: If you want to parse M3U8 for multiple qualities
+                        // M3u8Helper.generateM3u8(
+                        //     "Mapple [${source.uppercase()}]",
+                        //     streamUrl,
+                        //     "$mappleAPI/",
+                        //     headers = headers
+                        // ).forEach(callback)
                     }
                 }
             } catch (e: Exception) {
