@@ -218,10 +218,10 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
-            // headers,
+            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=b16a9385bb4d4ff4a4af3bbcbb6f7842::81f926be050d4763593610893cd5e58b::1770042637::ni",
+            headers,
             referer = "$newUrl/",
-            // cookies = cookies
+            cookies = cookies
         ).parsed<PlayList>()
 
         playlist.forEach { item ->
