@@ -146,7 +146,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Sooti", sootiAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeStremioStreams("Castle", base64Decode(castleAPI), res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -982,25 +982,16 @@ object CineStreamExtractors : CineStreamProvider() {
             ).text
 
             val streamsData = JSONObject(streamsDataText)
+            val data = streamsData.getJSONObject("data")
+            val streamUrl = data.getString("stream_url")
 
-            callback.invoke(
-                newExtractorLink(
-                    "mapple",
-                    "mapple",
-                     streamsData.toString()
-                )
-            )
-
-            // val regex = Regex("""\"stream_url"\s*:\s*"([^"]+)\"""")
-            // val video_link =  regex.find(json)?.groupValues?.get(1)
-
-            // if(video_link != null) {
-            //     M3u8Helper.generateM3u8(
-            //         "Mapple [${source.uppercase()}]",
-            //         video_link,
-            //         "$mappleAPI/",
-            //     ).forEach(callback)
-            // }
+            if(streamUrl.isNotEmpty()) {
+                M3u8Helper.generateM3u8(
+                    "Mapple [${source.uppercase()}]",
+                    video_link,
+                    "$mappleAPI/",
+                ).forEach(callback)
+            }
         }
     }
 
@@ -2590,7 +2581,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val entries =
             res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(720p|1080p|2160p))")
                 .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
-        entries?.map {
+        entries.map {
             val href = it.nextElementSibling()?.select("a")?.attr("href")
             val token = href?.substringAfter("id=")
             val encodedurl =
@@ -3550,7 +3541,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val fixTitle = title?.replace(" ", "+")
-        val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(),imdbId= imdbId?.toString() ?: "", seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
+        val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId ?: "", imdbId = imdbId ?: "", seasonId = season ?: "", episodeId = episode ?: "")
         val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,season != null)
         val type = if(season == null) {"movie"}  else {"tv"}
         val sourceUrl = if(season == null) {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
