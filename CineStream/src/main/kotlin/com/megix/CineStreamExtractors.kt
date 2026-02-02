@@ -988,7 +988,7 @@ object CineStreamExtractors : CineStreamProvider() {
             if(streamUrl.isNotEmpty()) {
                 M3u8Helper.generateM3u8(
                     "Mapple [${source.uppercase()}]",
-                    video_link,
+                    streamUrl,
                     "$mappleAPI/",
                 ).forEach(callback)
             }
