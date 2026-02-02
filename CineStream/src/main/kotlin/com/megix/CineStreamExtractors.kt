@@ -948,7 +948,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "sequoia"
         )
 
-        sources.amap { source ->
+        sources.map { source ->
 
             val jsonBody = """
                 {
@@ -971,10 +971,26 @@ object CineStreamExtractors : CineStreamProvider() {
                 headers = headers
             ).text
 
+            callback.invoke(
+                newExtractorLink(
+                    "encryptResText",
+                    "encryptResText",
+                    encryptResText.toString()
+                )
+            )
+
             val encryptRes = JSONObject(encryptResText)
             val streamPath = encryptRes.getString("url")
 
             val finalUrl = "${mappleAPI}${streamPath}&requestToken=$token"
+
+            callback.invoke(
+                newExtractorLink(
+                    "finalUrl",
+                    "finalUrl",
+                    finalUrl.toString()
+                )
+            )
 
             val streamsDataText = app.get(
                 finalUrl,
