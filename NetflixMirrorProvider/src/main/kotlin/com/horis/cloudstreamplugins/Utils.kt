@@ -83,9 +83,9 @@ suspend fun bypass(mainUrl: String): String {
     val (savedCookie, savedTimestamp) = NetflixMirrorStorage.getCookie()
 
     // Return cached cookie if valid (≤15 hours old)
-    // if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
-    //     return savedCookie
-    // }
+    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        return savedCookie
+    }
 
     val newCookie = try {
         var verifyCheck: String
