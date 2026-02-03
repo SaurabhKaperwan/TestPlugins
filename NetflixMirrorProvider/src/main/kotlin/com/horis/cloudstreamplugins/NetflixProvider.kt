@@ -218,9 +218,9 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
         val playlist = app.get(
-            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$newUrl/",
+            referer = "$mainUrl/",
             cookies = cookies
         ).parsed<PlayList>()
 
