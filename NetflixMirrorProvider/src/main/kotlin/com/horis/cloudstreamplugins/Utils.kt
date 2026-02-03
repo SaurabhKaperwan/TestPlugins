@@ -129,7 +129,6 @@ suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: 
 
     val headers2 = mapOf(
         "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding" to "gzip, deflate, br, zstd",
         "Accept-Language" to "en-GB,en;q=0.9",
         "Connection" to "keep-alive",
         "Host" to "net52.cc",
