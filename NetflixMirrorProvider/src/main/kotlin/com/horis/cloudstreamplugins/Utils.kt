@@ -109,10 +109,42 @@ suspend fun bypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
+suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>, callback: (ExtractorLink) -> Unit): String {
     val requestBody = FormBody.Builder().add("id", id).build()
-    val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody).text
+    val headers = mapOf(
+        "X-Requested-With" to "XMLHttpRequest",
+        "Referer" to "$mainUrl/",
+    )
+    val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
+
+    callback.invoke(
+        newExtractorLink(
+            "json",
+            "json",
+            json.toString(),
+        )
+    )
+
     val h = JSONObject(json).getString("h")
-    val token = app.get("$newUrl/play.php?id=$id&$h").document.select("body").attr("data-h")
+    val document = app.get("$newUrl/play.php?id=$id&$h").document
+
+    callback.invoke(
+        newExtractorLink(
+            "document",
+            "document",
+            document.toString(),
+        )
+    )
+
+    val token = document.select("body").attr("data-h")
+
+    callback.invoke(
+        newExtractorLink(
+            "token",
+            "token",
+            token.toString(),
+        )
+    )
+
     return token
 }

@@ -218,7 +218,7 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
 
-        val token = getVideoToken(mainUrl, newUrl, id, cookies)
+        val token = getVideoToken(mainUrl, newUrl, id, cookies, callback)
         val playlist = app.get(
             "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
