@@ -126,7 +126,27 @@ suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: 
     )
 
     val h = JSONObject(json).getString("h")
-    val document = app.get("$newUrl/play.php?id=$id&$h").document
+
+    val headers2 = mapOf(
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding" to "gzip, deflate, br, zstd",
+        "Accept-Language" to "en-GB,en;q=0.9",
+        "Connection" to "keep-alive",
+        "Host" to "net52.cc",
+        "Referer" to "https://net20.cc/",
+        "sec-ch-ua" to "\"Chromium\";v=\"142\", \"Brave\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+        "sec-ch-ua-mobile" to "?0",
+        "sec-ch-ua-platform" to "\"Linux\"",
+        "Sec-Fetch-Dest" to "iframe",
+        "Sec-Fetch-Mode" to "navigate",
+        "Sec-Fetch-Site" to "cross-site",
+        "Sec-Fetch-Storage-Access" to "none",
+        "Sec-Fetch-User" to "?1",
+        "Sec-GPC" to "1",
+        "Upgrade-Insecure-Requests" to "1",
+        "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    )
+    val document = app.get("$newUrl/play.php?id=$id&$h", headers = headers2).document
 
     callback.invoke(
         newExtractorLink(
