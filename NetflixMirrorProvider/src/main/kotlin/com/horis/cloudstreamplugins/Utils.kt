@@ -109,22 +109,13 @@ suspend fun bypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>, callback: (ExtractorLink) -> Unit): String {
+suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
     val requestBody = FormBody.Builder().add("id", id).build()
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
     val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
-
-    callback.invoke(
-        newExtractorLink(
-            "json",
-            "json",
-            json.toString(),
-        )
-    )
-
     val h = JSONObject(json).getString("h")
 
     val headers2 = mapOf(
@@ -132,7 +123,7 @@ suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: 
         "Accept-Language" to "en-GB,en;q=0.9",
         "Connection" to "keep-alive",
         "Host" to "net52.cc",
-        "Referer" to "https://net20.cc/",
+        "Referer" to "$mainUrl/",
         "sec-ch-ua" to "\"Chromium\";v=\"142\", \"Brave\";v=\"142\", \"Not_A Brand\";v=\"99\"",
         "sec-ch-ua-mobile" to "?0",
         "sec-ch-ua-platform" to "\"Linux\"",
@@ -146,24 +137,6 @@ suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: 
         "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
     )
     val document = app.get("$newUrl/play.php?id=$id&$h", headers = headers2).document
-
-    callback.invoke(
-        newExtractorLink(
-            "document",
-            "document",
-            document.toString(),
-        )
-    )
-
     val token = document.select("body").attr("data-h")
-
-    callback.invoke(
-        newExtractorLink(
-            "token",
-            "token",
-            token.toString(),
-        )
-    )
-
     return token
 }

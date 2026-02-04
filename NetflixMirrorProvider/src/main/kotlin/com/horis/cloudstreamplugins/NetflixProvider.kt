@@ -27,7 +27,7 @@ class NetflixProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net20.cc"
+    override var mainUrl = "https://net22.cc"
     private var newUrl = "https://net52.cc"
     override var name = "Netflix"
 
@@ -218,7 +218,7 @@ class NetflixProvider : MainAPI() {
             "hd" to "on"
         )
 
-        val token = getVideoToken(mainUrl, newUrl, id, cookies, callback)
+        val token = getVideoToken(mainUrl, newUrl, id, cookies)
         val playlist = app.get(
             "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
