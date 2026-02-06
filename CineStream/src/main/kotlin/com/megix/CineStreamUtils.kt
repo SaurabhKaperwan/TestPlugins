@@ -666,7 +666,7 @@ suspend fun loadSourceNameExtractor(
 
 fun getSimplifiedTitle(title: String) : String {
     val extracted = extractSpecs(title)
-    val extractedSpecs = buildExtractedTitle(extracted)
+    return buildExtractedTitle(extracted)
 }
 
 suspend fun loadCustomExtractor(
