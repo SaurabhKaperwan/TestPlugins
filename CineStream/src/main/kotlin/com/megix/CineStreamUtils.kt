@@ -221,7 +221,7 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
     val size = extracted["size"]?.firstOrNull()
 
     return if (size != null) {
-        "$specs \n 💾 $size"
+        "$specs 💾 $size"
     } else {
         specs
     }
@@ -579,7 +579,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "$source \n $extractedSpecs \n [$fileSize]",
+                        "$source $extractedSpecs 💾 $fileSize",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -593,7 +593,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] \n $extractedSpecs \n 💾 $fileSize",
+                    "$source[HCloud] $extractedSpecs 💾 $fileSize",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -629,7 +629,7 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source \n [${link.source}$fixSize] \n $extractedSpecs",
+                "$source [${link.source}$fixSize] \n$extractedSpecs",
                 link.url,
                 type = link.type
             ) {

@@ -717,7 +717,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "$sourceName \n" + " $title",
+                    "[$sourceName]" + " $title",
                     streamUrl,
                     type,
                 ) {
@@ -763,7 +763,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Vadapav",
-                "Vadapav \n $text",
+                "[Vadapav] $text",
                 vadapavAPI + dlink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -2486,7 +2486,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "[Torrentio🧲] \n" + title,
+                    "[Torrentio🧲] " + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -4076,7 +4076,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood \n $extractedSpecs",
+                            "[Bollywood] $extractedSpecs",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
