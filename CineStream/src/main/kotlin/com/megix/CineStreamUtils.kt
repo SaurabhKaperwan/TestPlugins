@@ -579,7 +579,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "$source $extractedSpecs 💾 $fileSize",
+                        "<b>$source</b> $extractedSpecs 💾 $fileSize",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -593,7 +593,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] $extractedSpecs 💾 $fileSize",
+                    "<b>$source[HCloud]</b> $extractedSpecs 💾 $fileSize",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -629,7 +629,7 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source [${link.source}$fixSize] \n$extractedSpecs",
+                "<b>$source</b> [</b>${link.source}</b>$fixSize] \n$extractedSpecs",
                 link.url,
                 type = link.type
             ) {
@@ -1032,7 +1032,7 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "$source[Filepress] $extractedSpecs[$formattedSize]",
+                "<b>$source[Filepress]</b> \n$extractedSpecs 💾$formattedSize",
                 finalLink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -1096,7 +1096,7 @@ suspend fun gofileExtractor(
         callback.invoke(
             newExtractorLink(
                 "Gofile",
-                "$source[Gofile] $extractedSpecs[$formattedSize]",
+                "<b>$source[Gofile]</b> \n$extractedSpecs 💾 $formattedSize",
                 link,
                 ExtractorLinkType.VIDEO
             ) {

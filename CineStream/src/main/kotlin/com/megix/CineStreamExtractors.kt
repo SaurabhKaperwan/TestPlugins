@@ -297,7 +297,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "CineCity",
-                    "CineCity Multi Audio 🌐",
+                    "<b>CineCity</b> Multi Audio 🌐",
                     files,
                     INFER_TYPE
                 ) {
@@ -717,7 +717,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "[$sourceName]" + " $title",
+                    "<b>[$sourceName]</b>" + " $title",
                     streamUrl,
                     type,
                 ) {
@@ -763,7 +763,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Vadapav",
-                "[Vadapav] $text",
+                "<b>[Vadapav]</b> $text",
                 vadapavAPI + dlink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -805,7 +805,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
-                    "DahmerMovies $tags",
+                    "<b>DahmerMovies</b> $tags",
                     url = href,
                     ExtractorLinkType.VIDEO
                 ) {
@@ -1965,7 +1965,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Hotstar",
-                    "Hotstar Multi Audio 🌐",
+                    "<b>Hotstar</b> Multi Audio 🌐",
                     "$netflix2API/${it.file}",
                 ) {
                     this.referer = "$netflix2API/"
@@ -2039,7 +2039,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "PrimeVideo",
-                    "PrimeVideo Multi Audio 🌐",
+                    "<b>PrimeVideo</b> Multi Audio 🌐",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
@@ -2120,7 +2120,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Netflix",
-                    "Netflix Multi Audio 🌐",
+                    "<b>Netflix</b> Multi Audio 🌐",
                     "${netflix2API}${it.file}",
                     type = ExtractorLinkType.M3U8
                 ) {
@@ -2486,7 +2486,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "[Torrentio🧲] " + title,
+                    "<b>[Torrentio🧲] </b>" + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2531,7 +2531,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 "SUB"
             }
 
-            val displayTitle = "[Animetosho[$type]🧲] \n $title \n ⬆️ $s | ⬇️ $l | 💾 $sizeStr"
+            val displayTitle = "<b>Animetosho[$type]🧲</b> \n$title \n⬆️ $s | ⬇️ $l | 💾 $sizeStr"
 
             callback.invoke(
                 newExtractorLink(
@@ -2573,7 +2573,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "[TorrentsDB🧲] " + title,
+                    "<b>[TorrentsDB🧲] </b>" + title,
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -3208,7 +3208,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Anizone",
-                "Anizone Multi Audio 🌐",
+                "<b>Anizone</b> Multi Audio 🌐",
                 source,
                 type = ExtractorLinkType.M3U8,
             ) {
@@ -4076,7 +4076,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "[Bollywood] $extractedSpecs",
+                            "<b>[Bollywood]</b> $extractedSpecs",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
