@@ -336,9 +336,6 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-//Make String bold
-fun String?.bold() = this?.let { "\u001B[1m$it\u001B[0m" } ?: ""
-
 //get Cast Data
 suspend fun parseCastData(tvType: String, imdbId: String? = null): List<ActorData>? {
     return if (tvType != "anime") {
@@ -546,6 +543,7 @@ fun getEpisodeSlug(
     }
 }
 
+//Dahmer
 fun getIndexQuality(str: String?): Int {
     return Regex("""(\d{3,4})[pP]""").find(str ?: "") ?. groupValues ?. getOrNull(1) ?. toIntOrNull()
         ?: Qualities.Unknown.value
@@ -557,6 +555,24 @@ fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
         str ?: ""
     )?.groupValues?.getOrNull(1)
         ?.replace(".", " ")?.trim() ?: str ?: ""
+}
+
+suspend fun resolveFinalUrl(startUrl: String): String {
+    var currentUrl = startUrl
+    var loopCount = 0
+    val maxRedirects = 5
+
+    while (loopCount < maxRedirects) {
+        val location = app.head(currentUrl, allowRedirects = false).headers.get("Location")
+
+        if(location.isNullOrEmpty()) {
+            break
+        }
+        currentUrl = location
+        loopCount++
+    }
+
+    return currentUrl
 }
 
 fun String.encodeUrl(): String {
@@ -574,8 +590,7 @@ suspend fun getHindMoviezLinks(
     val doc = response.document
     val name = doc.select("div.container p:contains(Name:)").text().substringAfter("Name: ")
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
-    val extracted = extractSpecs(name)
-    val extractedSpecs = buildExtractedTitle(extracted)
+    val simplifiedTitle = getSimplifiedTitle(name + fileSize)
 
     runAllAsync(
         {
@@ -586,7 +601,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "${source.bold()} $extractedSpecs $fileSize 💾",
+                        "$source $simplifiedTitle",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -600,7 +615,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "$source[HCloud] ".bold() + "$extractedSpecs $fileSize 💾",
+                    "$source[HCloud] $simplifiedTitle",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -630,13 +645,12 @@ suspend fun loadSourceNameExtractor(
 
             if(isDownload) return@launch
 
-            val extracted = extractSpecs(link.name)
-            val extractedSpecs = buildExtractedTitle(extracted)
+            val simplifiedTitle = getSimplifiedTitle(link.name)
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "${source.bold()} " + "[${link.source}]".bold() + " $extractedSpecs $fixSize",
+                "$source [${link.source}] $simplifiedTitle $fixSize",
                 link.url,
                 type = link.type
             ) {
@@ -648,6 +662,11 @@ suspend fun loadSourceNameExtractor(
             callback.invoke(newLink)
         }
     }
+}
+
+fun getSimplifiedTitle(title: String) : String {
+    val extracted = extractSpecs(title)
+    val extractedSpecs = buildExtractedTitle(extracted)
 }
 
 suspend fun loadCustomExtractor(
@@ -983,10 +1002,6 @@ suspend fun filepressExtractor(
     if(json.optBoolean("status") == false) return
     val data = json.optJSONObject("data")
 
-    val fileName = data?.optString("name") ?: ""
-    val extracted = extractSpecs(fileName)
-    val extractedSpecs = buildExtractedTitle(extracted)
-
     val size = data?.optString("size")?.toLongOrNull() ?: 0
 
     val formattedSize = if (size < 1024L * 1024 * 1024) {
@@ -996,6 +1011,9 @@ suspend fun filepressExtractor(
         val sizeInGB = size.toDouble() / (1024 * 1024 * 1024)
         "%.2f GB".format(sizeInGB)
     }
+
+    val fileName = data?.optString("name") ?: ""
+    val simplifiedTitle = getSimplifiedTitle(fileName + formattedSize)
 
     val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -1039,7 +1057,7 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "$source [Filepress] $extractedSpecs $formattedSize 💾",
+                "$source [Filepress] $simplifiedTitle",
                 finalLink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -1098,12 +1116,11 @@ suspend fun gofileExtractor(
     }
 
     if(link != null) {
-        val extracted = extractSpecs(fileName)
-        val extractedSpecs = buildExtractedTitle(extracted)
+        val simplifiedTitle = getSimplifiedTitle(fileName + formattedSize)
         callback.invoke(
             newExtractorLink(
                 "Gofile",
-                "$source [Gofile] $extractedSpecs $formattedSize 💾",
+                "$source [Gofile] $simplifiedTitle",
                 link,
                 ExtractorLinkType.VIDEO
             ) {
