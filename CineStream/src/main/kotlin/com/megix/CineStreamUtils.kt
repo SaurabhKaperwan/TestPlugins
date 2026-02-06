@@ -220,10 +220,14 @@ fun buildExtractedTitle(extracted: Map<String, List<String>>): String {
 
     val size = extracted["size"]?.firstOrNull()
 
-    return if (size != null) {
-        "$specs 💾 $size"
+    return if (size != null && specs.isNotEmpty()) {
+        "\n$specs $size 💾"
+    } else if(size != null) {
+        "$size 💾"
+    } else if(specs.isNotEmpty()) {
+        "\n$specs"
     } else {
-        specs
+        ""
     }
 }
 
@@ -331,6 +335,9 @@ fun getLanguage(language: String?): String? {
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
+
+//Make String bold
+fun String?.bold() = this?.let { "\u001B[1m$it\u001B[0m" } ?: ""
 
 //get Cast Data
 suspend fun parseCastData(tvType: String, imdbId: String? = null): List<ActorData>? {
@@ -579,7 +586,7 @@ suspend fun getHindMoviezLinks(
                 callback.invoke(
                     newExtractorLink(
                         source,
-                        "<b>$source</b> $extractedSpecs 💾 $fileSize",
+                        "${source.bold()} $extractedSpecs $fileSize 💾",
                         it.attr("href"),
                         ExtractorLinkType.VIDEO,
                     ) {
@@ -593,7 +600,7 @@ suspend fun getHindMoviezLinks(
             callback.invoke(
                 newExtractorLink(
                     "$source[HCloud]",
-                    "<b>$source[HCloud]</b> $extractedSpecs 💾 $fileSize",
+                    "$source[HCloud] ".bold() + "$extractedSpecs $fileSize 💾",
                     link,
                     ExtractorLinkType.VIDEO,
                 ) {
@@ -629,7 +636,7 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "<b>$source</b> [</b>${link.source}</b>$fixSize] \n$extractedSpecs",
+                "${source.bold()} " + "[${link.source}]".bold() + " $extractedSpecs $fixSize",
                 link.url,
                 type = link.type
             ) {
@@ -1032,7 +1039,7 @@ suspend fun filepressExtractor(
         callback.invoke(
             newExtractorLink(
                 "Filepress",
-                "<b>$source[Filepress]</b> \n$extractedSpecs 💾$formattedSize",
+                "$source [Filepress] $extractedSpecs $formattedSize 💾",
                 finalLink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -1096,7 +1103,7 @@ suspend fun gofileExtractor(
         callback.invoke(
             newExtractorLink(
                 "Gofile",
-                "<b>$source[Gofile]</b> \n$extractedSpecs 💾 $formattedSize",
+                "$source [Gofile] $extractedSpecs $formattedSize 💾",
                 link,
                 ExtractorLinkType.VIDEO
             ) {
