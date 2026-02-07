@@ -191,6 +191,13 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val seacrhUrl = "$projectfreetvAPI/data/browse/?lang=3&keyword=$query&year=$year&networks=&rating=&votes=&genre=&country=&cast=&directors=&type=&order_by=&page=1&limit=1"
+        callback.invoke(
+            newExtractorLink(
+               "seacrhUrl",
+               "seacrhUrl",
+               seacrhUrl.toString()
+            )
+        )
         val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI).text
         val searchObject = JSONObject(searchJson)
 
