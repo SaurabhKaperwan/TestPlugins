@@ -49,6 +49,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
+import java.util.regex.Pattern
 
 val M3U8_HEADERS = mapOf(
     "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
