@@ -213,11 +213,28 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val type = if(season == null) "movie" else "series"
         val searchUrl = "$akAPI/search?q=${title.replace(" ", "+")}&section=$type&year=$year&rating=0&formats=0&quality=0"
+
+        callback.invoke(
+            newExtractorLink(
+                "searchUrl",
+                "searchUrl",
+                searchUrl.toString(),
+            )
+        )
+
         val url = app.get(searchUrl, referer = "$akAPI/")
             .document
             .selectFirst("a.box")
             ?.attr("href")
             ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "url",
+                "url",
+                url.toString(),
+            )
+        )
 
         val document = app.get(url, referer = "$akAPI/").document
         val imdb = document.selectFirst("a[href*='imdb.com']")
@@ -225,6 +242,14 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.trimEnd('/')
             ?.substringAfterLast("/")
             ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "imdb",
+                "imdb",
+                imdb.toString(),
+            )
+        )
 
         if(imdbId != imdb) return
 
