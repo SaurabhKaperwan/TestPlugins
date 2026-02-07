@@ -196,7 +196,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val moviesArray = searchObject.getJSONArray("movies")
         if (moviesArray.length() == 0) return
         val id = moviesArray.getJSONObject(0).getString("_id")
-        val json = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI).text
+        val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI).text
         val rootObject = JSONObject(jsonString)
 
         if (rootObject.has("streams")) {
