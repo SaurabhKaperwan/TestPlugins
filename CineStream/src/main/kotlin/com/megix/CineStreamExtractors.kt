@@ -204,7 +204,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val link2 = app.get(link, referer = "$akAPI/")
                 .document
-                .selectFirst("download-link")
+                .selectFirst("a.download-link")
                 ?.attr("href")
                 ?: return null
 
