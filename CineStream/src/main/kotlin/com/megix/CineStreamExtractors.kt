@@ -204,7 +204,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             for (i in 0 until streamsArray.length()) {
                 val item = streamsArray.getJSONObject(i)
-                val currentEpisode = item.optString("e")
+                val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
                     loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
