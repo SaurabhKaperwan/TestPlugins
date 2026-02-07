@@ -68,7 +68,7 @@ open class CineStreamProvider : MainAPI() {
         const val vidSrcHindiApi = "https://hindi.rgshows.ru"
         const val dahmerMoviesAPI = "https://a.111477.xyz"
         const val hexaAPI = "https://themoviedb.hexa.su"
-        const val videasyAPI = "https://api.videasy.net"
+        const val videasyAPI = "https://api2.videasy.net"
         const val vidlinkAPI = "https://vidlink.pro"
         const val multiDecryptAPI = "https://enc-dec.app/api"
         const val sootiAPI = """https://sooti.info/{"DebridServices":[{"provider":"httpstreaming","httpHDHub4u":true,"httpCineDoze":true}],"Languages":[],"Scrapers":["knaben","extto","torrentdownload"],"IndexerScrapers":["zilean","stremthru"],"minSize":0,"maxSize":200,"ShowCatalog":true,"DebridProvider":"httpstreaming"}"""
