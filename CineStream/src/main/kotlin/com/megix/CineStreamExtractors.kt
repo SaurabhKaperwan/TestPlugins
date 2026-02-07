@@ -239,8 +239,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = app.get(url, referer = "$akAPI/").document
         val imdb = document.selectFirst("a[href*='imdb.com']")
             ?.attr("href")
-            ?.trimEnd('/')
-            ?.substringAfterLast("/")
+            ?.substringAfter("title/")
+            ?.substringBefore("/")
             ?: return
 
         callback.invoke(
