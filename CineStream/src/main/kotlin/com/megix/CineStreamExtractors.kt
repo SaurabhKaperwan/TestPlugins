@@ -53,6 +53,15 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                "Cinestream",
+                "Cinestream",
+                res.toString()
+            )
+        )
+
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -132,6 +141,14 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                "Cinestream",
+                "Cinestream",
+                res.toString()
+            )
+        )
+
         runAllAsync(
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
@@ -194,27 +211,11 @@ object CineStreamExtractors : CineStreamProvider() {
             ?.attr("href")
             ?: return null
 
-            callback.invoke(
-                newExtractorLink(
-                    "link",
-                    "link",
-                    link,
-                )
-            )
-
             val link2 = app.get(link, referer = "$akAPI/")
                 .document
                 .selectFirst("a.download-link")
                 ?.attr("href")
                 ?: return null
-
-            callback.invoke(
-                newExtractorLink(
-                    "link2",
-                    "link2",
-                    link2,
-                )
-            )
 
             val source = app.get(link2, referer = "$akAPI/")
                 .document
@@ -228,7 +229,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if(imdbId == null || title == null || year == null) return
 
         val type = if(season == null) "movie" else "series"
-        val searchUrl = "$akAPI/search?q=${title.replace(" ", "+")}&section=$type&year=$year&rating=0&formats=0&quality=0"
+        val searchUrl = "$akAPI/search?q=${URLEncoder.encode(title, "UTF-8")}&section=$type&year=$year&rating=0&formats=0&quality=0"
         val url = app.get(searchUrl, referer = "$akAPI/")
             .document
             .selectFirst("a.box")
@@ -250,7 +251,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val match = episodeLinks.find { element ->
                 val text = element.text()
-                text.contains("حلقة $episode") || text.contains("Episode $episode")
+                val regex = "(?:حلقة|Episode)\\s+$episode(?!\\d)".toRegex(RegexOption.IGNORE_CASE)
+                regex.containsMatchIn(text)
             }
 
             if(match == null) return
@@ -265,7 +267,14 @@ object CineStreamExtractors : CineStreamProvider() {
                 "Ak 🇸🇦",
                 source,
                 ExtractorLinkType.VIDEO
-            )
+            ) {
+                this.referer = "$akAPI/"
+                this.headers = mapOf(
+                    "Connection" to "keep-alive",
+                    "Referer" to "$akAPI/",
+                    "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+                )
+            }
         )
     }
 
@@ -301,6 +310,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "ProjectFreeTV",
+                            "ProjectFreeTV",
+                            source,
+                        )
+                    )
+
                     loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
                 }
             }
@@ -2633,7 +2651,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "Torrentio 🧲  |  👤 $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
+                    "Torrentio 🧲  |  👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2724,7 +2742,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "TorrentsDB 🧲  | 👤 $seeders ⬆️ " + getSimplifiedTitle(title + fileSize),
+                    "TorrentsDB 🧲  | 👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
