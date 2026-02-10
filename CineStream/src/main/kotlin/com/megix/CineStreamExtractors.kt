@@ -4430,7 +4430,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood ${simplifiedTitle.replae("\n", "")}",
+                            "Bollywood ${simplifiedTitle.replace("\n", "")}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
