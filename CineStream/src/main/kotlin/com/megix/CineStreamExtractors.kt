@@ -1052,7 +1052,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "$sourceName | " + title.replace("[RD🌩️]\n", ""),
+                    "⌜ $sourceName ⌟ " + title.replace("[RD🌩️]\n", ""),
                     streamUrl,
                     type,
                 ) {
@@ -1098,7 +1098,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Vadapav",
-                "Vadapav | $text",
+                "⌜ Vadapav ⌟ $text",
                 vadapavAPI + dlink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -2837,7 +2837,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Torrentio🧲",
-                    "Torrentio 🧲  |  👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
+                    "⌜ Torrentio 🧲 ⌟   👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -2884,7 +2884,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val simplifiedTitle = getSimplifiedTitle(title + sizeStr)
 
-            val displayTitle = "Animetosho [$type] 🧲 \n⬆️ $s | ⬇️ $l $simplifiedTitle"
+            val displayTitle = "⌜ Animetosho [$type] ⌟ 🧲 \n⬆️ $s | ⬇️ $l $simplifiedTitle"
 
             callback.invoke(
                 newExtractorLink(
@@ -2928,7 +2928,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "TorrentsDB🧲",
-                    "TorrentsDB 🧲  | 👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
+                    "⌜ TorrentsDB 🧲 ⌟  👤 $seeders ⬆️  |" + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
@@ -4430,7 +4430,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood $simplifiedTitle",
+                            "Bollywood ${simplifiedTitle.replae("\n", "")}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
