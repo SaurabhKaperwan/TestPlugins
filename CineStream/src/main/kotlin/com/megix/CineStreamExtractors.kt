@@ -588,7 +588,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         callback.invoke(
                             newExtractorLink(
                                 "SucccBots",
-                                "SucccBots " + cleanTitle(name),
+                                "SucccBots " + getSimplifiedTitle(name),
                                 videoUrl,
                                 ExtractorLinkType.VIDEO
                             )
@@ -658,7 +658,7 @@ object CineStreamExtractors : CineStreamProvider() {
                         callback.invoke(
                             newExtractorLink(
                                 "SucccBots",
-                                "SucccBots " + cleanTitle(name),
+                                "SucccBots " + getSimplifiedTitle(name),
                                 videoUrl,
                                 ExtractorLinkType.VIDEO
                             )
