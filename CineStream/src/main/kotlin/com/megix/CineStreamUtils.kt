@@ -58,9 +58,6 @@ val M3U8_HEADERS = mapOf(
     "Connection" to "keep-alive",
 )
 
-data class SpecOption(val value: String, val label: String)
-
-// 2. Define Options
 val SPEC_OPTIONS = mapOf(
     "quality" to listOf(
         // -- Optical / Disk --
@@ -400,7 +397,6 @@ suspend fun NFBypass(mainUrl: String): String {
         throw e
     }
 
-
     // Persist the new cookie
     if (newCookie.isNotEmpty()) {
         CineStreamStorage.saveCookie(newCookie)
@@ -568,21 +564,22 @@ fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
         ?.replace(".", " ")?.trim() ?: str ?: ""
 }
 
-suspend fun resolveFinalUrl(startUrl: String): String {
+suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
     var loopCount = 0
     val maxRedirects = 5
 
     while (loopCount < maxRedirects) {
-        val location = app.head(currentUrl, allowRedirects = false).headers.get("Location")
-
-        if(location.isNullOrEmpty()) {
-            break
+        val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
+        if (res.code == 200 || res.code == 302 || res.code == 307) {
+            val location = res.headers.get("Location")
+            if(location.isNullOrEmpty()) break
+            currentUrl = location
+        } else {
+            return null
         }
-        currentUrl = location
         loopCount++
     }
-
     return currentUrl
 }
 

@@ -53,15 +53,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-
-        callback.invoke(
-            newExtractorLink(
-                "Cinestream",
-                "Cinestream",
-                res.toString()
-            )
-        )
-
         runAllAsync(
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -75,7 +66,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
-            { invokeAk(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
+            { invokeAkwam(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -93,6 +84,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeVadapav(res.title, res.year, res.season, res.episode, callback) },
+            { invokeSucccbots(res.title, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -118,7 +110,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            // { invokeStremioStreams("Nuvio", nuvioStreamsAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeStremioStreams("Meteor", meteorAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.isAsian) invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioStreams("Nodebrid", nodebridAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -141,14 +133,6 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                "Cinestream",
-                "Cinestream",
-                res.toString()
-            )
-        )
-
         runAllAsync(
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeGojo(res.anilistId, res.episode, subtitleCallback ,callback) },
@@ -194,7 +178,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    suspend fun invokeAk(
+    suspend fun invokeAkwam(
         imdbId: String? = null,
         title: String? = null,
         year: Int? = null,
@@ -205,19 +189,19 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
 
         suspend fun getLink(url: String) : String? {
-            val link = app.get(url, referer = "$akAPI/")
+            val link = app.get(url, referer = "$akwamAPI/")
             .document
             .selectFirst("a.link-download")
             ?.attr("href")
             ?: return null
 
-            val link2 = app.get(link, referer = "$akAPI/")
+            val link2 = app.get(link, referer = "$akwamAPI/")
                 .document
                 .selectFirst("a.download-link")
                 ?.attr("href")
                 ?: return null
 
-            val source = app.get(link2, referer = "$akAPI/")
+            val source = app.get(link2, referer = "$akwamAPI/")
                 .document
                 .selectFirst("a.link")
                 ?.attr("href")
@@ -229,13 +213,13 @@ object CineStreamExtractors : CineStreamProvider() {
         if(imdbId == null || title == null || year == null) return
 
         val type = if(season == null) "movie" else "series"
-        val searchUrl = "$akAPI/search?q=${URLEncoder.encode(title, "UTF-8")}&section=$type&year=$year&rating=0&formats=0&quality=0"
-        val url = app.get(searchUrl, referer = "$akAPI/")
+        val searchUrl = "$akwamAPI/search?q=${URLEncoder.encode(title, "UTF-8")}&section=$type&year=$year&rating=0&formats=0&quality=0"
+        val url = app.get(searchUrl, referer = "$akwamAPI/")
             .document
             .selectFirst("a.box")
             ?.attr("href")
             ?: return
-        val document = app.get(url, referer = "$akAPI/").document
+        val document = app.get(url, referer = "$akwamAPI/").document
         val imdb = document.selectFirst("a[href*='imdb.com']")
             ?.attr("href")
             ?.substringAfter("title/")
@@ -263,15 +247,16 @@ object CineStreamExtractors : CineStreamProvider() {
 
         callback.invoke(
             newExtractorLink(
-                "Ak 🇸🇦",
-                "Ak 🇸🇦",
+                "Akwam 🇸🇦",
+                "Akwam 🇸🇦",
                 source,
                 ExtractorLinkType.VIDEO
             ) {
-                this.referer = "$akAPI/"
+                this.quality = Qualities.P720.value
+                this.referer = "$akwamAPI/"
                 this.headers = mapOf(
                     "Connection" to "keep-alive",
-                    "Referer" to "$akAPI/",
+                    "Referer" to "$akwamAPI/",
                     "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
                 )
             }
@@ -293,13 +278,13 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val seacrhUrl = "$projectfreetvAPI/data/browse/?lang=3&keyword=$query&year=$year&networks=&rating=&votes=&genre=&country=&cast=&directors=&type=&order_by=&page=1&limit=1"
-        val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI, timeout = 60L).text
+        val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI, timeout = 600L).text
         val searchObject = JSONObject(searchJson)
         val moviesArray = searchObject.getJSONArray("movies")
         if (moviesArray.length() == 0) return
         val id = moviesArray.getJSONObject(0).getString("_id")
         if(id.isEmpty()) return
-        val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
+        val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 600L).text
         val rootObject = JSONObject(jsonString)
 
         if (rootObject.has("streams")) {
@@ -310,15 +295,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "ProjectFreeTV",
-                            "ProjectFreeTV",
-                            source,
-                        )
-                    )
-
                     loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
                 }
             }
@@ -498,6 +474,215 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         }
+    }
+
+    suspend fun invokeSucccbots(
+        title: String?,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val succcbotsAPI = base64Decode(succcbots)
+        val SEARCH = "$succcbotsAPI/0:search"
+        val FALLBACK = "$succcbotsAPI/0:fallback"
+
+        if (title.isNullOrBlank()) return
+
+        val media = "application/json".toMediaType()
+        val isMovie = season == null || episode == null
+        val emitted = mutableSetOf<String>()
+
+        val fallbackHeaders = mapOf(
+            "accept" to "*/*",
+            "content-type" to "application/json",
+            "origin" to succcbots,
+            "referer" to "$succcbotsAPI/fallback",
+            "user-agent" to USER_AGENT
+        )
+
+        fun norm(s: String) =
+            s.lowercase()
+                .replace('.', ' ')
+                .replace('_', ' ')
+                .replace('-', ' ')
+
+        val wanted = norm(title)
+
+        val r1 = Regex("""s0?$season\s*e0?$episode""", RegexOption.IGNORE_CASE)
+        val r2 = Regex("""$season[xX]0?$episode""")
+
+        fun epMatch(name: String): Boolean {
+            if (isMovie) return true
+            return r1.containsMatchIn(name) || r2.containsMatchIn(name)
+        }
+
+        fun seasonMatch(name: String): Boolean {
+            if (season == null) return true
+            return Regex("""s0?$season""", RegexOption.IGNORE_CASE)
+                .containsMatchIn(name)
+        }
+
+        val visitedFolders = mutableSetOf<String>()
+
+        suspend fun walkFolder(id: String) {
+
+            if (!visitedFolders.add(id)) return
+
+            try {
+                val body = """
+            {
+              "id":"$id",
+              "type":"folder",
+              "password":"",
+              "page_token":"",
+              "page_index":0
+            }
+            """.trimIndent().toRequestBody(media)
+
+                val files = JSONObject(
+                    app.post(
+                        FALLBACK,
+                        headers = fallbackHeaders,
+                        requestBody = body
+                    ).text
+                ).getJSONObject("data")
+                    .getJSONArray("files")
+
+                for (i in 0 until files.length()) {
+
+                    val f = files.getJSONObject(i)
+
+                    val name = f.getString("name")
+                    val mime = f.optString("mimeType").lowercase()
+                    val link = f.optString("link")
+                    val childId = f.optString("id")
+
+                    // ---------- FOLDER ----------
+                    if ("folder" in mime) {
+
+                        if (isMovie) {
+                            walkFolder(childId)
+                        } else {
+                            if (seasonMatch(name) || epMatch(name)) {
+                                walkFolder(childId)
+                            }
+                        }
+                        continue
+                    }
+
+                    // ---------- FILE ----------
+                    if (!mime.startsWith("video")) continue
+
+                    val normalized = norm(name)
+
+                    if (!isMovie) {
+                        if (!epMatch(normalized)) continue
+                    }
+
+                    val url = "$succcbots$link"
+                    if (!emitted.add(url)) continue
+
+                    val videoUrl = resolveFinalUrl(url)
+
+                    if(videoUrl != null) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "SucccBots",
+                                "SucccBots " + cleanTitle(name),
+                                videoUrl,
+                                ExtractorLinkType.VIDEO
+                            )
+                            {
+                                this.quality = getIndexQuality(name)
+                            }
+                        )
+                    }
+                }
+
+            } catch (_: Exception) {
+                Log.e("SuccFolder", "Traversal failed: $id")
+            }
+        }
+
+        // ----------- SEARCH PAGINATION -----------
+        var token: String? = null
+        var pageIndex = 0
+
+        do {
+            try {
+
+                val body = """
+            {
+              "q":"$title",
+              "page_token":${token?.let { "\"$it\"" } ?: "null"},
+              "page_index":$pageIndex
+            }
+            """.trimIndent().toRequestBody(media)
+
+                val json = JSONObject(app.post(SEARCH, requestBody = body).text)
+
+                val files = json
+                    .getJSONObject("data")
+                    .getJSONArray("files")
+
+                for (i in 0 until files.length()) {
+
+                    val f = files.getJSONObject(i)
+
+                    val name = f.getString("name")
+                    val mime = f.optString("mimeType").lowercase()
+                    val link = f.optString("link")
+                    val id = f.optString("id")
+
+                    if ("folder" in mime) {
+                        Log.d("SuccSearch", "FOLDER -> $name")
+                        walkFolder(id)
+                        continue
+                    }
+
+                    if (!mime.startsWith("video")) continue
+
+                    val normalized = norm(name)
+
+                    if (!isMovie) {
+                        if (!normalized.contains(wanted)) continue
+                        if (!epMatch(normalized)) continue
+                    }
+
+                    val url = "$succcbotsAPI$link"
+                    if (!emitted.add(url)) continue
+
+                    val videoUrl = resolveFinalUrl(url)
+
+                    if(videoUrl != null) {
+                        callback.invoke(
+                            newExtractorLink(
+                                "SucccBots",
+                                "SucccBots " + cleanTitle(name),
+                                videoUrl,
+                                ExtractorLinkType.VIDEO
+                            )
+                            {
+                                this.quality = getIndexQuality(name)
+                            }
+                        )
+                    }
+                }
+
+                token =
+                    json.optString("nextPageToken").takeIf { it.isNotBlank() }
+                        ?: json.getJSONObject("data")
+                            .optString("nextPageToken")
+                            .takeIf { it.isNotBlank() }
+
+                if (token != null) pageIndex++
+
+            } catch (_: Exception) {
+                Log.e("SuccSearch", "Search page failed")
+                break
+            }
+
+        } while (token != null)
     }
 
     suspend fun invokeVidstack(
@@ -867,7 +1052,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "[$sourceName]" + " $title",
+                    "$sourceName | " + title.replace("[RD🌩️]\n", ""),
                     streamUrl,
                     type,
                 ) {
@@ -913,7 +1098,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback.invoke(
             newExtractorLink(
                 "Vadapav",
-                "[Vadapav] $text",
+                "Vadapav | $text",
                 vadapavAPI + dlink,
                 ExtractorLinkType.VIDEO
             ) {
@@ -940,7 +1125,7 @@ object CineStreamExtractors : CineStreamProvider() {
             it.text() to it.attr("href")
         }.filter {
             if (season == null) {
-                it.first.contains(Regex("(?i)(1080p|2160p)"))
+                it.first.contains(Regex("(?i)(720p|1080p|2160p)"))
             } else {
                 val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
                 it.first.contains(Regex("(?i)S${seasonSlug}E${episodeSlug}"))
@@ -951,7 +1136,8 @@ object CineStreamExtractors : CineStreamProvider() {
             val quality = getIndexQuality(it.first)
             val tags = getIndexQualityTags(it.first)
             val href = if (it.second.contains(dahmerMoviesAPI)) it.second else (dahmerMoviesAPI + it.second)
-            val videoLink = resolveFinalUrl(href)
+            val videoLink = resolveFinalUrl(href) ?: return@map
+
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
