@@ -84,7 +84,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeVadapav(res.title, res.year, res.season, res.episode, callback) },
-            { invokeSucccbots(res.title, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -476,215 +475,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeSucccbots(
-        title: String?,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val succcbotsAPI = base64Decode(succcbots)
-        val SEARCH = "$succcbotsAPI/0:search"
-        val FALLBACK = "$succcbotsAPI/0:fallback"
-
-        if (title.isNullOrBlank()) return
-
-        val media = "application/json".toMediaType()
-        val isMovie = season == null || episode == null
-        val emitted = mutableSetOf<String>()
-
-        val fallbackHeaders = mapOf(
-            "accept" to "*/*",
-            "content-type" to "application/json",
-            "origin" to succcbots,
-            "referer" to "$succcbotsAPI/fallback",
-            "user-agent" to USER_AGENT
-        )
-
-        fun norm(s: String) =
-            s.lowercase()
-                .replace('.', ' ')
-                .replace('_', ' ')
-                .replace('-', ' ')
-
-        val wanted = norm(title)
-
-        val r1 = Regex("""s0?$season\s*e0?$episode""", RegexOption.IGNORE_CASE)
-        val r2 = Regex("""$season[xX]0?$episode""")
-
-        fun epMatch(name: String): Boolean {
-            if (isMovie) return true
-            return r1.containsMatchIn(name) || r2.containsMatchIn(name)
-        }
-
-        fun seasonMatch(name: String): Boolean {
-            if (season == null) return true
-            return Regex("""s0?$season""", RegexOption.IGNORE_CASE)
-                .containsMatchIn(name)
-        }
-
-        val visitedFolders = mutableSetOf<String>()
-
-        suspend fun walkFolder(id: String) {
-
-            if (!visitedFolders.add(id)) return
-
-            try {
-                val body = """
-            {
-              "id":"$id",
-              "type":"folder",
-              "password":"",
-              "page_token":"",
-              "page_index":0
-            }
-            """.trimIndent().toRequestBody(media)
-
-                val files = JSONObject(
-                    app.post(
-                        FALLBACK,
-                        headers = fallbackHeaders,
-                        requestBody = body
-                    ).text
-                ).getJSONObject("data")
-                    .getJSONArray("files")
-
-                for (i in 0 until files.length()) {
-
-                    val f = files.getJSONObject(i)
-
-                    val name = f.getString("name")
-                    val mime = f.optString("mimeType").lowercase()
-                    val link = f.optString("link")
-                    val childId = f.optString("id")
-
-                    // ---------- FOLDER ----------
-                    if ("folder" in mime) {
-
-                        if (isMovie) {
-                            walkFolder(childId)
-                        } else {
-                            if (seasonMatch(name) || epMatch(name)) {
-                                walkFolder(childId)
-                            }
-                        }
-                        continue
-                    }
-
-                    // ---------- FILE ----------
-                    if (!mime.startsWith("video")) continue
-
-                    val normalized = norm(name)
-
-                    if (!isMovie) {
-                        if (!epMatch(normalized)) continue
-                    }
-
-                    val url = "$succcbots$link"
-                    if (!emitted.add(url)) continue
-
-                    val videoUrl = resolveFinalUrl(url)
-
-                    if(videoUrl != null) {
-                        callback.invoke(
-                            newExtractorLink(
-                                "SucccBots",
-                                "SucccBots " + getSimplifiedTitle(name),
-                                videoUrl,
-                                ExtractorLinkType.VIDEO
-                            )
-                            {
-                                this.quality = getIndexQuality(name)
-                            }
-                        )
-                    }
-                }
-
-            } catch (_: Exception) {
-                Log.e("SuccFolder", "Traversal failed: $id")
-            }
-        }
-
-        // ----------- SEARCH PAGINATION -----------
-        var token: String? = null
-        var pageIndex = 0
-
-        do {
-            try {
-
-                val body = """
-            {
-              "q":"$title",
-              "page_token":${token?.let { "\"$it\"" } ?: "null"},
-              "page_index":$pageIndex
-            }
-            """.trimIndent().toRequestBody(media)
-
-                val json = JSONObject(app.post(SEARCH, requestBody = body).text)
-
-                val files = json
-                    .getJSONObject("data")
-                    .getJSONArray("files")
-
-                for (i in 0 until files.length()) {
-
-                    val f = files.getJSONObject(i)
-
-                    val name = f.getString("name")
-                    val mime = f.optString("mimeType").lowercase()
-                    val link = f.optString("link")
-                    val id = f.optString("id")
-
-                    if ("folder" in mime) {
-                        Log.d("SuccSearch", "FOLDER -> $name")
-                        walkFolder(id)
-                        continue
-                    }
-
-                    if (!mime.startsWith("video")) continue
-
-                    val normalized = norm(name)
-
-                    if (!isMovie) {
-                        if (!normalized.contains(wanted)) continue
-                        if (!epMatch(normalized)) continue
-                    }
-
-                    val url = "$succcbotsAPI$link"
-                    if (!emitted.add(url)) continue
-
-                    val videoUrl = resolveFinalUrl(url)
-
-                    if(videoUrl != null) {
-                        callback.invoke(
-                            newExtractorLink(
-                                "SucccBots",
-                                "SucccBots " + getSimplifiedTitle(name),
-                                videoUrl,
-                                ExtractorLinkType.VIDEO
-                            )
-                            {
-                                this.quality = getIndexQuality(name)
-                            }
-                        )
-                    }
-                }
-
-                token =
-                    json.optString("nextPageToken").takeIf { it.isNotBlank() }
-                        ?: json.getJSONObject("data")
-                            .optString("nextPageToken")
-                            .takeIf { it.isNotBlank() }
-
-                if (token != null) pageIndex++
-
-            } catch (_: Exception) {
-                Log.e("SuccSearch", "Search page failed")
-                break
-            }
-
-        } while (token != null)
-    }
-
     suspend fun invokeVidstack(
         imdbId: String? = null,
         season: Int? = null,
@@ -937,7 +727,7 @@ object CineStreamExtractors : CineStreamProvider() {
         suspend fun parseHtml(html: String): JSONObject {
             val jsonBody = JSONObject().put("text", html)
             val request = Request.Builder()
-                .url("https://enc-dec.app/api/parse-html")
+                .url("$multiDecryptAPI/parse-html")
                 .post(jsonBody.toString().toRequestBody(JSON_MEDIA_TYPE))
                 .build()
 
@@ -3770,7 +3560,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val serverList = app.get(url, timeout = 30, headers = headers).parsedSafe<PrimeSrcServerList>()
-        serverList?.servers?.forEach {
+        serverList?.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
@@ -4248,11 +4038,11 @@ object CineStreamExtractors : CineStreamProvider() {
         val rbody = FormBody.Builder().add("token", sourcesHash).build()
         val sourceslistDoc = app.post("$hostUrl/response.php", requestBody = rbody, headers = mapOf("x-requested-with" to "XMLHttpRequest")).document
         val serverList = sourceslistDoc.select("li")
-        serverList.forEach {
+        serverList.amap {
             val serverDataId = it.attr("data-id")
             val serverData = it.attr("data-server")
             val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
-            val src = app.get(playVideoUrl, ).document
+            val src = app.get(playVideoUrl).document
             val iframe = src.select("iframe").attr("src")
             loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
         }
@@ -4411,10 +4201,10 @@ object CineStreamExtractors : CineStreamProvider() {
         if (jsonObject.has("files")) {
             val filesArray = jsonObject.getAsJsonArray("files")
 
-            filesArray.forEach { element ->
+            filesArray.amap { element ->
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
-                if(fileName.contains(".$titleSlug")) return@forEach
+                if(fileName.contains(".$titleSlug")) return@amap
                 val fileId = item.get("id").asString
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
@@ -4430,7 +4220,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "Bollywood",
-                            "Bollywood ${simplifiedTitle.replace("\n", "")}",
+                            "⌜ Bollywood ⌟ ${simplifiedTitle.replace("\n", "")}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {

@@ -6,8 +6,19 @@ import android.content.Context
 
 @CloudstreamPlugin
 open class CineStream: Plugin() {
+
+    companion object {
+        var superstreamCookie: String = ""
+    }
+
     override fun load(context: Context) {
         CineStreamStorage.init(context.applicationContext)
+
+        // --- ADDED: Load the cookie from memory when app starts ---
+        val prefs = context.getSharedPreferences("cinestream_settings", Context.MODE_PRIVATE)
+        superstreamCookie = prefs.getString("superstream_cookie", "") ?: ""
+        // ----------------------------------------------------------
+
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
         registerMainAPI(CineTmdbProvider())

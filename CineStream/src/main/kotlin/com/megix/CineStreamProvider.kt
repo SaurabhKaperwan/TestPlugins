@@ -96,7 +96,6 @@ open class CineStreamProvider : MainAPI() {
         const val dramafullAPI = "https://dramafull.cc"
         const val projectfreetvAPI = "https://projectfreetv.sx"
         const val akwamAPI = "https://ak.sv"
-        const val succcbots = "aHR0cHM6Ly91c2VuZXQuc3VjY2Nib3RzLndvcmtlcnMuZGV2"
 
         var leviathanAPI = """
         https://leviathanaddon.dpdns.org/eyJzZXJ2aWNlIjoicmQiLCJrZXkiOi
