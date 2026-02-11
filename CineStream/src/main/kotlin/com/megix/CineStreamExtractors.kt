@@ -3560,7 +3560,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val serverList = app.get(url, timeout = 30, headers = headers).parsedSafe<PrimeSrcServerList>()
-        serverList?.servers?.amap {
+        serverList?.servers?.forEach {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
@@ -4038,7 +4038,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val rbody = FormBody.Builder().add("token", sourcesHash).build()
         val sourceslistDoc = app.post("$hostUrl/response.php", requestBody = rbody, headers = mapOf("x-requested-with" to "XMLHttpRequest")).document
         val serverList = sourceslistDoc.select("li")
-        serverList.amap {
+        serverList.forEach {
             val serverDataId = it.attr("data-id")
             val serverData = it.attr("data-server")
             val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
@@ -4201,10 +4201,10 @@ object CineStreamExtractors : CineStreamProvider() {
         if (jsonObject.has("files")) {
             val filesArray = jsonObject.getAsJsonArray("files")
 
-            filesArray.amap { element ->
+            filesArray.forEach { element ->
                 val item = element.asJsonObject
                 val fileName = item.get("file_name").asString
-                if(fileName.contains(".$titleSlug")) return@amap
+                if(fileName.contains(".$titleSlug")) return@forEach
                 val fileId = item.get("id").asString
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(

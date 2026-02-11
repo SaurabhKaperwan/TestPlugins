@@ -14,11 +14,10 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.phisher98.BuildConfig
+
 
 class BottomFragment(private val plugin: CineStream) : BottomSheetDialogFragment() {
 
@@ -30,31 +29,22 @@ class BottomFragment(private val plugin: CineStream) : BottomSheetDialogFragment
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val id = plugin.resources!!.getIdentifier(
-            "bottom_sheet_layout",
-            "layout",
-            BuildConfig.LIBRARY_PACKAGE_NAME
-        )
+        // Use the current package's BuildConfig
+        val pkgName = BuildConfig.LIBRARY_PACKAGE_NAME
+
+        val id = plugin.resources!!.getIdentifier("bottom_sheet_layout", "layout", pkgName)
         val layout = plugin.resources!!.getLayout(id)
         val view = inflater.inflate(layout, container, false)
 
-        val outlineId = plugin.resources!!.getIdentifier(
-            "outline",
-            "drawable",
-            BuildConfig.LIBRARY_PACKAGE_NAME
-        )
+        val outlineId = plugin.resources!!.getIdentifier("outline", "drawable", pkgName)
 
         val contentGroup = view.findView<ViewGroup>("server_group")
         contentGroup.removeAllViews()
 
-        // Create the Input Field
-        cookieInput = EditText(context).apply {
+        // Fix: Use requireContext() to ensure context is not null
+        cookieInput = EditText(requireContext()).apply {
             hint = "Paste Superstream Cookie here..."
-
-            // --- CONNECTED: Pre-fill with the saved variable ---
             setText(CineStream.superstreamCookie)
-            // -------------------------------------------------
-
             setTextColor(Color.BLACK)
             setHintTextColor(Color.GRAY)
             textSize = 14f
@@ -75,12 +65,7 @@ class BottomFragment(private val plugin: CineStream) : BottomSheetDialogFragment
 
         contentGroup.addView(cookieInput)
 
-        // Save Button Logic
-        val saveIconId = plugin.resources!!.getIdentifier(
-            "save_icon",
-            "drawable",
-            BuildConfig.LIBRARY_PACKAGE_NAME
-        )
+        val saveIconId = plugin.resources!!.getIdentifier("save_icon", "drawable", pkgName)
         val saveBtn = view.findView<ImageView>("save")
         saveBtn.setImageDrawable(plugin.resources!!.getDrawable(saveIconId, null))
         saveBtn.background = plugin.resources!!.getDrawable(outlineId, null)
@@ -89,17 +74,16 @@ class BottomFragment(private val plugin: CineStream) : BottomSheetDialogFragment
             val cookieString = cookieInput?.text.toString().trim()
 
             if (cookieString.isNotEmpty()) {
-                // 1. Save to the memory variable
                 CineStream.superstreamCookie = cookieString
 
-                // 2. Save to Phone Storage (SharedPreferences) so it remembers after restart
-                val prefs = context?.getSharedPreferences("cinestream_settings", Context.MODE_PRIVATE)
-                prefs?.edit()?.putString("superstream_cookie", cookieString)?.apply()
+                // Fix: Save using SharedPreferences safely
+                val prefs = requireContext().getSharedPreferences("cinestream_settings", Context.MODE_PRIVATE)
+                prefs.edit().putString("superstream_cookie", cookieString).apply()
 
-                Toast.makeText(context, "Cookie Saved!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Cookie Saved!", Toast.LENGTH_SHORT).show()
                 dismiss()
             } else {
-                Toast.makeText(context, "Please paste the cookie first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Please paste the cookie first", Toast.LENGTH_SHORT).show()
             }
         }
 
