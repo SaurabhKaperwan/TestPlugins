@@ -1297,7 +1297,7 @@ object CineStreamExtractors : CineStreamProvider() {
             document.select("div.download-item a").amap { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = app.get(url, allowRedirects = false).headers["location"]
+                    link = app.get(link, allowRedirects = false, timeout = 600L).headers["location"] ?: return@amap
                 }
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
@@ -1315,7 +1315,7 @@ object CineStreamExtractors : CineStreamProvider() {
             episodeCards.amap { episodeCard ->
                 var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
                 if(!link.contains("hubcloud")) {
-                    link = app.get(url, allowRedirects = false).headers["location"]
+                    link = app.get(link, allowRedirects = false, timeout = 600L).headers["location"] ?: return@amap
                 }
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
