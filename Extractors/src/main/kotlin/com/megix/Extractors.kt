@@ -284,11 +284,11 @@ open class Driveleech : ExtractorApi() {
                         "$name[CF] $fileName[$fileSize]",
                         source,
                         ExtractorLinkType.VIDEO
-                    )
-                ) {
-                    this.quality = quality
-                    this.headers = VIDEO_HEADERS
-                }
+                    ) {
+                        this.quality = quality
+                        this.headers = VIDEO_HEADERS
+                    }
+                )
             }
         } catch (e: Exception) {
             Log.d("CF", e.toString())
