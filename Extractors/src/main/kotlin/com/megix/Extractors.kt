@@ -80,7 +80,24 @@ open class XDmovies: ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                url,
+            )
+        )
+
         val location = app.get(url, allowRedirects = false).headers["location"]
+
+        callback.invoke(
+            newExtractorLink(
+                "location",
+                "location",
+                location.toString(),
+            )
+        )
+
         if(location != null) {
             loadExtractor(location, "", subtitleCallback, callback)
         }

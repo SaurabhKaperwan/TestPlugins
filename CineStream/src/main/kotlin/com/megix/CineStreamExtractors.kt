@@ -1293,25 +1293,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
         val document = app.get(XDmoviesAPI + matched.path).documentLarge
 
-        callback.invoke(
-            newExtractorLink(
-                "document",
-                "document",
-                document.toString()
-            )
-        )
-
         if(season == null) {
             document.select("div.download-item a").amap { source ->
-
-                callback.invoke(
-                    newExtractorLink(
-                        "source",
-                        "source",
-                        source.attr("href")
-                    )
-                )
-
                 loadSourceNameExtractor("XDmovies", source.attr("href"), "", subtitleCallback, callback)
             }
         } else {
@@ -1327,15 +1310,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
             episodeCards.amap { episodeCard ->
                 val link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
-
-                callback.invoke(
-                    newExtractorLink(
-                        "source",
-                        "source",
-                        link
-                    )
-                )
-
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
