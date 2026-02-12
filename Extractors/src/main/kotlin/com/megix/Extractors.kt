@@ -399,11 +399,16 @@ open class VCloud : ExtractorApi() {
                 else if (text.contains("Server : 10Gbps")) {
                     var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
+                    if(redirectUrl.contains("link=") {
+                        redirectUrl = redirectUrl.substringAfter("link=")
+                    }
+
                     callback.invoke(
                         newExtractorLink(
                             "$name[Download]",
                             "$name[Download] $header[$size]",
-                            redirectUrl
+                            redirectUrl,
+                            ExtractorLinkType.VIDEO
                         ) {
                             this.quality = quality
                             this.headers = VIDEO_HEADERS
@@ -595,11 +600,16 @@ open class HubCloud : ExtractorApi() {
             else if (text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
+                if(redirectUrl.contains("link=") {
+                    redirectUrl = redirectUrl.substringAfter("link=")
+                }
+
                 callback.invoke(
                     newExtractorLink(
                         "$name[Download]",
                         "$name[Download] $header[$size]",
-                        redirectUrl
+                        redirectUrl,
+                        ExtractorLinkType.VIDEO
                     ) {
                         this.quality = quality
                         this.headers = VIDEO_HEADERS
