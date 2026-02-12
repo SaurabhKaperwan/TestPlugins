@@ -90,11 +90,6 @@ subprojects {
         implementation("com.google.code.gson:gson:2.11.0")
         implementation("org.json:json:20231013")
         implementation("androidx.annotation:annotation:1.9.0")
-
-        // For UI components
-        implementation("com.google.android.material:material:1.9.0")
-        implementation("androidx.appcompat:appcompat:1.6.1")
-        implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     }
 }
 
