@@ -399,7 +399,7 @@ open class VCloud : ExtractorApi() {
                 else if (text.contains("Server : 10Gbps")) {
                     var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
-                    if(redirectUrl.contains("link=") {
+                    if(redirectUrl.contains("link=")) {
                         redirectUrl = redirectUrl.substringAfter("link=")
                     }
 
@@ -600,7 +600,7 @@ open class HubCloud : ExtractorApi() {
             else if (text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
-                if(redirectUrl.contains("link=") {
+                if(redirectUrl.contains("link=")) {
                     redirectUrl = redirectUrl.substringAfter("link=")
                 }
 
