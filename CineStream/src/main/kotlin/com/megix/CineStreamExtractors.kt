@@ -1308,8 +1308,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
             }
 
-            episodeCards.amap {
-                val link = it.selectFirst("a")?.attr("href") ?: return@amap
+            episodeCards.amap { episodeCard ->
+                val link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }

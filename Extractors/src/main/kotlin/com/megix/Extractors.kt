@@ -98,10 +98,16 @@ open class Driveleech : ExtractorApi() {
     override val mainUrl: String = "https://driveleech.*"
     override val requiresReferer = false
 
-    private suspend fun CFType1(url: String): List<String> {
-        val document = app.get(url+"?type=1").document
-        val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
-        return links
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.map { t ->
+            val document = app.get(url + "?type=$t").document
+            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+            downloadLinks.addAll(links)
+        }
+        return downloadLinks
     }
 
     private suspend fun resumeCloudLink(baseUrl: String, url: String): String? {
@@ -219,26 +225,26 @@ open class Driveleech : ExtractorApi() {
                     }
 
                 }
-                text.contains("Direct Links") -> {
-                    try {
-                        val link = baseUrl + href
-                        CFType1(link).forEach {
-                            callback.invoke(
-                                newExtractorLink(
-                                    "$name CF Type1",
-                                    "$name[CF Type1] $fileName[$fileSize]",
-                                    it,
-                                    ExtractorLinkType.VIDEO
-                                ) {
-                                    this.quality = quality
-                                    this.headers = VIDEO_HEADERS
-                                }
-                            )
-                        }
-                    } catch (e: Exception) {
-                        Log.d("Error:", e.toString())
-                    }
-                }
+                // text.contains("Direct Links") -> {
+                //     try {
+                //         val link = baseUrl + href
+                //         CFType(link).forEach {
+                //             callback.invoke(
+                //                 newExtractorLink(
+                //                     "$name CF Type1",
+                //                     "$name[CF Type1] $fileName[$fileSize]",
+                //                     it,
+                //                     ExtractorLinkType.VIDEO
+                //                 ) {
+                //                     this.quality = quality
+                //                     this.headers = VIDEO_HEADERS
+                //                 }
+                //             )
+                //         }
+                //     } catch (e: Exception) {
+                //         Log.d("Error:", e.toString())
+                //     }
+                // }
                 text.contains("Resume Cloud") -> {
                     try {
                         val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@amap
@@ -266,6 +272,27 @@ open class Driveleech : ExtractorApi() {
                 }
             }
         }
+
+        //Cloudflare backup links
+        try {
+            val sources = CFType(url.replace("file", "wfile"))
+
+            sources.forEach { source ->
+                callback.invoke(
+                    newExtractorLink(
+                        "$name CF",
+                        "$name[CF] $fileName[$fileSize]",
+                        source,
+                        ExtractorLinkType.VIDEO
+                    )
+                ) {
+                    this.quality = quality
+                    this.headers = VIDEO_HEADERS
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("CF", e.toString())
+        }
     }
 }
 
@@ -277,11 +304,11 @@ open class VCloud : ExtractorApi() {
     suspend fun resolveFinalUrl(startUrl: String): String? {
         var currentUrl = startUrl
         var loopCount = 0
-        val maxRedirects = 5
+        val maxRedirects = 10
 
         while (loopCount < maxRedirects) {
             val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
-            if (res.code == 200 || res.code == 302 || res.code == 307) {
+            if (res.code == 200 || res.code == 302 || res.code == 307 || res.code == 301) {
                 val location = res.headers.get("Location")
                 if(location.isNullOrEmpty()) break
                 currentUrl = location
@@ -449,11 +476,11 @@ open class HubCloud : ExtractorApi() {
     suspend fun resolveFinalUrl(startUrl: String): String? {
         var currentUrl = startUrl
         var loopCount = 0
-        val maxRedirects = 5
+        val maxRedirects = 10
 
         while (loopCount < maxRedirects) {
             val res = app.head(currentUrl, allowRedirects = false, timeout = 600L)
-            if (res.code == 200 || res.code == 302 || res.code == 307) {
+            if (res.code == 200 || res.code == 302 || res.code == 307 || res.code == 301) {
                 val location = res.headers.get("Location")
                 if(location.isNullOrEmpty()) break
                 currentUrl = location
@@ -674,6 +701,18 @@ open class GDFlix : ExtractorApi() {
     override val mainUrl = "https://gdflix.*"
     override val requiresReferer = false
 
+    private suspend fun CFType(url: String): List<String> {
+        val types = listOf("1", "2")
+        val downloadLinks = mutableListOf<String>()
+
+        types.map { t ->
+            val document = app.get(url + "?type=$t").document
+            val links = document.select("a.btn-success").mapNotNull { it.attr("href") }
+            downloadLinks.addAll(links)
+        }
+        return downloadLinks
+    }
+
     override suspend fun getUrl(
         url: String,
         referer: String?,
@@ -692,10 +731,9 @@ open class GDFlix : ExtractorApi() {
 
         //Cloudflare backup links
         try {
-            val source = app.get("${newUrl.replace("file", "wfile")}")
-                .document.select("a.btn-success").attr("href")
+            val sources = CFType(newUrl.replace("file", "wfile"))
 
-            if (source.isNotEmpty()) {
+            sources.forEach { source ->
                 callback.invoke(
                     newExtractorLink(
                         "GDFlix[CF]",
