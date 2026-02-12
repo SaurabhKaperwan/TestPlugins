@@ -391,7 +391,7 @@ open class VCloud : ExtractorApi() {
                     )
                 }
                 else if (text.contains("Server : 10Gbps")) {
-                    var redirectUrl = resolveFinalUrl(link) ?: return@forEach
+                    var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
                     callback.invoke(
                         newExtractorLink(
@@ -587,7 +587,7 @@ open class HubCloud : ExtractorApi() {
                 )
             }
             else if (text.contains("Server : 10Gbps")) {
-                var redirectUrl = resolveFinalUrl(link) ?: return@forEach
+                var redirectUrl = resolveFinalUrl(link) ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
