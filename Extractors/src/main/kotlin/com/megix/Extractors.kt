@@ -225,26 +225,26 @@ open class Driveleech : ExtractorApi() {
                     }
 
                 }
-                // text.contains("Direct Links") -> {
-                //     try {
-                //         val link = baseUrl + href
-                //         CFType(link).forEach {
-                //             callback.invoke(
-                //                 newExtractorLink(
-                //                     "$name CF Type1",
-                //                     "$name[CF Type1] $fileName[$fileSize]",
-                //                     it,
-                //                     ExtractorLinkType.VIDEO
-                //                 ) {
-                //                     this.quality = quality
-                //                     this.headers = VIDEO_HEADERS
-                //                 }
-                //             )
-                //         }
-                //     } catch (e: Exception) {
-                //         Log.d("Error:", e.toString())
-                //     }
-                // }
+                text.contains("Direct Links") -> {
+                    try {
+                        val link = baseUrl + href
+                        CFType(link).forEach {
+                            callback.invoke(
+                                newExtractorLink(
+                                    "$name CF",
+                                    "$name[CF] $fileName[$fileSize]",
+                                    it,
+                                    ExtractorLinkType.VIDEO
+                                ) {
+                                    this.quality = quality
+                                    this.headers = VIDEO_HEADERS
+                                }
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.d("Error:", e.toString())
+                    }
+                }
                 text.contains("Resume Cloud") -> {
                     try {
                         val resumeCloud = resumeCloudLink(baseUrl, href) ?: return@amap
@@ -271,27 +271,6 @@ open class Driveleech : ExtractorApi() {
                     Log.d("Error", "No Server matched")
                 }
             }
-        }
-
-        //Cloudflare backup links
-        try {
-            val sources = CFType(url.replace("file", "wfile"))
-
-            sources.forEach { source ->
-                callback.invoke(
-                    newExtractorLink(
-                        "$name CF",
-                        "$name[CF] $fileName[$fileSize]",
-                        source,
-                        ExtractorLinkType.VIDEO
-                    ) {
-                        this.quality = quality
-                        this.headers = VIDEO_HEADERS
-                    }
-                )
-            }
-        } catch (e: Exception) {
-            Log.d("CF", e.toString())
         }
     }
 }

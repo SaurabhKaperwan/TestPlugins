@@ -1291,7 +1291,7 @@ object CineStreamExtractors : CineStreamProvider() {
         ).parsedSafe<XDMoviesSearchResponse>() ?: return
 
         val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
-        val document = app.get(XDmoviesAPI + matched.path).document
+        val document = app.get(XDmoviesAPI + matched.path).documentLarge
 
         if(season == null) {
             document.select("div.download-item a").amap {
