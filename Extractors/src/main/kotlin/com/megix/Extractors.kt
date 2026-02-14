@@ -293,28 +293,27 @@ open class VCloud : ExtractorApi() {
             div?.select("h2 a.btn")?.amap {
                 val link = it.attr("href")
                 val text = it.text()
-                if(text.contains("FSL Server")) {
-                    myCallback(link, "[FSL Server]")
-                } else if (text.contains("FSLv2")) {
-                    myCallback(link, "[FSLv2]")
-                } else if (text.contains("[Server : 1]")) {
-                    myCallback(link, "[Server : 1]")
-                } else if(text.contains("BuzzServer")) {
+
+                if(text.contains("FSL Server")) myCallback(link, "[FSL Server]")
+                else if (text.contains("FSLv2")) myCallback(link, "[FSLv2]")
+                else if (text.contains("[Server : 1]")) myCallback(link, "[Server : 1]")
+                else if(text.contains("BuzzServer")) {
                     val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
                     val baseUrl = getBaseUrl(link)
                     if(dlink != "") myCallback(baseUrl + dlink, "[BuzzServer]")
-                } else if (link.contains("pixeldra")) {
+                }
+                else if (link.contains("pixeldra")) {
                     val baseUrlLink = getBaseUrl(link)
                     val finalURL = if (link.contains("download", true)) link
                     else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                     myCallback(finalURL, "[Pixeldrain]")
-                } else if (text.contains("Server : 10Gbps")) {
+                }
+                else if (text.contains("Server : 10Gbps")) {
                     var redirectUrl = resolveFinalUrl(link) ?: return@amap
                     if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                     myCallback(redirectUrl, "[Download]")
-                } else {
-                    if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) myCallback(link, "")
                 }
+                else { Log.d("Error", "No Server matched") }
             }
         }
     }
@@ -385,30 +384,27 @@ open class HubCloud : ExtractorApi() {
             val link = it.attr("href")
             val text = it.text()
 
-            if (text.contains("FSL Server")) {
-                myCallback(link, "[FSL Server]")
-            } else if (text.contains("FSLv2")) {
-                myCallback(link, "[FSLv2 Server]")
-            } else if (text.contains("Mega Server")) {
-                myCallback(link, "[Mega Server]")
-            } else if (text.contains("Download File")) {
-                myCallback(link)
-            } else if (text.contains("BuzzServer")) {
+            if (text.contains("FSL Server")) myCallback(link, "[FSL Server]")
+            else if (text.contains("FSLv2")) myCallback(link, "[FSLv2 Server]")
+            else if (text.contains("Mega Server")) myCallback(link, "[Mega Server]")
+            else if (text.contains("Download File")) myCallback(link)
+            else if (text.contains("BuzzServer")) {
                 val dlink = app.get("$link/download", referer = link, allowRedirects = false).headers["hx-redirect"] ?: ""
                 val baseUrl = getBaseUrl(link)
                 if(dlink != "") myCallback( baseUrl + dlink, "[BuzzServer]")
-            } else if (link.contains("pixeldra")) {
+            }
+            else if (link.contains("pixeldra")) {
                 val baseUrlLink = getBaseUrl(link)
                 val finalURL = if (link.contains("download", true)) link
                 else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                 myCallback(finalURL, "[Pixeldrain]")
-            } else if (text.contains("Server : 10Gbps")) {
+            }
+            else if (text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@amap
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")
-            } else {
-                if(!link.contains(".zip") && (link.contains(".mkv") || link.contains(".mp4"))) myCallback(link)}
             }
+            else { Log.d("Error", "No Server matched") }
         }
     }
 }
