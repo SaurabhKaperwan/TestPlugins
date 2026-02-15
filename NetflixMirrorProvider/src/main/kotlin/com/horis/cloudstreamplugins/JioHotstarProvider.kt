@@ -27,19 +27,23 @@ class JioHotstarProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net52.cc"
+    override var mainUrl = "https://net22.cc"
     private var newUrl = "https://net52.cc"
     override var name = "JioHotstar"
 
     override val hasMainPage = true
-    private val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-    private val cookies = mapOf (
-        "hd" to "on",
-        "ott" to "hs"
+    private var cookie_value = ""
+    private val headers = mapOf(
+        "X-Requested-With" to "XMLHttpRequest"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "ott" to "hs",
+            "hd" to "on"
+        )
         val document = app.get(
             "$mainUrl/mobile/home",
             cookies = cookies,
@@ -71,6 +75,12 @@ class JioHotstarProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "hd" to "on",
+            "ott" to "hs"
+        )
         val url = "$mainUrl/mobile/hs/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(url, referer = "$mainUrl/home", cookies = cookies).parsed<SearchData>()
 
@@ -83,7 +93,13 @@ class JioHotstarProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val id = parseJson<Id>(url).id
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "hd" to "on",
+            "ott" to "hs"
+        )
         val data = app.get(
             "$mainUrl/mobile/hs/post.php?id=$id&t=${APIHolder.unixTime}",
             headers,
@@ -159,6 +175,11 @@ class JioHotstarProvider : MainAPI() {
         title: String, eid: String, sid: String, page: Int
     ): List<Episode> {
         val episodes = arrayListOf<Episode>()
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "hd" to "on",
+            "ott" to "hs"
+        )
         var pg = page
         while (true) {
             val data = app.get(
@@ -189,6 +210,11 @@ class JioHotstarProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "hd" to "on",
+            "ott" to "hs"
+        )
 
         val playlist = app.get(
             "$newUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",

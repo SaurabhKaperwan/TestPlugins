@@ -79,6 +79,41 @@ fun convertRuntimeToMinutes(runtime: String): Int {
     return totalMinutes
 }
 
+suspend fun bypass(mainUrl: String): String {
+    // Check persistent storage first
+    val (savedCookie, savedTimestamp) = NetflixMirrorStorage.getCookie()
+
+    // Return cached cookie if valid (≤15 hours old)
+    if (!savedCookie.isNullOrEmpty() && System.currentTimeMillis() - savedTimestamp < 54_000_000) {
+        return savedCookie
+    }
+
+    val newCookie = try {
+        var verifyCheck: String
+        var verifyResponse: NiceResponse
+        var count = 0
+        do {
+            verifyResponse = app.post("$mainUrl/tv/p.php")
+            verifyCheck = verifyResponse.text
+            count++
+            if (count > 5) {
+                throw Exception("Failed to verify cookie")
+            }
+        } while (!verifyCheck.contains("\"r\":\"n\""))
+        verifyResponse.cookies["t_hash_t"].orEmpty()
+    } catch (e: Exception) {
+        // Clear invalid cookie on failure
+        NetflixMirrorStorage.clearCookie()
+        throw e
+    }
+
+    // Persist the new cookie
+    if (newCookie.isNotEmpty()) {
+        NetflixMirrorStorage.saveCookie(newCookie)
+    }
+    return newCookie
+}
+
 suspend fun getVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
     val requestBody = FormBody.Builder().add("id", id).build()
     val headers = mapOf(

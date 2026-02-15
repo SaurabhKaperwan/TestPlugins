@@ -8,6 +8,7 @@ import android.content.Context
 open class NetflixMirrorPlugin: Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
+        NetflixMirrorStorage.init(context.applicationContext)
         registerMainAPI(NetflixProvider())
         registerMainAPI(PrimeVideoProvider())
         registerMainAPI(JioHotstarProvider())

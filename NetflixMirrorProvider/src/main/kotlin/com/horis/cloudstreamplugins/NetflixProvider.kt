@@ -27,26 +27,27 @@ class NetflixProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net52.cc"
+    override var mainUrl = "https://net22.cc"
     private var newUrl = "https://net52.cc"
     override var name = "Netflix"
 
     override val hasMainPage = true
-    private val headers = mapOf( "X-Requested-With" to "XMLHttpRequest" )
-    private val cookies = mapOf (
-        "hd" to "on",
-        "ott" to "nf"
+    private var cookie_value = ""
+    private val headers = mapOf(
+        "X-Requested-With" to "XMLHttpRequest"
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
-        val cookies1 = mapOf(
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
             "user_token" to "233123f803cf02184bf6c67e149cdd50",
             "ott" to "nf",
             "hd" to "on"
         )
         val document = app.get(
             "$mainUrl/home",
-            cookies = cookies1,
+            cookies = cookies,
             referer = "$mainUrl/",
         ).document
         val items = document.select(".lolomoRow").map {
@@ -74,6 +75,12 @@ class NetflixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "hd" to "on",
+            "ott" to "nf"
+        )
         val url = "$mainUrl/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(
             url,
@@ -90,7 +97,13 @@ class NetflixProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
+        cookie_value = if(cookie_value.isEmpty()) bypass(newUrl) else cookie_value
         val id = parseJson<Id>(url).id
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "ott" to "nf",
+            "hd" to "on"
+        )
         val data = app.get(
             "$mainUrl/post.php?id=$id&t=${APIHolder.unixTime}",
             headers,
@@ -164,6 +177,11 @@ class NetflixProvider : MainAPI() {
         title: String, eid: String, sid: String, page: Int
     ): List<Episode> {
         val episodes = arrayListOf<Episode>()
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "ott" to "nf",
+            "hd" to "on"
+        )
         var pg = page
         while (true) {
             val data = app.get(
@@ -194,6 +212,12 @@ class NetflixProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
+        val cookies = mapOf(
+            "t_hash_t" to cookie_value,
+            "ott" to "nf",
+            "hd" to "on"
+        )
+
         val token = getVideoToken(mainUrl, newUrl, id, cookies)
         val playlist = app.get(
             "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
