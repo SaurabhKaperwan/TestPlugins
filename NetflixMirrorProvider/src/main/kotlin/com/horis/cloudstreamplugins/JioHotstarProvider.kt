@@ -27,7 +27,7 @@ class JioHotstarProvider : MainAPI() {
     )
     override var lang = "en"
 
-    override var mainUrl = "https://net22.cc"
+    override var mainUrl = "https://net52.cc"
     private var newUrl = "https://net52.cc"
     override var name = "JioHotstar"
 
