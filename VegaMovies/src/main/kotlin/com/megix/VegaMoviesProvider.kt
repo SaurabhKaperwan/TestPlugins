@@ -83,7 +83,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         val json = app.get("$mainUrl/search.php?q=$query&page=$page").text
         val response = tryParseJson<VegaSearchResponse>(json) ?: return null
-        val results = response.hits.forEach { hit ->
+        val results = response.hits.map { hit ->
             val doc = hit.document
             newMovieSearchResponse(doc.post_title.replace("Download ", ""), doc.permalink, TvType.Movie) {
                 this.posterUrl = doc.post_thumbnail
@@ -296,7 +296,6 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     data class EpisodeLink(
         val source: String
     )
-
 
     data class VegaSearchResponse(
         val hits: List<VegaHit>
