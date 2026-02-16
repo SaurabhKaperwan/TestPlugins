@@ -80,9 +80,14 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/search.html?q=$query&page=$page").document
-        val results = document.select("div.movies-grid > a")
-            .mapNotNull { it.toSearchResult() }
+        val json = app.get("$mainUrl/search.php?q=$query&page=$page").text
+        val response = tryParseJson<VegaSearchResponse>(json) ?: return null
+        val results = response.hits.forEach { hit ->
+            val doc = hit.document
+            return newMovieSearchResponse(doc.post_title.replace("Download ", ""), mainUrl + doc.permalink, TvType.Movie) {
+                this.posterUrl = doc.post_thumbnail
+            }
+        }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)
     }
@@ -290,5 +295,22 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     data class EpisodeLink(
         val source: String
+    )
+
+
+    data class VegaSearchResponse(
+        val hits: List<VegaHit>
+    )
+
+    data class VegaHit(
+        val document: VegaDocument
+    )
+
+    data class VegaDocument(
+        val id: String,
+        val imdb_id: String?,
+        val post_title: String,
+        val permalink: String,
+        val post_thumbnail: String
     )
 }
