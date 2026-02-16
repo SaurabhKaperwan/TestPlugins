@@ -49,18 +49,13 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         "$mainUrl/category/web-series/jio-studios/page/%d/" to "Jio Cinema",
         "$mainUrl/category/web-series/sonyliv/page/%d/" to "Sony Liv",
         "$mainUrl/category/web-series/zee5-originals/page/%d/" to "Zee5",
-        "$mainUrl/category/web-series/alt-balaji-web-series/page/%d/" to "ALT Balaji",
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(
-            request.data.format(page),
-            referer = mainUrl,
-            headers = headers
-        ).document
+        val document = app.get(request.data.format(page)).document
         val home = document.select("a.blog-img").mapNotNull {
             it.toSearchResult()
         }
@@ -76,11 +71,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         }
     }
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get(
-            "$mainUrl/page/$page/?s=$query",
-            referer = mainUrl,
-            headers = headers
-        ).document
+        val document = app.get("$mainUrl/page/$page/?s=$query").document
         val results = document.select("a.blog-img").mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
         return newSearchResponseList(results, hasNext)

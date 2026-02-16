@@ -104,9 +104,9 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         }
 
         var description = document
-            .select("h3:has(span:contains(SYNOPSIS/PLOT))")
-            .nextElementSibling()
-            .text()
+            .selectFirst("h3:has(span:contains(SYNOPSIS/PLOT))")
+            ?.nextElementSibling()
+            ?.text()
 
         val jsonResponse = app.get("$cinemeta_url/$tvtype/$imdbId.json").text
         val responseData = tryParseJson<ResponseData>(jsonResponse)
@@ -160,7 +160,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
                 val Eurl = unilink?.attr("href")
                 Eurl?.let { eurl ->
-                    val document2 = app.get(eurl, headers = headers).document
+                    val document2 = app.get(eurl).document
                     val vcloudLinks = document2.select("p > a").mapNotNull {
                         if(it.attr("href").contains("vcloud", true)) {
                             it.attr("href")
@@ -212,10 +212,10 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 addImdbUrl(imdbUrl)
             }
         } else {
-            val buttons = doc.select("a:has(button.dwd-button)")
+            val buttons = document.select("a:has(button.dwd-button)")
             val data = buttons.mapNotNull { button ->
                 val link = fixUrl(button.attr("href"))
-                val doc = app.get(link, headers = headers).document
+                val doc = app.get(link).document
                 val source = doc.select("a:contains(V-Cloud)").attr("href")
                 EpisodeLink(source)
             }
