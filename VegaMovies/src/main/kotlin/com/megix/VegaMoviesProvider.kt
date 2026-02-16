@@ -89,8 +89,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
                 this.posterUrl = doc.post_thumbnail
             }
         }
-        val hasNext = if(results.isEmpty()) false else true
-        return newSearchResponseList(results, hasNext)
+        return newSearchResponseList(results)
     }
 
     override suspend fun load(url: String): LoadResponse? {
