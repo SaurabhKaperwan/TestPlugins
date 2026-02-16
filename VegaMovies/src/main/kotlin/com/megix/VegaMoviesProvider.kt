@@ -52,12 +52,12 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
 
     override val mainPage = mainPageOf(
         "$mainUrl/page/%d/" to "Home",
-        "$mainUrl/web-series/netflix/page/%d/" to "Netflix",
-        "$mainUrl/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
-        "$mainUrl/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
-        "$mainUrl/web-series/mx-original/page/%d/" to "MX Original",
-        "$mainUrl/anime-series/page/%d/" to "Anime Series",
-        "$mainUrl/korean-series/page/%d/" to "Korean Series"
+        "$mainUrl/category/web-series/netflix/page/%d/" to "Netflix",
+        "$mainUrl/category/web-series/disney-plus-hotstar/page/%d/" to "Disney Plus Hotstar",
+        "$mainUrl/category/web-series/amazon-prime-video/page/%d/" to "Amazon Prime",
+        "$mainUrl/category/web-series/mx-original/page/%d/" to "MX Original",
+        "$mainUrl/category/anime-series/page/%d/" to "Anime Series",
+        "$mainUrl/category/korean-series/page/%d/" to "Korean Series"
     )
 
     override suspend fun getMainPage(
@@ -80,7 +80,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     override suspend fun search(query: String, page: Int): SearchResponseList? {
-        val document = app.get("$mainUrl/page/$page/?s=$query").document
+        val document = app.get("$mainUrl/search.html?q=$query&page=$page").document
         val results = document.select("div.movies-grid > a")
             .mapNotNull { it.toSearchResult() }
         val hasNext = if(results.isEmpty()) false else true
