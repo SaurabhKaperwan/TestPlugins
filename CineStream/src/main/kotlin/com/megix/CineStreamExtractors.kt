@@ -191,7 +191,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
 
-        val searchTitle = if (season == null) "${title.replace(":","")} $year" else "${title.replace(":","")} S${seasonSlug}E${episodeSlug}"
+        val searchTitle = if (season == null) "${title?.replace(":","")} $year" else "${title?.replace(":","")} S${seasonSlug}E${episodeSlug}"
 
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
