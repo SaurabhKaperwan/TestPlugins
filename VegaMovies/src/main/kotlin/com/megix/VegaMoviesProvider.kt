@@ -11,6 +11,7 @@ import com.lagradost.cloudstream3.utils.httpsify
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import java.net.URI
 
 open class VegaMoviesProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://vegamovies.cologne"
@@ -74,7 +75,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val href = this.attr("href")
         val posterUrl = httpsify(this.select("img").attr("src"))
 
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        return newMovieSearchResponse(title, URI(href).path, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -84,7 +85,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
         val response = tryParseJson<VegaSearchResponse>(json) ?: return null
         val results = response.hits.forEach { hit ->
             val doc = hit.document
-            return newMovieSearchResponse(doc.post_title.replace("Download ", ""), mainUrl + doc.permalink, TvType.Movie) {
+            newMovieSearchResponse(doc.post_title.replace("Download ", ""), doc.permalink, TvType.Movie) {
                 this.posterUrl = doc.post_thumbnail
             }
         }
@@ -93,7 +94,7 @@ open class VegaMoviesProvider : MainAPI() { // all providers must be an instance
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(fixUrl(url)).document
         var title = document.select("header.post-header > h1").text().replace("Download ", "")
         var posterUrl = document.select("p > img").attr("src")
         val imdbUrl =  document.select("a[href*=\"imdb\"]").attr("href")

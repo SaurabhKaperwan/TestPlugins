@@ -8,6 +8,7 @@ import org.json.JSONObject
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbUrl
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
+import java.net.URI
 
 class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://rogmovies.store"
@@ -69,7 +70,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
         val title = this.attr("title").replace("Download ", "")
         val href = this.attr("href")
         val posterUrl = this.select("img").attr("src")
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        return newMovieSearchResponse(title, URI(href).path, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -82,7 +83,7 @@ class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an ins
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        val document = app.get(fixUrl(url)).document
         var title = document.select("meta[property=og:title]").attr("content").replace("Download ", "")
         var posterUrl = document.select("meta[property=og:image]").attr("content")
         val div = document.selectFirst(".entry-content, .entry-inner")
