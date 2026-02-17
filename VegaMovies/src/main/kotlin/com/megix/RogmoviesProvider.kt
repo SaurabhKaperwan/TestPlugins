@@ -3,6 +3,7 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.json.JSONObject
+import kotlinx.coroutines.runBlocking
 
 class RogmoviesProvider : VegaMoviesProvider() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://rogmovies.vip"
