@@ -892,7 +892,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "DahmerMovies",
-                    "[DahmerMovies] $tags",
+                    "[DahmerMovies]".toSansSerifBold() + " $tags",
                     videoLink,
                     ExtractorLinkType.VIDEO
                 ) {
@@ -3925,7 +3925,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "GramCinema",
-                            "[GramCinema] ${simplifiedTitle.replace("\n", "")}",
+                            "[GramCinema]".toSansSerifBold() + " ${simplifiedTitle}",
                             streamUrl,
                             ExtractorLinkType.VIDEO
                         ) {
