@@ -502,7 +502,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "videosmashyi"
         )
 
-        servers.forEach { server ->
+        servers.amap { server ->
 
             val type = if(server == "videosmashyi" || server == "smashystream") {
                 "1"
@@ -519,10 +519,10 @@ object CineStreamExtractors : CineStreamProvider() {
             val data_json = app.get(url, headers = headers).text
             val dataString = JSONObject(data_json).getString("data")
 
-            if(dataString.isEmpty()) return@forEach
+            if(dataString.isEmpty()) return@amap
 
             val parts = dataString.split("/#")
-            if (parts.size < 2) return@forEach
+            if (parts.size < 2) return@amap
             val host = parts[0]
             val id = parts[1]
             val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
@@ -810,14 +810,14 @@ object CineStreamExtractors : CineStreamProvider() {
         val serversObj = parseHtml(serversHtml)
         val servers = extractAllServers(serversObj)
 
-        servers.forEach { server ->
+        servers.amap { server ->
             val lid = server.lid
             val encLid = encrypt(lid)
             val serverName = server.name
             val embedUrlReq = "$YflixAPI/ajax/links/view?id=$lid&_=$encLid"
             val embedRespStr = app.get(embedUrlReq).text
             val encryptedEmbed = JSONObject(embedRespStr).getString("result")
-            if (encryptedEmbed.isEmpty()) return@forEach
+            if (encryptedEmbed.isEmpty()) return@amap
             val embed_url = decrypt(encryptedEmbed)
             loadExtractor(embed_url, "Yflix", subtitleCallback, callback)
         }
@@ -883,11 +883,11 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }.ifEmpty { return }
 
-        paths.map {
+        paths.amap {
             val quality = getIndexQuality(it.first)
             val tags = getIndexQualityTags(it.first)
             val href = if (it.second.contains(dahmerMoviesAPI)) it.second else (dahmerMoviesAPI + it.second)
-            val videoLink = resolveFinalUrl(href) ?: return@map
+            val videoLink = resolveFinalUrl(href) ?: return@amap
 
             callback.invoke(
                 newExtractorLink(
@@ -1053,7 +1053,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "cherry", "pines", "magnolia", "sequoia"
         )
 
-        sources.map { source ->
+        sources.amap { source ->
             try {
                 val jsonBody = """
                     {
@@ -1384,12 +1384,6 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    //https://ani.metsu.site/proxy/oppai/pahe/Fw8cARFZQkFuChkMER0eWl4OHkYeEQYWFC1KX1ddSUJbT1VWWwhcTUIWcFFZVUtJEUwSVQgKC1ESQUQiV1ZUR0sRTB8CDwheU0AQQnlSXAJFTBZNGVIIWFQHEUQWJAQNB10KFRNHBAAdQFRFXgNxSA9SXBMAEw
-    //https://b.animetsu.live/api/anime/search/?query=juju
-    //https://b.animetsu.live/api/anime/oppai/6989b8a329cf95f4eb03b524/1?server=default&source_type=dub
-    //https://b.animetsu.live/api/anime/servers/6989b8a329cf95f4eb03b524/1
-    //https://animetsu.live/
-
     suspend fun invokeGojo(
         title: String? = null,
         aniId: Int? = null,
@@ -1402,7 +1396,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val episodeNumber = episode ?: 1
         val gojoAPI = gojoBaseAPI.replace("https://", "https://b.")
         val headers = mapOf(
-            "Referer" to gojoBaseAPI,
+            "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI
         )
 
@@ -3271,7 +3265,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val serverList = app.get(url, timeout = 30, headers = headers).parsedSafe<PrimeSrcServerList>()
-        serverList?.servers?.forEach {
+        serverList?.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
@@ -3423,7 +3417,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data,)
         val json = parseCinemaOSSources(decryptedJson.toString())
 
-        json.forEach {
+        json.amap {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
             val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else if(it["bitrate"]?.contains("4K",true) ?: false){ Qualities.P2160.value} else { Qualities.P1080.value}
             val quality =  if(it["quality"]?.isNotEmpty() == true && it["quality"]?.toIntOrNull() !=null) getQualityFromName(it["quality"]) else if (it["quality"]?.isNotEmpty() == true)  if(it["quality"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["quality"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value} else bitrateQuality
@@ -3749,7 +3743,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val rbody = FormBody.Builder().add("token", sourcesHash).build()
         val sourceslistDoc = app.post("$hostUrl/response.php", requestBody = rbody, headers = mapOf("x-requested-with" to "XMLHttpRequest")).document
         val serverList = sourceslistDoc.select("li")
-        serverList.forEach {
+        serverList.amap {
             val serverDataId = it.attr("data-id")
             val serverData = it.attr("data-server")
             val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"

@@ -175,6 +175,7 @@ val SPEC_OPTIONS = mapOf(
     "hdr" to listOf(
         SpecOption("DV", "Dolby Vision 👁️"),
         SpecOption("DoVi", "Dolby Vision 👁️"),
+        SpecOption("DOLBYVISION", "Dolby Vision 👁️"),
         SpecOption("HDR10+", "HDR10+ 🔆"),
         SpecOption("HDR10", "HDR10 🔆"),
         SpecOption("HLG", "HLG 📡"),
@@ -185,24 +186,12 @@ val SPEC_OPTIONS = mapOf(
         // -- Indian --
         SpecOption("HIN", "Hindi 🇮🇳"),
         SpecOption("Hindi", "Hindi 🇮🇳"),
-        SpecOption("TAM", "Tamil 🇮🇳"),
         SpecOption("Tamil", "Tamil 🇮🇳"),
-        SpecOption("TEL", "Telugu 🇮🇳"),
         SpecOption("Telugu", "Telugu 🇮🇳"),
-        SpecOption("MAL", "Malayalam 🇮🇳"),
         SpecOption("Malayalam", "Malayalam 🇮🇳"),
-        SpecOption("KAN", "Kannada 🇮🇳"),
         SpecOption("Kannada", "Kannada 🇮🇳"),
-        SpecOption("BEN", "Bengali 🇮🇳"),
         SpecOption("Bengali", "Bengali 🇮🇳"),
-        SpecOption("PUN", "Punjabi 🇮🇳"),
         SpecOption("Punjabi", "Punjabi 🇮🇳"),
-        SpecOption("MAR", "Marathi 🇮🇳"),
-        SpecOption("Marathi", "Marathi 🇮🇳"),
-        SpecOption("GUJ", "Gujarati 🇮🇳"),
-        SpecOption("Gujarati", "Gujarati 🇮🇳"),
-        SpecOption("ORI", "Odia 🇮🇳"),
-        SpecOption("BHO", "Bhojpuri 🇮🇳"),
 
         // -- Global --
         SpecOption("ENG", "English 🇺🇸"),
@@ -213,41 +202,13 @@ val SPEC_OPTIONS = mapOf(
         SpecOption("Japanese", "Japanese 🇯🇵"),
         SpecOption("CHN", "Chinese 🇨🇳"),
         SpecOption("Chinese", "Chinese 🇨🇳"),
-        SpecOption("CAN", "Cantonese 🇭🇰"),
-        SpecOption("MAN", "Mandarin 🇨🇳"),
-        SpecOption("SPA", "Spanish 🇪🇸"),
         SpecOption("Spanish", "Spanish 🇪🇸"),
-        SpecOption("LAT", "Latin Spanish 🇲🇽"),
-        SpecOption("FRE", "French 🇫🇷"),
         SpecOption("French", "French 🇫🇷"),
-        SpecOption("GER", "German 🇩🇪"),
         SpecOption("German", "German 🇩🇪"),
-        SpecOption("ITA", "Italian 🇮🇹"),
         SpecOption("Italian", "Italian 🇮🇹"),
-        SpecOption("RUS", "Russian 🇷🇺"),
         SpecOption("Russian", "Russian 🇷🇺"),
-        SpecOption("POR", "Portuguese 🇵🇹"),
         SpecOption("Portuguese", "Portuguese 🇵🇹"),
-        SpecOption("PT-BR", "Brazilian Port. 🇧🇷"),
-        SpecOption("ARA", "Arabic 🇸🇦"),
         SpecOption("Arabic", "Arabic 🇸🇦"),
-        SpecOption("THA", "Thai 🇹🇭"),
-        SpecOption("VIE", "Vietnamese 🇻🇳"),
-        SpecOption("IND", "Indonesian 🇮🇩"),
-        SpecOption("MAL", "Malay 🇲🇾"),
-        SpecOption("TUR", "Turkish 🇹🇷"),
-        SpecOption("PER", "Persian 🇮🇷"),
-        SpecOption("POL", "Polish 🇵🇱"),
-        SpecOption("UKR", "Ukrainian 🇺🇦"),
-        SpecOption("DUT", "Dutch 🇳🇱"),
-        SpecOption("SWE", "Swedish 🇸🇪"),
-        SpecOption("NOR", "Norwegian 🇳🇴"),
-        SpecOption("DAN", "Danish 🇩🇰"),
-        SpecOption("FIN", "Finnish 🇫🇮"),
-        SpecOption("HEB", "Hebrew 🇮🇱"),
-        SpecOption("CZE", "Czech 🇨🇿"),
-        SpecOption("HUN", "Hungarian 🇭🇺"),
-        SpecOption("GRE", "Greek 🇬🇷"),
         SpecOption("Multi", "Multi-Audio 🌍"),
         SpecOption("Dual", "Dual-Audio 🌗")
     )
@@ -753,7 +714,7 @@ suspend fun loadSourceNameExtractor(
             val fixSize = if(size.isNotEmpty()) " $size" else ""
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$source [${link.source}] $simplifiedTitle $fixSize",
+                "<strong>$source [${link.source}]</strong> $simplifiedTitle $fixSize",
                 link.url,
                 type = link.type
             ) {
@@ -1351,8 +1312,8 @@ suspend fun getGojoStreams(
 
             callback.invoke(
                 newExtractorLink(
-                    "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
-                    "Gojo [${lang.uppercase()}] [${provider.uppercase()}]",
+                    "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
+                    "Animetsu [${lang.uppercase()}] [${provider.uppercase()}]",
                     fixUrl(url, "https://ani.metsu.site/proxy"),
                     type = if (videoType == "video/mp4") ExtractorLinkType.VIDEO else ExtractorLinkType.M3U8
                 ) {
