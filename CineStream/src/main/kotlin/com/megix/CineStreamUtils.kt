@@ -690,6 +690,20 @@ suspend fun getHindMoviezLinks(
     )
 }
 
+fun String.toBoldUnicode(): String {
+    val builder = StringBuilder()
+    for (char in this) {
+        val codePoint = when (char) {
+            in 'A'..'Z' -> 0x1D400 + (char - 'A')
+            in 'a'..'z' -> 0x1D41A + (char - 'a')
+            in '0'..'9' -> 0x1D7CE + (char - '0')
+            else -> char.code
+        }
+        builder.append(Character.toChars(codePoint))
+    }
+    return builder.toString()
+}
+
 suspend fun loadSourceNameExtractor(
     source: String,
     url: String,
@@ -712,9 +726,10 @@ suspend fun loadSourceNameExtractor(
             val simplifiedTitle = getSimplifiedTitle(link.name)
             val combined = if(source.contains("(Combined)")) " (Combined)" else ""
             val fixSize = if(size.isNotEmpty()) " $size" else ""
+            val sourceBold = "$source [${link.source}]".toBoldUnicode()
             val newLink = newExtractorLink(
                 if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "<strong>$source [${link.source}]</strong> $simplifiedTitle $fixSize",
+                "$sourceBold [${link.source}] $simplifiedTitle $fixSize",
                 link.url,
                 type = link.type
             ) {
