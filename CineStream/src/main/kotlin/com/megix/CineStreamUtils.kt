@@ -6,18 +6,13 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
 import java.util.Base64
-import okhttp3.*
-import okhttp3.FormBody
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
 import com.lagradost.api.Log
 import com.lagradost.nicehttp.NiceResponse
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import com.lagradost.nicehttp.RequestBodyTypes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -382,12 +377,17 @@ suspend fun NFBypass(mainUrl: String): String {
 }
 
 suspend fun getNfVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
-    val requestBody = FormBody.Builder().add("id", id).build()
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
-    val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
+
+    val json = app.post(
+        "$mainUrl/play.php",
+        headers = headers,
+        cookies = cookies,
+        data = mapOf("id" to id)
+    ).text
     val h = JSONObject(json).getString("h")
 
     val headers2 = mapOf(
@@ -948,7 +948,7 @@ suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvT
             }
           }
         }
-    """.trimIndent().trim()
+    """.trimIndent()
 
     val variables = mapOf(
         "search" to title,
@@ -957,16 +957,18 @@ suspend fun tmdbToAnimeId(title: String?, year: Int?, season: String?, type: TvT
         "season" to season?.uppercase(),
         "seasonYear" to year,
         "format" to listOf(if (type == TvType.AnimeMovie) "MOVIE" else "TV", "ONA")
-    ).filterValues { value -> value != null && value.toString().isNotEmpty() }
-    val data = mapOf(
-        "query" to query,
-        "variables" to variables
-    ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
-    val res = app.post(anilistAPI, requestBody = data)
-        .parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+    ).filterValues { it != null && it.toString().isNotEmpty() }
+
+    val res = app.post(
+        url = anilistAPI,
+        json = mapOf(
+            "query" to query,
+            "variables" to variables
+        )
+    ).parsedSafe<AniSearch>()?.data?.Page?.media?.firstOrNull()
+
     return AniIds(res?.id, res?.idMal)
 }
-
 
 fun getSeason(month: Int?): String? {
     val seasons = arrayOf(
@@ -1106,21 +1108,20 @@ suspend fun getProtonStream(
                 .padStart(9, '0')
             }"
 
-            val requestBody = FormBody.Builder()
-                .add("downloadid", id)
-                .add("token", "ok")
-                .add("uid", uid)
-                .build()
-
             val postHeaders = mapOf(
                 "User-Agent" to USER_AGENT,
                 "Referer" to protonmoviesAPI,
                 "Content-Type" to "multipart/form-data",
             )
+
             val idData = app.post(
                 "$protonmoviesAPI/ppd.php",
                 headers = postHeaders,
-                requestBody = requestBody
+                data = mapOf(
+                    "downloadid" to id,
+                    "token" to "ok",
+                    "uid" to uid
+                )
             ).text
 
             val headers = mapOf(

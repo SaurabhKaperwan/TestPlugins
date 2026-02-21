@@ -11,20 +11,11 @@ import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.FormBody
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Headers
-
 import org.json.JSONObject
 import org.json.JSONArray
 
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import java.net.URI
 import java.net.URL
-import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import com.lagradost.cloudstream3.utils.JsUnpacker
@@ -3311,12 +3302,19 @@ object CineStreamExtractors : CineStreamProvider() {
                 val postDoc = url?.let { app.get("$it", cacheTime = 60, timeout = 30).document }
                 val id = postDoc?.select("a.Button.B.on")?.attr("data-ide")
                 repeat(5) { i ->
-                    val mediaType = "application/x-www-form-urlencoded".toMediaType()
-                    val body =
-                        "action=action_change_player_eroz&ide=$id&key=$i".toRequestBody(mediaType)
                     val ajaxUrl = "$mainUrl/wp-admin/admin-ajax.php"
-                    val doc =
-                        app.post(ajaxUrl, requestBody = body, cacheTime = 60, timeout = 30).document
+
+                    val doc = app.post(
+                        url = ajaxUrl,
+                        data = mapOf(
+                            "action" to "action_change_player_eroz",
+                            "ide" to id.toString(),
+                            "key" to i.toString()
+                        ),
+                        cacheTime = 60,
+                        timeout = 30
+                    ).document
+
                     var url = doc.select("iframe").attr("src").replace("\\", "").replace(
                         "\"",
                         ""
@@ -3693,21 +3691,29 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val url = if(season == null) "$multiEmbededApi/?video_id=$tmdbId&tmdb=1" else " $multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
-        val streamingUrl = app.get(url, allowRedirects = false).headers.get("Location")
-        val mediaType = "application/x-www-form-urlencoded".toMediaType()
-        val body = "button-click=ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==&button-referer=".toRequestBody(mediaType)
-        val sourcesDoc = app.post(streamingUrl.toString(), requestBody = body, timeout = 40).text
+        val streamingUrl = app.get(url, allowRedirects = false).headers.get("Location") ?: return
+        val sourcesDoc = app.post(
+            url = streamingUrl,
+            data = mapOf(
+                "button-click" to "ZEhKMVpTLVF0LVBTLVF0TnprekxTLVF5LVBEVXRMLTAtVjNOLTBjMU8tMEF5TmpneC1QRFUtNQ==",
+                "button-referer" to ""
+            ),
+            timeout = 40
+        ).text
         val pattern = "load_sources\\(\"(.*?)\"\\)".toRegex()
         val sourcesHash = pattern.find(sourcesDoc)?.groupValues?.getOrNull(1) ?: return
         val hostUrl = "${URI(streamingUrl).scheme}://${URI(streamingUrl).host}"
-        val rbody = FormBody.Builder().add("token", sourcesHash).build()
-        val sourceslistDoc = app.post("$hostUrl/response.php", requestBody = rbody, headers = mapOf("x-requested-with" to "XMLHttpRequest")).document
+        val sourceslistDoc = app.post(
+            "$hostUrl/response.php",
+            data = mapOf("token" to sourcesHash),
+            headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        ).document
         val serverList = sourceslistDoc.select("li")
         serverList.amap {
             val serverDataId = it.attr("data-id")
             val serverData = it.attr("data-server")
             val playVideoUrl = "$hostUrl/playvideo.php?video_id=$serverDataId&server_id=${serverData}r&token=$sourcesHash&init=0"
-            val src = app.get(playVideoUrl, ).document
+            val src = app.get(playVideoUrl).document
             val iframe = src.select("iframe").attr("src")
             loadSourceNameExtractor("SuperEmbeded",iframe,hostUrl,subtitleCallback,callback)
         }
