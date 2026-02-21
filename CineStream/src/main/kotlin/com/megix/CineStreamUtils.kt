@@ -767,13 +767,14 @@ fun formatSize(bytes: Long): String {
 //         "Accept-Language" to "en-US,en;q=0.9'",
 //     )
 
-//     val jsonBody = """{"text":"$text"}"""
-//     val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+//     val jsonBody = mapOf(
+//         "text" to text
+//     )
 
 //     val response = app.post(
 //         "https://enc-dec.app/api/$source",
 //         headers = headers,
-//         requestBody = requestBody
+//         json = jsonBody
 //     )
 
 //     if(response.isSuccessful) {
@@ -828,10 +829,16 @@ suspend fun bypassXDM(url: String): String? {
 
     if (id.isEmpty()) return null
 
-    val jsonBody = """{"code":"$id"}"""
-    val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
-    val jsonResponse = app.post("$baseUrl/api/session", requestBody = requestBody).text
-    val json = JSONObject(jsonResponse)
+    val responseText = app.post(
+        "$baseUrl/api/session",
+        json = mapOf("code" to id)
+    ).text
+
+    val json = try {
+        JSONObject(responseText)
+    } catch (e: Exception) {
+        return null
+    }
     val sessionId = json.optString("sessionId")
     val token = json.optString("token")
 
@@ -846,12 +853,10 @@ suspend fun bypassXDM(url: String): String? {
     return source
 }
 
-fun getAniListInfo(animeId: Int): AnimeInfo? {
-    val client = OkHttpClient()
-
+suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val query = """
-        query (${"$"}id: Int) {
-            Media (id: ${"$"}id, type: ANIME) {
+        query (${'$'}id: Int) {
+            Media (id: ${'$'}id, type: ANIME) {
                 title {
                     english
                     romaji
@@ -861,29 +866,22 @@ fun getAniListInfo(animeId: Int): AnimeInfo? {
         }
     """.trimIndent()
 
-    val jsonBody = JSONObject()
-    jsonBody.put("query", query)
-    jsonBody.put("variables", JSONObject().put("id", animeId))
+    val requestData = mapOf(
+        "query" to query,
+        "variables" to mapOf("id" to animeId)
+    )
 
-    val request = Request.Builder()
-        .url("https://graphql.anilist.co")
-        .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
-        .build()
+    val response = app.post(
+        "https://graphql.anilist.co",
+        json = requestData
+    ).parsedSafe<AniListResponse>()
 
-    client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) return null
+    val media = response?.data?.media ?: return null
 
-        val responseBody = response.body.string()
-        val json = JSONObject(responseBody)
-        val media = json.optJSONObject("data")?.optJSONObject("Media") ?: return null
-        val rawBanner = media.optString("bannerImage")
-        val finalBanner = rawBanner.takeUnless { it.isBlank() || it == "null" }
-        val titleObj = media.optJSONObject("title")
-        val english = titleObj?.optString("english")
-        //val romaji = titleObj?.optString("romaji")
-        val finalTitle = english?.takeUnless { it.isBlank() || it == "null" }
-        return AnimeInfo(finalTitle, finalBanner)
-    }
+    val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
+    val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
+
+    return AnimeInfo(finalTitle, finalBanner)
 }
 
 suspend fun convertTmdbToAnimeId(

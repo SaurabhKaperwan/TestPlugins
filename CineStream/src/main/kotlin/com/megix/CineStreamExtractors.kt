@@ -525,14 +525,12 @@ object CineStreamExtractors : CineStreamProvider() {
             val id = parts[1]
             val encrypted = app.get("$host/api/v1/video?id=$id", headers = headers).text
 
-            val jsonBody = JsonObject().apply {
-                addProperty("text", encrypted)
-                addProperty("type", type)
-            }
+            val jsonBody = mapOf(
+                "text" to encrypted,
+                "type" to type
+            )
 
-            val mediaTypeJson = "application/json; charset=utf-8".toMediaType()
-            val requestBody = jsonBody.toString().toRequestBody(mediaTypeJson)
-            val decrypted = app.post("$multiDecryptAPI/dec-vidstack", requestBody = requestBody).text
+            val decrypted = app.post("$multiDecryptAPI/dec-vidstack", json = jsonBody).text
             val resultObject = JSONObject(decrypted).getJSONObject("result")
             val m3u8 = resultObject.getString("source")
 
@@ -723,12 +721,10 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         suspend fun decrypt(text: String): String {
-            val jsonBody = """{"text":"$text"}"""
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
-
+            val jsonBody = mapOf("text" to text)
             val text = app.post(
                 "$multiDecryptAPI/dec-movies-flix",
-                requestBody = requestBody
+                json = jsonBody
             ).text
 
             val json = JSONObject(text)
@@ -948,11 +944,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val enc_data = app.get(url, headers = headers).text
 
-            val jsonBody = """{"text":"$enc_data","id":"$tmdbId"}"""
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+            val jsonBody = mapOf("text" to enc_data, "id" to tmdbId)
             val response = app.post(
                 "$multiDecryptAPI/dec-videasy",
-                requestBody = requestBody
+                json = jsonBody
             )
 
             if(response.isSuccessful) {
@@ -1125,11 +1120,10 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val enc_data = app.get(url, headers = headers).text
 
-        val jsonBody = """{"text":"$enc_data","key":"$key"}"""
-        val requestBody = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaType())
+        val jsonBody = mapOf("text" to enc_data, "key" to key)
         val response = app.post(
             "$multiDecryptAPI/dec-hexa",
-            requestBody = requestBody,
+            json = jsonBody,
             headers = mapOf("Content-Type" to "application/json")
         )
 
@@ -1796,12 +1790,11 @@ object CineStreamExtractors : CineStreamProvider() {
 
 
         suspend fun decrypt(text: String): String {
-            val jsonBody = """{"text":"$text"}"""
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
+            val jsonBody = mapOf("text" to text)
 
             val text = app.post(
                 "$multiDecryptAPI/dec-kai",
-                requestBody = requestBody
+                json = jsonBody
             ).text
 
             val json = JSONObject(text)
