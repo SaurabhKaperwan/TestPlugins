@@ -818,7 +818,7 @@ suspend fun bypassHrefli(url: String): String? {
 //XDM
 suspend fun bypassXDM(url: String): String? {
     val link = app.get(
-        link,
+        url,
         allowRedirects = false,
         timeout = 600L
     ).headers["location"] ?: return null
