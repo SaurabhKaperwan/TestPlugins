@@ -3,15 +3,22 @@ package com.megix
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.network.WebViewResolver
+import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
+import com.google.gson.JsonElement
+import com.google.gson.JsonParser
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import com.lagradost.cloudstream3.utils.M3u8Helper
 import com.lagradost.cloudstream3.utils.getAndUnpack
-import com.lagradost.cloudstream3.USER_AGENT
-import android.util.Log
-import kotlinx.coroutines.delay
+import java.net.URI
+import com.lagradost.api.Log
 
 open class SuperVideo : ExtractorApi() {
     override val name = "SuperVideo"
@@ -65,10 +72,10 @@ class Pahe : ExtractorApi() {
     override val name = "Pahe"
     override val mainUrl = "https://pahe.win"
     override val requiresReferer = true
-
     private val kwikParamsRegex = Regex("""\("(\w+)",\d+,"(\w+)",(\d+),(\d+),\d+\)""")
     private val kwikDUrl = Regex("action=\"([^\"]+)\"")
     private val kwikDToken = Regex("value=\"([^\"]+)\"")
+    private val client = OkHttpClient()
 
     private fun decrypt(fullString: String, key: String, v1: Int, v2: Int): String {
         val keyIndexMap = key.withIndex().associate { it.value to it.index }
@@ -78,8 +85,6 @@ class Pahe : ExtractorApi() {
 
         while (i < fullString.length) {
             val nextIndex = fullString.indexOf(toFind, i)
-            if (nextIndex == -1) break
-
             val decodedCharStr = buildString {
                 for (j in i until nextIndex) {
                     append(keyIndexMap[fullString[j]] ?: -1)
@@ -87,6 +92,7 @@ class Pahe : ExtractorApi() {
             }
 
             i = nextIndex + 1
+
             val decodedChar = (decodedCharStr.toInt(v2) - v1).toChar()
             sb.append(decodedChar)
         }
@@ -94,72 +100,74 @@ class Pahe : ExtractorApi() {
         return sb.toString()
     }
 
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
+    override suspend fun getUrl(url: String, referer: String?, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit) {
+        val noRedirects = OkHttpClient.Builder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .build()
 
-        val kwikUrl = app.get(
-            "$url/i",
-            allowRedirects = false
-        ).headers["location"] ?: return
+        val initialRequest = Request.Builder()
+            .url("$url/i")
+            .get()
+            .build()
 
-        val fContentResp = app.get(
-            kwikUrl,
-            headers = mapOf(
-                "Referer" to "https://kwik.cx/",
-                "User-Agent" to USER_AGENT
-            )
-        )
-        val fContentString = fContentResp.text
-        val sessionCookie = fContentResp.headers["set-cookie"]?.substringBefore(";") ?: ""
-        val match = kwikParamsRegex.find(fContentString) ?: return
-        val (fullString, key, v1, v2) = match.destructured
+        val kwikUrl = "https://" + noRedirects.newCall(initialRequest).execute()
+                        .header("location")!!.substringAfterLast("https://")
 
+        val fContentRequest = Request.Builder()
+            .url(kwikUrl)
+            .header("referer", "https://kwik.cx/")
+            .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
+            .get()
+            .build()
+
+        val fContent = client.newCall(fContentRequest).execute()
+        val fContentString = fContent.body.string()
+
+        val (fullString, key, v1, v2) = kwikParamsRegex.find(fContentString)!!.destructured
         val decrypted = decrypt(fullString, key, v1.toInt(), v2.toInt())
 
-        val uri = kwikDUrl.find(decrypted)?.groupValues?.get(1) ?: return
-        val tok = kwikDToken.find(decrypted)?.groupValues?.get(1) ?: return
+        val uri = kwikDUrl.find(decrypted)!!.destructured.component1()
+        val tok = kwikDToken.find(decrypted)!!.destructured.component1()
+
+        val noRedirectClient = OkHttpClient().newBuilder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .cookieJar(client.cookieJar)
+            .build()
 
         var code = 419
         var tries = 0
-        var location = ""
+        var content: Response? = null
 
         while (code != 302 && tries < 20) {
+            val formBody = FormBody.Builder()
+                .add("_token", tok)
+                .build()
 
-            val postResp = app.post(
-                uri,
-                headers = mapOf(
-                    "User-Agent" to USER_AGENT,
-                    "Referer" to kwikUrl,
-                    "Cookie" to sessionCookie
-                ),
-                data = mapOf("_token" to tok),
-                allowRedirects = false
-            )
+            val postRequest = Request.Builder()
+                .url(uri)
+                .header("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
+                .header("referer", fContent.request.url.toString())
+                .header("cookie",  fContent.headers("set-cookie").firstOrNull().toString())
+                .post(formBody)
+                .build()
 
-            code = postResp.code
-            if (code == 302 || code == 301) {
-                location = postResp.headers["location"] ?: ""
-                break
-            }
-
+            content = noRedirectClient.newCall(postRequest).execute()
+            code = content.code
             tries++
-            delay(500)
         }
 
-        if (location.isEmpty()) return
+        val location = content?.header("location").toString()
+        content?.close()
 
         callback.invoke(
             newExtractorLink(
                 name,
                 name,
-                location
+                location,
             ) {
                 this.referer = "https://kwik.cx/"
-                this.quality = Qualities.Unknown.value
             }
         )
     }
@@ -243,14 +251,15 @@ open class MegaUp : ExtractorApi() {
 
         if (encodedResult == null) return
 
-        val m3u8Data = app.post(
-            url = "https://enc-dec.app/api/dec-mega",
-            json = mapOf(
-                "text" to encodedResult,
-                "agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0"
-            )
-        ).text
-
+        val body = """
+        {
+        "text": "$encodedResult",
+        "agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0"
+        }
+        """.trimIndent()
+            .trim()
+            .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        val m3u8Data=app.post("https://enc-dec.app/api/dec-mega", requestBody = body).text
         if (m3u8Data.isBlank()) {
             Log.d("Phisher", "Encoded result is null or empty")
             return
