@@ -10,6 +10,8 @@ import org.json.JSONObject
 import com.lagradost.cloudstream3.utils.M3u8Helper
 import com.lagradost.cloudstream3.utils.getAndUnpack
 import com.lagradost.cloudstream3.USER_AGENT
+import android.util.Log
+import kotlinx.coroutines.delay
 
 open class SuperVideo : ExtractorApi() {
     override val name = "SuperVideo"
@@ -58,8 +60,6 @@ class Kwik : ExtractorApi() {
         )
     }
 }
-
-import kotlinx.coroutines.delay
 
 class Pahe : ExtractorApi() {
     override val name = "Pahe"
@@ -156,10 +156,11 @@ class Pahe : ExtractorApi() {
             newExtractorLink(
                 name,
                 name,
-                location,
-                referer = "https://kwik.cx/",
-                quality = Qualities.Unknown.value
-            )
+                location
+            ) {
+                this.referer = referer
+                this.quality = Qualities.Unknown.value
+            }
         )
     }
 }
