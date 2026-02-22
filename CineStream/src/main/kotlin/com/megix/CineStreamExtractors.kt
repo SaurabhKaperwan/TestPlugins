@@ -3954,7 +3954,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     if (slink.isNotEmpty()) {
                         val lan = s.optString("lan")
                         subtitleCallback.invoke(
-                            SubtitleFile(
+                            newSubtitleFile(
                                 getLanguage(lan) ?: lan,
                                 slink
                             )
