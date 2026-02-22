@@ -92,7 +92,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-            { invokeFilm1k(res.title, res.season, res.year, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
@@ -3273,74 +3272,6 @@ object CineStreamExtractors : CineStreamProvider() {
     //     }
     // }
 
-    // For rare movies
-    suspend fun invokeFilm1k(
-        title: String? = null,
-        season: Int? = null,
-        year: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        //val proxyUrl = "https://corsproxy.io/?url="
-        val mainUrl = "$Film1kApi"
-        if (season == null) {
-            try {
-                val fixTitle = title?.replace(":", "")?.replace(" ", "+")
-                val doc = app.get("$mainUrl/?s=$fixTitle", cacheTime = 60, timeout = 30).document
-                val posts = doc.select("header.entry-header").filter { element ->
-                    element.selectFirst(".entry-title")?.text().toString().contains(
-                        "${
-                            title?.replace(
-                                ":",
-                                ""
-                            )
-                        }"
-                    ) && element.selectFirst(".entry-title")?.text().toString()
-                        .contains(year.toString())
-                }.toList()
-                val url = posts.firstOrNull()?.select("a:nth-child(1)")?.attr("href")
-                val postDoc = url?.let { app.get("$it", cacheTime = 60, timeout = 30).document }
-                val id = postDoc?.select("a.Button.B.on")?.attr("data-ide")
-                repeat(5) { i ->
-                    val ajaxUrl = "$mainUrl/wp-admin/admin-ajax.php"
-
-                    val doc = app.post(
-                        url = ajaxUrl,
-                        data = mapOf(
-                            "action" to "action_change_player_eroz",
-                            "ide" to id.toString(),
-                            "key" to i.toString()
-                        ),
-                        cacheTime = 60,
-                        timeout = 30
-                    ).document
-
-                    var url = doc.select("iframe").attr("src").replace("\\", "").replace(
-                        "\"",
-                        ""
-                    ) // It is necessary because it returns link with double qoutes like this ("https://voe.sx/e/edpgpjsilexe")
-                    val film1kRegex = Regex("https://film1k\\.xyz/e/([^/]+)/.*")
-                    if (url.contains("https://film1k.xyz")) {
-                        val matchResult = film1kRegex.find(url)
-                        if (matchResult != null) {
-                            val code = matchResult.groupValues[1]
-                            url = "https://filemoon.sx/e/$code"
-                        }
-                    }
-                    url = url.replace("https://films5k.com", "https://mwish.pro")
-                    loadSourceNameExtractor(
-                        "Film1k",
-                        url,
-                        "",
-                        subtitleCallback,
-                        callback
-                    )
-                }
-            } catch (_: Exception) {
-            }
-        }
-    }
-
     suspend fun invokeCinemaOS(
         imdbId: String? = null,
         tmdbId: Int? = null,
@@ -3918,7 +3849,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val HOST = "h5.aoneroom.com"
         val BASE_URL = "https://$HOST"
-        val SEASON_SUFFIX_REGEX = Regex("\\sS\\d+$")
+        val SEASON_SUFFIX_REGEX = """\sS\d+(?:-S?\d+)*$""".toRegex(RegexOption.IGNORE_CASE)
 
         val baseHeaders = mapOf(
             "X-Client-Info" to "{\"timezone\":\"Africa/Nairobi\"}",
