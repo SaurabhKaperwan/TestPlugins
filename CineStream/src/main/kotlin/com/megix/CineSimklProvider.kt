@@ -155,7 +155,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private suspend fun getPosterUrl(
+    private fun getPosterUrl(
         id: String? = null,
         type: String,
      ): String? {
