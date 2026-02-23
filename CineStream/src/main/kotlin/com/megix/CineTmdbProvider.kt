@@ -23,7 +23,7 @@ class CineTmdbProvider: MainAPI() {
     override var lang = "en"
     override val hasMainPage = true
     override val hasQuickSearch = true
-    override val providerType = ProviderType.MetaProvider
+    // override val providerType = ProviderType.MetaProvider
     private val apiUrl = "https://api.themoviedb.org/3"
     private val image_proxy = "https://wsrv.nl/?url="
 
@@ -217,6 +217,7 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
                 this.showStatus = getStatus(res.status)
+                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -255,6 +256,7 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
 
                 this.score = Score.from10(res.vote_average.toString())
+                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -434,6 +436,7 @@ class CineTmdbProvider: MainAPI() {
 
     data class MediaDetail(
         @param:JsonProperty("id") val id: Int? = null,
+        @param:JsonProperty("adult") val adult: Boolean = false,
         @param:JsonProperty("imdb_id") val imdbId: String? = null,
         @param:JsonProperty("title") val title: String? = null,
         @param:JsonProperty("name") val name: String? = null,

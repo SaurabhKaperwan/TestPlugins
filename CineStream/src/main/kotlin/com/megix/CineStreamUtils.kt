@@ -314,7 +314,7 @@ fun getLanguage(language: String?): String? {
 fun convertToLocalTime(isoString: String? = null): String? {
     return try {
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH)
-        val date = parser.parse(isoString) ?: return ""
+        val date = parser.parse(isoString) ?: return isoString
         val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH)
         formatter.timeZone = TimeZone.getDefault()
         formatter.format(date)
@@ -546,16 +546,10 @@ fun getEpisodeSlug(
 fun getIndexQuality(str: String?): Int {
     if (str.isNullOrBlank()) return Qualities.Unknown.value
 
-    // Check for explicit "1080p" like style formats
-    val exactResolution = Regex("""(\d{3,4})[pP]""").find(str)
-        ?.groupValues?.getOrNull(1)
-        ?.toIntOrNull()
-
-    if (exactResolution != null) {
-        return exactResolution
+    Regex("""(\d{3,4})[pP]""").find(str)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let {
+        return it
     }
 
-    // Check for marketing keywords if no specific number found
     val lowerStr = str.lowercase()
     return when {
         lowerStr.contains("8k") -> 4320
@@ -564,6 +558,7 @@ fun getIndexQuality(str: String?): Int {
         else -> Qualities.Unknown.value
     }
 }
+
 
 //Dahmer
 fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
