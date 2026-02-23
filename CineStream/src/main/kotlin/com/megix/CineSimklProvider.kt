@@ -44,9 +44,9 @@ class CineSimklProvider: MainAPI() {
     private val repo = SyncRepo(AccountManager.simklApi)
     private val kitsuAPI = "https://anime-kitsu.strem.fun"
     private val cinemetaAPI = "https://v3-cinemeta.strem.io"
-    private val haglund_url = "https://arm.haglund.dev/api/v2"
+    // private val haglund_url = "https://arm.haglund.dev/api/v2"
     private val image_proxy = "https://wsrv.nl/?url="
-    private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
+    // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
         "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
@@ -76,12 +76,6 @@ class CineSimklProvider: MainAPI() {
             .firstOrNull() ?: "" // Take the first numeric ID found
     }
 
-    private suspend fun getExternalIds(id: Int? = null) : String?{
-        val url = "$haglund_url/ids?source=myanimelist&id=$id"
-        val json = app.get(url).text
-        return tryParseJson<ExtenalIds>(json)?.imdb
-    }
-
     private fun getStatus(status: String?): ShowStatus? {
         return when (status) {
             "airing" -> ShowStatus.Ongoing
@@ -90,53 +84,13 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-   private suspend fun extractImdbInfo(
-        kitsuId: String? = null,
-        season: Int? = null,
-        episode: Int? = null
-    ): Triple<String?, Int?, Int?>? {
+    private suspend fun extractNameAndTMDBId(imdbId: String? = null): Pair<String?, Int?>? {
         return try {
-            if (kitsuId == null) return null
-
-            val response = app.get("$kitsuAPI/meta/series/kitsu:$kitsuId.json")
-            if (!response.isSuccessful) {
-                return null
-            }
-
-            val jsonString = response.text
-            val rootObject = JSONObject(jsonString)
-            val metaObject = rootObject.optJSONObject("meta") ?: return null
-
-            val imdbId = metaObject.optString("imdb_id").takeIf { it.isNotBlank() }
-
-            if (episode == null) {
-                return Triple(imdbId, null, null)
-            }
-
-            val videosArray = metaObject.optJSONArray("videos") ?: return Triple(imdbId, null, null)
-
-            for (i in 0 until videosArray.length()) {
-                val videoObject = videosArray.optJSONObject(i) ?: continue
-                if (videoObject.optInt("episode") == episode) {
-                    val imdbSeason = videoObject.optInt("imdbSeason").takeIf { it > 0 }
-                    val imdbEpisode = videoObject.optInt("imdbEpisode").takeIf { it > 0 }
-                    return Triple(imdbId, imdbSeason, imdbEpisode)
-                }
-            }
-
-            Triple(imdbId, season, episode)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private suspend fun extractNameAndTMDBId(imdbId: String? = null): Triple<String?, Int?, Int?>? {
-        return try {
-            if (imdbId.isNullOrBlank()) return Triple(null, null, null)
+            if (imdbId.isNullOrBlank()) return null
 
             val response = app.get("$cinemetaAPI/meta/series/$imdbId.json")
             if (!response.isSuccessful) {
-                return Triple(null, null, null)
+                return null
             }
 
             val jsonString = response.text
@@ -144,12 +98,11 @@ class CineSimklProvider: MainAPI() {
             val metaObject = rootObject.optJSONObject("meta")
 
             val name = metaObject?.optString("name")?.takeIf { it.isNotBlank() }
-            val moviedbId = metaObject?.optInt("moviedb_id", -1)?.takeIf { it != -1 }
             val year = metaObject?.optString("year")?.substringBefore("-")?.toIntOrNull()
                     ?: metaObject?.optString("year")?.substringBefore("–")?.toIntOrNull()
                     ?: metaObject?.optString("year")?.toIntOrNull()
 
-            Triple(name, moviedbId, year)
+            Pair(name, year)
         } catch (e: Exception) {
             null
         }
@@ -345,7 +298,7 @@ class CineSimklProvider: MainAPI() {
                 this.plot = plot
                 this.tags = genres
                 this.comingSoon = isUpcoming(json.released)
-                // this.duration = json.runtime?.toIntOrNull()
+                this.duration = json.runtime?.toIntOrNull()
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
@@ -373,14 +326,15 @@ class CineSimklProvider: MainAPI() {
                         anilistId,
                         malId,
                         kitsuId,
-                        json.season?.toIntOrNull(),
                         it.season,
                         it.episode,
                         it.date.toString().substringBefore("-").toIntOrNull(),
                         isAnime,
                         isBollywood,
                         isAsian,
-                        isCartoon
+                        isCartoon,
+                        it.tvdb?.season ?: json.season?.toIntOrNull(),
+                        it.tvdb?.episode
                     ).toJson()
                 ) {
                     this.name = it.title + if(it.aired == false) " • [UPCOMING]" else ""
@@ -403,7 +357,7 @@ class CineSimklProvider: MainAPI() {
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.actors = cast
-                // this.showStatus = getStatus(json.status)
+                this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
                 this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
@@ -422,7 +376,37 @@ class CineSimklProvider: MainAPI() {
     ): Boolean {
         val res = parseJson<LoadLinksData>(data)
         if(res.isAnime) {
-            runAnimeInvokers(res, subtitleCallback, callback)
+            val (imdbTitle, imdbYear) = try {
+                extractNameAndYear(res.imdbId) ?: Pair(res.en_title, res.year)
+            } catch (e: Exception) {
+                Pair(res.en_title, res.year)
+            }
+
+            invokeAllAnimeSources(
+                AllLoadLinksData(
+                    res.en_title,
+                    res.imdbId,
+                    res.tmdbId,
+                    res.anilistId,
+                    res.malId,
+                    res.kitsuId,
+                    res.year,
+                    res.airedYear,
+                    res.season,
+                    res.episode,
+                    res.isAnime,
+                    res.isBollywood,
+                    res.isAsian,
+                    res.isCartoon,
+                    res.title,
+                    imdbTitle,
+                    res.imdbSeason,
+                    res.imdbEpisode,
+                    imdbYear,
+                ),
+                subtitleCallback,
+                callback
+            )
         } else {
             invokeAllSources(
                 AllLoadLinksData(
@@ -451,60 +435,6 @@ class CineSimklProvider: MainAPI() {
             )
         }
         return true
-    }
-
-    private suspend fun runAnimeInvokers(
-        res: LoadLinksData,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        var (imdbId, imdbSeason, imdbEpisode) = try {
-            if (res.imdbId != null) {
-                Triple(res.imdbId, res.imdbSeason ?: res.season, res.episode)
-            } else {
-                extractImdbInfo(res.kitsuId, res.imdbSeason ?: res.season, res.episode) ?: Triple(null, null, null)
-            }
-        } catch (e: Exception) {
-            Triple(null, null, null)
-        }
-
-        if(imdbId == null)  {
-            imdbId = getExternalIds(res.malId)
-            imdbSeason = res.imdbSeason
-            imdbEpisode = res.episode
-        }
-
-        val (imdbTitle, tmdbId, imdbYear) = try {
-            extractNameAndTMDBId(imdbId) ?: Triple(res.en_title, res.tmdbId, res.year)
-        } catch (e: Exception) {
-            Triple(res.en_title, res.tmdbId, res.year)
-        }
-
-        invokeAllAnimeSources(
-            AllLoadLinksData(
-                res.title,
-                imdbId,
-                tmdbId,
-                res.anilistId,
-                res.malId,
-                res.kitsuId,
-                res.year,
-                res.airedYear,
-                res.season,
-                res.episode,
-                res.isAnime,
-                res.isBollywood,
-                res.isAsian,
-                res.isCartoon,
-                null,
-                imdbTitle,
-                imdbSeason,
-                imdbEpisode,
-                imdbYear,
-            ),
-            subtitleCallback,
-            callback
-        )
     }
 
     data class SimklResponse (
@@ -549,7 +479,8 @@ class CineSimklProvider: MainAPI() {
         var anilist  : String? = null,
         var kitsu    : String? = null,
         var anidb    : String? = null,
-        var simkl    : Int?    = null
+        var simkl    : Int?    = null,
+        var tvdb     : String? = null
     )
 
     data class Ratings (
@@ -600,6 +531,12 @@ class CineSimklProvider: MainAPI() {
         var aired       : Boolean  = false,
         var img         : String?  = null,
         var date        : String?  = null,
+        var tvdb        : Tvdb?    = Tvdb(),
+    )
+
+    data class Tvdb (
+        var season  : Int? = null,
+        var episode : Int? = null
     )
 
     data class LoadLinksData(
@@ -613,17 +550,14 @@ class CineSimklProvider: MainAPI() {
         val anilistId   : Int?    = null,
         val malId       : Int?    = null,
         val kitsuId     : String? = null,
-        val imdbSeason  : Int?    = null,
         val season      : Int?    = null,
         val episode     : Int?    = null,
         val airedYear   : Int?    = null,
         val isAnime     : Boolean = false,
         val isBollywood : Boolean = false,
         val isAsian     : Boolean = false,
-        val isCartoon   : Boolean = false
-    )
-
-    data class ExtenalIds(
-        val imdb     : String? = null,
+        val isCartoon   : Boolean = false,
+        val imdbSeason  : Int?    = null,
+        val imdbEpisode : Int?    = null,
     )
 }

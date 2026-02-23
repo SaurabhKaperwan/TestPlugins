@@ -199,6 +199,7 @@ class CineTmdbProvider: MainAPI() {
                             this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
+                            this.runtime = eps.runtime
                         }.apply {
                             this.addDate(eps.airDate)
                         }
@@ -468,6 +469,7 @@ class CineTmdbProvider: MainAPI() {
         @param:JsonProperty("vote_average") val voteAverage: Double? = null,
         @param:JsonProperty("episode_number") val episodeNumber: Int? = null,
         @param:JsonProperty("season_number") val seasonNumber: Int? = null,
+        @param:JsonProperty("runtime") val runtime: Int? = null,
     )
 
      data class MediaDetailEpisodes(
