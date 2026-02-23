@@ -43,6 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
 
@@ -310,7 +311,7 @@ fun getLanguage(language: String?): String? {
     return tag
 }
 
-fun convertToLocalTime(isoString: String): String {
+fun convertToLocalTime(isoString: String? = null): String? {
     return try {
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH)
         val date = parser.parse(isoString) ?: return ""

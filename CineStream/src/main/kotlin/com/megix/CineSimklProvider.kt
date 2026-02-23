@@ -169,9 +169,7 @@ class CineSimklProvider: MainAPI() {
         } else if(type == "poster") {
             return "$baseUrl/posters/${id}_m.webp"
         } else if(type == "imdb:bg") {
-            val res = app.head("https://images.metahub.space/background/medium/$id/img")
-            return if(res.code == 200) "${image_proxy}https://images.metahub.space/background/large/$id/img"
-            else null
+            return "${image_proxy}https://images.metahub.space/background/large/$id/img"
         } else if(type == "youtube") {
             return "https://img.youtube.com/vi/${id}/maxresdefault.jpg"
         } else {
@@ -189,9 +187,8 @@ class CineSimklProvider: MainAPI() {
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    val poster = getPosterUrl(it.poster, "poster")
                     newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
-                        posterUrl = poster
+                        posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
                 }
@@ -243,9 +240,8 @@ class CineSimklProvider: MainAPI() {
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    val poster = getPosterUrl(it.poster, "poster")
                     newMovieSearchResponse("${it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
-                        this.posterUrl = poster
+                        this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
                 } ?: return null
@@ -365,7 +361,6 @@ class CineSimklProvider: MainAPI() {
             val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
-                val ep_poster = getPosterUrl(it.img, "episode")
                 newEpisode(
                     LoadLinksData(
                         json.title,
@@ -392,7 +387,7 @@ class CineSimklProvider: MainAPI() {
                     this.season = it.season
                     this.episode = it.episode
                     this.description = it.description
-                    this.posterUrl = ep_poster ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
+                    this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                     addDate(convertToLocalTime(it.date), "yyyy-MM-dd'T'HH:mm:ss")
                 }
             }
