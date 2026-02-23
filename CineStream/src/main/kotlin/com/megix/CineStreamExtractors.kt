@@ -281,7 +281,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 this.headers = mapOf(
                     "Connection" to "keep-alive",
                     "Referer" to "$akwamAPI/",
-                    "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+                    "User-Agent" to USER_AGENT,
                 )
             }
         )
@@ -1365,7 +1365,7 @@ object CineStreamExtractors : CineStreamProvider() {
         for (i in 0 until subsJson.length()) {
             val sub = subsJson.getJSONObject(i)
             val subUrl = sub.getString("url").replace("/ipfs", "").replace("\\", "")
-            val file = "https://sudatchi.com/api/proxy$subUrl"
+            val file = "$sudatchiAPI/api/proxy$subUrl"
             val label = sub.getJSONObject("SubtitlesName").getString("name")
             subtitleCallback.invoke(
                 newSubtitleFile(
@@ -2119,17 +2119,30 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
         }
 
+        val (sSlug, eSlug) = getEpisodeSlug(1, episode)
+
         if (link.isEmpty()) {
-            val type = if (episode != null) "(Combined)" else ""
-            document.select("a[href*=dwo]").forEach { anchor ->
+            document.select("a[href*=dwo]").amap { anchor ->
+                val anchorText = anchor.text()
+
+                val type = if (episode != null && !anchorText.contains("ep", ignoreCase = true)) {
+                    " (Combined)"
+                } else {
+                    ""
+                }
+
+                if (episode != null && type == "" && !anchorText.contains("ep$eSlug", ignoreCase = true)) {
+                    return@amap
+                }
+
                 val innerDoc = app.get(anchor.attr("href")).document
-                innerDoc.select("div > p > a").forEach {
+                innerDoc.select("div > p > a").amap {
                     loadSourceNameExtractor(
                         "Hdmovie2$type",
                         it.attr("href"),
                         "",
                         subtitleCallback,
-                        callback,
+                        callback
                     )
                 }
             }
@@ -2154,6 +2167,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
     ) {
         val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
+        val (sSlug, eSlug) = getEpisodeSlug(1, episode)
         app.get(url).document.select("div.L a").amap {
             if(!it.text().trim().startsWith("$title ($year)")) return@amap
             val regex = Regex("""S\d{2}E\d{2}""", RegexOption.IGNORE_CASE)
@@ -2161,7 +2175,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
             if (episode != null && regex.containsMatchIn(it.text())) {
                 val currentEpRegex = Regex(
-                    """E0*${episode}""",
+                    """E$eSlug""",
                     RegexOption.IGNORE_CASE
                 )
 
@@ -2184,7 +2198,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
                 else if(text.contains("Episode")) {
-                    if(text.contains("Episode $episode") || text.contains("Episode 0$episode")) {
+                    if(text.contains("Episode $eSlug")) {
                         loadSourceNameExtractor(
                             "Skymovies",
                             it.attr("href"),
@@ -2729,9 +2743,8 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val query = id ?: return
         val api = if (sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
-        val searchUrl = "$api/search.php?q=$query&page=1"
+        val searchUrl = "$api/search.php?q=$id&page=1"
         val json = app.get(searchUrl).text
         val movieUrls = tryParseJson<VegaSearchResponse>(json)?.hits?.map { hit ->
             val permalink = hit.document.permalink
@@ -2753,7 +2766,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 res.select("h4:matches((?i)(Season $season)), h3:matches((?i)(Season $season))").amap { h4 ->
                     h4.nextElementSibling()?.select("a:matches((?i)(V-Cloud|Single|Episode|G-Direct))")?.amap {
                         val doc = app.get(it.attr("href")).document
-                        val epLink = doc.selectFirst("h4:contains(Episodes):contains($episode)")
+                        val epLink = doc.selectFirst("h4:contains(Episode):contains($episode)")
                             ?.nextElementSibling()
                             ?.selectFirst("a:matches((?i)(V-Cloud))")
                             ?.attr("href")

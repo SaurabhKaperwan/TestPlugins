@@ -310,6 +310,18 @@ fun getLanguage(language: String?): String? {
     return tag
 }
 
+fun convertToLocalTime(isoString: String): String {
+    return try {
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH)
+        val date = parser.parse(isoString) ?: return ""
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH)
+        formatter.timeZone = TimeZone.getDefault()
+        formatter.format(date)
+    } catch (e: Exception) {
+        isoString
+    }
+}
+
 fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
@@ -826,6 +838,8 @@ suspend fun bypassXDM(url: String): String? {
         allowRedirects = false,
         timeout = 600L
     ).headers["location"] ?: return null
+
+    if(link.contains("hubcloud")) return link
 
     val baseUrl = getBaseUrl(link)
     val id = link.substringAfterLast("/")
