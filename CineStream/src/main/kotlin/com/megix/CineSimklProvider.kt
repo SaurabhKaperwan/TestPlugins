@@ -84,7 +84,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-    private suspend fun extractNameAndTMDBId(imdbId: String? = null): Pair<String?, Int?>? {
+    private suspend fun extractNameAndYear(imdbId: String? = null): Pair<String?, Int?>? {
         return try {
             if (imdbId.isNullOrBlank()) return null
 
@@ -283,7 +283,6 @@ class CineSimklProvider: MainAPI() {
                 anilistId,
                 malId,
                 kitsuId,
-                null,
                 null,
                 null,
                 null,

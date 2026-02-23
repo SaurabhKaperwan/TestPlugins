@@ -199,7 +199,7 @@ class CineTmdbProvider: MainAPI() {
                             this.posterUrl = getImageUrl(eps.stillPath) ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
                             this.score = Score.from10(eps.voteAverage)
                             this.description = eps.overview
-                            this.runtime = eps.runtime
+                            this.runTime = eps.runtime
                         }.apply {
                             this.addDate(eps.airDate)
                         }
