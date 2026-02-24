@@ -669,33 +669,24 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
     size: String = "",
 ) {
-    val scope = CoroutineScope(Dispatchers.Default + Job())
-
     loadExtractor(url, referer, subtitleCallback) { link ->
-        scope.launch {
-            val isDownload = if(link.source.contains("Download")
-                || link.url.contains("video-downloads.googleusercontent")
-            ){ true } else { false }
+        val isDownload = link.source.contains("Download") ||
+                         link.url.contains("video-downloads.googleusercontent")
 
-            // if(isDownload) return@launch
+        val simplifiedTitle = getSimplifiedTitle(link.name)
+        val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+        val fixSize = if (size.isNotEmpty()) " $size" else ""
+        val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-            val simplifiedTitle = getSimplifiedTitle(link.name)
-            val combined = if(source.contains("(Combined)")) " (Combined)" else ""
-            val fixSize = if(size.isNotEmpty()) " $size" else ""
-            val sourceBold = "$source [${link.source}]".toSansSerifBold()
-            val newLink = newExtractorLink(
-                if(isDownload) "Download${combined}" else "${link.source}$combined",
-                "$sourceBold $simplifiedTitle $fixSize",
-                link.url,
-                type = link.type
-            ) {
-                this.referer = link.referer
-                this.quality = quality ?: link.quality
-                this.headers = link.headers
-                this.extractorData = link.extractorData
-            }
-            callback.invoke(newLink)
-        }
+        val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+        val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
+
+        val newLink = link.copy(
+            source = newSourceName,
+            name = newName,
+            quality = quality ?: link.quality
+        )
+        callback.invoke(newLink)
     }
 }
 

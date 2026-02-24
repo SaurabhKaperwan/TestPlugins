@@ -1209,10 +1209,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = response.document
 
         if(season == null) {
-            document.select("div.download-item a").map { source ->
+            document.select("div.download-item a").amap { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@map
+                    link = bypassXDM(link) ?: return@amap
                 }
 
                 callback.invoke(
@@ -1236,10 +1236,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
             }
 
-            episodeCards.map { episodeCard ->
-                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@map
+            episodeCards.amap { episodeCard ->
+                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@map
+                    link = bypassXDM(link) ?: return@amap
                 }
 
                 callback.invoke(
