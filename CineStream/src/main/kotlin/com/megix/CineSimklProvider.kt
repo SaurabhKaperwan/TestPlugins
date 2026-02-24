@@ -74,12 +74,11 @@ class CineSimklProvider: MainAPI() {
         val id =  url.split('/')
             .filter { part -> part.toIntOrNull() != null } // Keep only numeric parts
             .firstOrNull() ?: "" // Take the first numeric ID found
-        val type = if(url.contains("/movies/")) {
-            "movies"
-        } else if(url.contains("/anime/")) {
-            "anime"
-        } else {
-            "tv"
+
+        val type = when {
+            url.contains("/movies/") -> "movies"
+            url.contains("/anime/") -> "anime"
+            else -> "tv"
         }
 
         return Pair(id, type)
@@ -290,6 +289,7 @@ class CineSimklProvider: MainAPI() {
         } ?: emptyList()
 
         val recommendations = relations + users_recommendations
+        val duration = json.runtime?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
 
         val imdbType = if (tvType == "show") "series" else tvType
         val cast = parseCastData(imdbType, imdbId)
@@ -320,13 +320,13 @@ class CineSimklProvider: MainAPI() {
                 this.plot = plot
                 this.tags = genres
                 this.comingSoon = isUpcoming(json.released)
-                this.duration = json.runtime?.toIntOrNull()
+                this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
                 this.actors = cast
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.recommendations = recommendations
-                // this.contentRating = json.certification
+                this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
@@ -374,14 +374,14 @@ class CineSimklProvider: MainAPI() {
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
-                this.duration = json.runtime?.toIntOrNull()
+                this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.actors = cast
                 this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
-                // this.contentRating = json.certification
+                this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
@@ -474,7 +474,7 @@ class CineSimklProvider: MainAPI() {
         var ratings               : Ratings?                         = Ratings(),
         var country               : String?                          = null,
         var certification         : String?                          = null,
-        var runtime               : String?                          = null,
+        var runtime               : Int?                             = null,
         var status                : String?                          = null,
         var total_episodes        : Int?                             = null,
         var network               : String?                          = null,
