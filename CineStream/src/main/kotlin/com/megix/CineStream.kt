@@ -19,7 +19,5 @@ open class CineStream: Plugin() {
         registerExtractorAPI(MegaUpTwoTwo())
         registerExtractorAPI(Fourspromax())
         registerExtractorAPI(Rapidairmax())
-        registerExtractorAPI(HubCloud())
-        registerExtractorAPI(HubCloudOne())
     }
 }
