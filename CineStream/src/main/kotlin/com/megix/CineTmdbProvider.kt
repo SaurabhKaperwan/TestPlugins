@@ -109,7 +109,8 @@ class CineTmdbProvider: MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val data = parseJson<Data>(url)
         val type = getType(data.type)
-        val append = "alternative_titles,credits,external_ids,videos,recommendations,images,content_ratings,release_dates"
+
+        val append = "alternative_titles,credits,external_ids,videos,recommendations,content_ratings,release_dates"
 
         val resUrl = if (type == TvType.Movie) {
             "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append"
@@ -122,7 +123,7 @@ class CineTmdbProvider: MainAPI() {
         val title = res.title ?: res.name ?: return null
         val poster = getOriImageUrl(res.posterPath)
         val randomBackdropPath = res.images?.backdrops?.takeIf { it.isNotEmpty() }?.random()?.filePath ?: res.backdropPath
-        val bgPoster = getOriImageUrl(randomBackdropPath)
+        val bgPoster = getOriImageUrl(res.backdropPath)
         val ageRating = res.usAgeRating
         val orgTitle = res.originalTitle ?: res.originalName
         val releaseDate = res.releaseDate ?: res.firstAirDate
@@ -463,7 +464,6 @@ class CineTmdbProvider: MainAPI() {
         @param:JsonProperty("recommendations") val recommendations: ResultsRecommendations? = null,
         @param:JsonProperty("alternative_titles") val alternative_titles: ResultsAltTitles? = null,
         @param:JsonProperty("production_countries") val production_countries: ArrayList<ProductionCountries>? = arrayListOf(),
-        @param:JsonProperty("images") val images: ImagesResponse? = null,
         @param:JsonProperty("content_ratings") val contentRatings: ContentRatings? = null,
         @param:JsonProperty("release_dates") val releaseDates: ReleaseDates? = null
     ) {
@@ -490,14 +490,6 @@ class CineTmdbProvider: MainAPI() {
 
      data class MediaDetailEpisodes(
         @param:JsonProperty("episodes") val episodes: ArrayList<Episodes>? = arrayListOf(),
-    )
-
-    data class ImagesResponse(
-        @param:JsonProperty("backdrops") val backdrops: ArrayList<ImageItem>? = arrayListOf()
-    )
-
-    data class ImageItem(
-        @param:JsonProperty("file_path") val filePath: String? = null
     )
 
     data class ContentRatings(
