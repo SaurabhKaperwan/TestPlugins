@@ -36,15 +36,15 @@ fun getBaseUrl(url: String): String {
     }
 }
 
-// suspend fun getLatestUrl(url: String, source: String): String {
-//     val link = JSONObject(
-//         app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-//     ).optString(source)
-//     if(link.isNullOrEmpty()) {
-//         return getBaseUrl(url)
-//     }
-//     return link
-// }
+suspend fun getLatestUrl(baseUrl: String, source: String): String {
+    val link = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString(source)
+    if(link.isNullOrEmpty()) {
+        return baseUrl
+    }
+    return link
+}
 
 suspend fun resolveFinalUrl(startUrl: String): String? {
     var currentUrl = startUrl
@@ -263,15 +263,19 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        var baseUrl = getBaseUrl(url)
+        val latestUrl = getLatestUrl(baseUrl, "hubcloud")
+        val newUrl = url.replace(baseUrl, latestUrl)
+
         callback.invoke(
             newExtractorLink(
-                "myextractor",
-                "myextractor",
-                url,
+                "newUrl",
+                "newUrl",
+                newUrl,
             )
         )
-        val newUrl = resolveFinalUrl(url.replace("https://hubcloud.ink", "https://hubcloud.foo")) ?: return
-        val baseUrl = getBaseUrl(newUrl)
+
+        baseUrl = getBaseUrl(newUrl)
         val doc = app.get(newUrl).document
 
         var link = if(newUrl.contains("/video/")) {
@@ -381,6 +385,10 @@ class GdFlix1: GDFlix() {
     override var mainUrl = "https://new1.gdflix."
 }
 
+class GdFlix2: GDFlix() {
+    override var mainUrl = "https://*.gdflix.*"
+}
+
 class GDFlixNet : GDFlix() {
     override var mainUrl = "https://new14.gdflix."
 }
@@ -412,8 +420,19 @@ open class GDFlix : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val newUrl = resolveFinalUrl(url) ?: return
-        val baseUrl = getBaseUrl(newUrl)
+        var baseUrl = getBaseUrl(url)
+        val latestUrl = getLatestUrl(baseUrl, "gdflix")
+        val newUrl = url.replace(baseUrl, latestUrl)
+
+        callback.invoke(
+            newExtractorLink(
+                "newUrl",
+                "newUrl",
+                newUrl,
+            )
+        )
+
+        baseUrl = getBaseUrl(newUrl)
         val document = app.get(newUrl).document
         val fileName = document.select("ul > li.list-group-item:contains(Name)").text()
             .substringAfter("Name : ").orEmpty()
