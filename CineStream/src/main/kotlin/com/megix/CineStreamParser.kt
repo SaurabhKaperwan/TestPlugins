@@ -487,11 +487,6 @@ data class TorrentioStream(
     val fileIdx: Int? = null,
     val description: String? = null,
     val sources: List<String>? = null,
-    val behaviorHints : TorrentioBehaviorHints? = TorrentioBehaviorHints(),
-)
-
-data class TorrentioBehaviorHints (
-  val filename : String? = null
 )
 
 data class StreamifyResponse(

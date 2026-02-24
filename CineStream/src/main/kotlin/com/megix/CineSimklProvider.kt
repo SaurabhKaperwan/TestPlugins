@@ -70,10 +70,19 @@ class CineSimklProvider: MainAPI() {
         "Personal" to "Personal",
     )
 
-    private fun getSimklId(url: String): String {
-        return url.split('/')
+    private fun getSimklIdAndType(url: String): Pair<String, String> {
+        val id =  url.split('/')
             .filter { part -> part.toIntOrNull() != null } // Keep only numeric parts
             .firstOrNull() ?: "" // Take the first numeric ID found
+        val type = if(url.contains("/movies/")) {
+            "movies"
+        } else if(url.contains("/anime/")) {
+            "anime"
+        } else {
+            "tv"
+        }
+
+        return Pair(id, type)
     }
 
     private fun getStatus(status: String?): ShowStatus? {
@@ -140,7 +149,7 @@ class CineSimklProvider: MainAPI() {
                 parseJson<Array<SimklResponse>>(json).map {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title_en ?: it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
+                    newMovieSearchResponse("${it.title_en ?: it.title}", "${mainUrl}${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -193,7 +202,7 @@ class CineSimklProvider: MainAPI() {
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title}", "$mainUrl/tv/${it.ids?.simkl_id}") {
+                    newMovieSearchResponse("${it.title}", "${mainUrl}${it.url?.replace("movie", "movies")}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -210,8 +219,22 @@ class CineSimklProvider: MainAPI() {
     }
 
      override suspend fun load(url: String): LoadResponse {
-        val simklId = getSimklId(url)
-        val jsonString = app.get("$apiUrl/tv/$simklId?client_id=$auth2&extended=full", headers = headers).text
+        val (simklId, simklType) = getSimklIdAndType(url)
+        var res = app.get(
+            "$apiUrl/$simklType/$simklId?client_id=$auth2&extended=full",
+            headers = headers,
+            allowRedirects = false
+        )
+
+        if(res.code in 300..399) {
+            var location = res.headers["Location"]
+            if(location != null) {
+                if(!location.contains("extended=full")) location += "&extended=full"
+                res = app.get(location, headers = headers)
+            }
+        }
+
+        val jsonString = res.text
         val json = parseJson<SimklResponse>(jsonString)
         val genres = json.genres?.map { it }
         val tvType = json.type.orEmpty()

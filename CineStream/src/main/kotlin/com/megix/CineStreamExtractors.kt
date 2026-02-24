@@ -2357,14 +2357,21 @@ object CineStreamExtractors : CineStreamProvider() {
         val res = app.get(url, timeout = 200L).parsedSafe<TorrentioResponse>()
 
         res?.streams?.forEach { stream ->
-            val title = stream.behaviorHints?.filename ?: stream.title ?: stream.name ?: ""
+
+            val title = if(sourceName == "Meteor") {
+                stream.description ?: stream.title ?: stream.name ?: ""
+            } else {
+                stream.title ?: stream.name ?: ""
+            }
+
             val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
             var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
             val fileSize = match?.groupValues?.get(2) ?: ""
 
             if (seeders < 25 && sourceName != "Meteor") return@forEach
-            seeders = 25
+
+            if(sourceName == "Meteor") seeders = 25
 
             val seedersText = if(sourceName == "Meteor") "25+" else "$seeders"
 
