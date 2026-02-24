@@ -1223,7 +1223,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 )
 
-                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+                loadExtractor(link, "", subtitleCallback, callback)
+                // loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
             val epRegex = Regex(
@@ -1250,7 +1251,9 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 )
 
-                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+                loadExtractor(link, "", subtitleCallback, callback)
+
+                // loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
     }
