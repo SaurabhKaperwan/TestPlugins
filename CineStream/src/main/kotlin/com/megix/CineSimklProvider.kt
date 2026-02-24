@@ -299,7 +299,7 @@ class CineSimklProvider: MainAPI() {
         } ?: emptyList()
 
         val recommendations = relations + users_recommendations
-        val duration = json.runtime?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
+        val duration = json.runtimeInMinutes?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
 
         val imdbType = if (tvType == "show") "series" else tvType
         val cast = parseCastData(imdbType, imdbId)
