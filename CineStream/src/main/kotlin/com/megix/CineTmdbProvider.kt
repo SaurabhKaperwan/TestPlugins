@@ -217,7 +217,6 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
                 this.score = Score.from10(res.vote_average.toString())
                 this.showStatus = getStatus(res.status)
-                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)
@@ -256,7 +255,6 @@ class CineTmdbProvider: MainAPI() {
                     ?.takeIf { it.isNotEmpty() } ?: genres
 
                 this.score = Score.from10(res.vote_average.toString())
-                this.contentRating = if(res.adult) "18+" else null
                 this.recommendations = recommendations
                 this.actors = actors
                 addTrailer(trailer)

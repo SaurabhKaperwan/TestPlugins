@@ -218,7 +218,7 @@ class CineSimklProvider: MainAPI() {
         }
     }
 
-     override suspend fun load(url: String): LoadResponse {
+    override suspend fun load(url: String): LoadResponse {
         val (simklId, simklType) = getSimklIdAndType(url)
         var res = app.get(
             "$apiUrl/$simklType/$simklId?client_id=$auth2&extended=full",
@@ -230,7 +230,7 @@ class CineSimklProvider: MainAPI() {
             var location = res.headers["Location"]
             if(location != null) {
                 if(!location.contains("extended=full")) location += "&extended=full"
-                res = app.get(location, headers = headers)
+                res = app.get(fixUrl(location, apiUrl), headers = headers)
             }
         }
 
@@ -326,7 +326,7 @@ class CineSimklProvider: MainAPI() {
                 this.actors = cast
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.recommendations = recommendations
-                this.contentRating = json.certification
+                // this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
@@ -381,7 +381,7 @@ class CineSimklProvider: MainAPI() {
                 this.actors = cast
                 this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
-                this.contentRating = json.certification
+                // this.contentRating = json.certification
                 this.addSimklId(simklId.toInt())
                 this.addAniListId(anilistId)
                 this.addMalId(malId)
