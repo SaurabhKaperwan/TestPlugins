@@ -670,9 +670,12 @@ suspend fun loadSourceNameExtractor(
     size: String = "",
 ) {
     loadExtractor(url, referer, subtitleCallback) { link ->
+
+        // 1. Simplified boolean logic
         val isDownload = link.source.contains("Download") ||
                          link.url.contains("video-downloads.googleusercontent")
 
+        // 2. Build your beautiful UI strings synchronously
         val simplifiedTitle = getSimplifiedTitle(link.name)
         val combined = if (source.contains("(Combined)")) " (Combined)" else ""
         val fixSize = if (size.isNotEmpty()) " $size" else ""
@@ -681,11 +684,19 @@ suspend fun loadSourceNameExtractor(
         val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
         val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-        val newLink = link.copy(
-            source = newSourceName,
-            name = newName,
-            quality = quality ?: link.quality
-        )
+        // 3. Reverted to your safe builder, but using the cleaned-up strings!
+        val newLink = newExtractorLink(
+            newSourceName,
+            newName,
+            link.url,
+            type = link.type
+        ) {
+            this.referer = link.referer
+            this.quality = quality ?: link.quality
+            this.headers = link.headers
+            this.extractorData = link.extractorData
+        }
+
         callback.invoke(newLink)
     }
 }
