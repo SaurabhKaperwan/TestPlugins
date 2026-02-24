@@ -20,9 +20,13 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+class HubCloudOne : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.one"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
-    override val mainUrl: String = "https://hubcloud.*"
+    override val mainUrl: String = "https://hubcloud.foo"
     override val requiresReferer = false
 
     override suspend fun getUrl(

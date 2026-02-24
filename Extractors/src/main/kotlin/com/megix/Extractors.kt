@@ -275,24 +275,7 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                url,
-            )
-        )
-
         val newUrl = resolveFinalUrl(url.replace("https://hubcloud.ink", "https://hubcloud.foo")) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                newUrl,
-            )
-        )
-
         val baseUrl = getBaseUrl(newUrl)
         val doc = app.get(newUrl).document
 
