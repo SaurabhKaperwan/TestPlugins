@@ -1209,10 +1209,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = response.document
 
         if(season == null) {
-            document.select("div.download-item a").amap { source ->
+            document.select("div.download-item a").map { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@amap
+                    link = bypassXDM(link) ?: return@map
                 }
 
                 callback.invoke(
