@@ -1206,7 +1206,7 @@ object CineStreamExtractors : CineStreamProvider() {
             else it
         }
 
-        val document = response.documentLarge
+        val document = response.document
 
         if(season == null) {
             document.select("div.download-item a").amap { source ->
@@ -1214,6 +1214,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "link",
+                        "link",
+                        link
+                    )
+                )
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1232,6 +1241,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "link",
+                        "link",
+                        link
+                    )
+                )
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
@@ -3646,15 +3664,16 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
+        val headers = mapOf("User-Agent" to USER_AGENT)
         val url = if (season == null) {
             "$multiEmbededApi/?video_id=$tmdbId&tmdb=1"
         } else {
             "$multiEmbededApi/?video_id=$tmdbId&tmdb=1&s=$season&e=$episode"
         }
 
-        val streamingUrl = app.get(url, allowRedirects = false).let { response ->
+        val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
             if (response.text.contains("Just a moment", ignoreCase = true)) {
-                app.get(url, allowRedirects = false, interceptor = CloudflareKiller()).headers["Location"]
+                app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
             } else {
                 response.headers["Location"]
             }
