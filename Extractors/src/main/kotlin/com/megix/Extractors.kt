@@ -252,6 +252,18 @@ class VCloud : HubCloud() {
     override val mainUrl: String = "https://vcloud.*"
 }
 
+class HubCloudOne : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.one"
+}
+
+class HubCloudFoo : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.foo"
+}
+
+class HubCloudInk : HubCloud() {
+    override val mainUrl: String = "https://hubcloud.ink"
+}
+
 open class HubCloud : ExtractorApi() {
     override val name: String = "Hub-Cloud"
     override val mainUrl: String = "https://hubcloud.*"
