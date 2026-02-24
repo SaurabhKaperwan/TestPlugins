@@ -484,7 +484,7 @@ class CineSimklProvider: MainAPI() {
         var ratings               : Ratings?                         = Ratings(),
         var country               : String?                          = null,
         var certification         : String?                          = null,
-        var runtime               : Int?                             = null,
+        var runtime               : Any?                             = null,
         var status                : String?                          = null,
         var total_episodes        : Int?                             = null,
         var network               : String?                          = null,
@@ -496,7 +496,11 @@ class CineSimklProvider: MainAPI() {
         var users_recommendations : ArrayList<UsersRecommendations>? = null,
         var relations             : ArrayList<Relations>?            = null,
         var trailers              : ArrayList<Trailers>?             = null,
-    )
+    ) {
+        //Strip everything except the numbers!
+        val runtimeInMinutes: Int?
+        get() = runtime?.toString()?.filter { it.isDigit() }?.toIntOrNull()
+    }
 
     data class Trailers (
         var name    : String? = null,
