@@ -1236,10 +1236,10 @@ object CineStreamExtractors : CineStreamProvider() {
                 epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
             }
 
-            episodeCards.amap { episodeCard ->
-                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
+            episodeCards.map { episodeCard ->
+                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@map
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@amap
+                    link = bypassXDM(link) ?: return@map
                 }
 
                 callback.invoke(
