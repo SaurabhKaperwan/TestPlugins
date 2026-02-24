@@ -264,13 +264,17 @@ open class HubCloud : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         var baseUrl = getBaseUrl(url)
-        val latestUrl = getLatestUrl(baseUrl, "hubcloud")
+        val latestUrl = if(url.contains("hubcloud")) {
+            getLatestUrl(baseUrl, "hubcloud")
+        } else {
+            getLatestUrl(baseUrl, "vcloud")
+        }
         val newUrl = url.replace(baseUrl, latestUrl)
 
         callback.invoke(
             newExtractorLink(
-                "newUrl",
-                "newUrl",
+                name,
+                name,
                 newUrl,
             )
         )
@@ -426,8 +430,8 @@ open class GDFlix : ExtractorApi() {
 
         callback.invoke(
             newExtractorLink(
-                "newUrl",
-                "newUrl",
+                name,
+                name,
                 newUrl,
             )
         )
