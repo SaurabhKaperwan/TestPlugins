@@ -122,7 +122,6 @@ class CineTmdbProvider: MainAPI() {
             ?: throw ErrorLoadingException("Invalid Json Response")
         val title = res.title ?: res.name ?: return null
         val poster = getOriImageUrl(res.posterPath)
-        val randomBackdropPath = res.images?.backdrops?.takeIf { it.isNotEmpty() }?.random()?.filePath ?: res.backdropPath
         val bgPoster = getOriImageUrl(res.backdropPath)
         val ageRating = res.usAgeRating
         val orgTitle = res.originalTitle ?: res.originalName

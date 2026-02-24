@@ -37,6 +37,7 @@ class CineSimklProvider: MainAPI() {
     // override val providerType = ProviderType.MetaProvider
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
+    private val simklDataAPI = "https://data.simkl.in"
     private final val mediaLimit = 10
     private val auth = com.lagradost.cloudstream3.BuildConfig.SIMKL_CLIENT_ID
     private val auth2 = BuildConfig.SIMKL_API
@@ -49,9 +50,9 @@ class CineSimklProvider: MainAPI() {
     // private val aio_meta = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7"
 
     override val mainPage = mainPageOf(
-        "/movies/trending/today?limit=$mediaLimit&extended=overview" to "Trending Movies Today",
-        "/tv/trending/today?limit=$mediaLimit&extended=overview" to "Trending Shows Today",
-        "/anime/trending/today?limit=$mediaLimit&extended=overview" to "Trending Anime",
+        "/discover/trending/movies/today_100.json" to "Trending Movies Today",
+        "/discover/trending/tv/today_100.json" to "Trending Shows Today",
+        "/discover/trending/anime/today_100.json" to "Trending Anime",
         "/anime/airing?today?sort=rank" to "Airing Anime Today",
         "/tv/genres/all/all-types/kr/all-networks/this-year/popular-today?limit=$mediaLimit" to "Trending Korean Shows",
         "/movies/genres/all/all-types/all-countries/this-year/rank?limit=$mediaLimit" to "Top Rated Movies This Year",
@@ -145,10 +146,12 @@ class CineSimklProvider: MainAPI() {
         suspend fun fetchResults(type: String): List<SearchResponse> {
             val result = runCatching {
                 val json = app.get("$apiUrl/search/$type?q=$query&page=$page&limit=$mediaLimit&extended=full&client_id=$auth", headers = headers).text
-                parseJson<Array<SimklResponse>>(json).map {
+                parseJson<Array<SimklResponse>>(json).mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title_en ?: it.title}", "${mainUrl}${it.url}") {
+                    val title = it.title_en ?: it.title ?: return@mapNotNull null
+                    val cleanTitle = title.replace("\\'", "'").replace("\\\"", "\"")
+                    newMovieSearchResponse(cleanTitle, "${mainUrl}${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -196,12 +199,17 @@ class CineSimklProvider: MainAPI() {
                             ?: return null
             return newHomePageResponse(homePageList, false)
         } else {
-
-             val data = app.get(apiUrl + request.data + "&client_id=$auth&page=$page", headers = headers)
+            val url = if(request.data.contains(".json")) {
+                simklDataAPI + request.data
+            } else  {
+                apiUrl + request.data + "&client_id=$auth&page=$page"
+            }
+             val data = app.get(url, headers = headers)
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    newMovieSearchResponse("${it.title}", "${mainUrl}${it.url?.replace("movie", "movies")}") {
+                    val title = it.title?.replace("\\'", "'")?.replace("\\\"", "\"") ?: return@mapNotNull null
+                    newMovieSearchResponse(title, "${mainUrl}${it.url?.replace("movie", "movies")}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -254,10 +262,12 @@ class CineSimklProvider: MainAPI() {
 
         val anilist_meta = if(anilistId != null) getAniListInfo(anilistId) else null
 
-        val enTitle =
+        var enTitle =
             anilist_meta?.title
             ?: json.en_title
             ?: json.title
+
+        enTitle = enTitle?.replace("\\'", "'")?.replace("\\\"", "\"")
 
         val plot = if(anilistId != null) {
             null
