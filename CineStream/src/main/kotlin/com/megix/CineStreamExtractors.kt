@@ -1214,9 +1214,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
-
-                HubCloud().getUrl(link, "", subtitleCallback, callback)
-                // loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
             val epRegex = Regex(
@@ -1234,8 +1232,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
-                HubCloud().getUrl(link, "", subtitleCallback, callback)
-                //loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
     }
