@@ -659,12 +659,6 @@ fun String.toSansSerifBold(): String {
     return builder.toString()
 }
 
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-
 suspend fun loadSourceNameExtractor(
     source: String,
     url: String,
@@ -705,9 +699,6 @@ suspend fun loadSourceNameExtractor(
         }
     }
 }
-
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 suspend fun loadCustomExtractor(
     name: String? = null,
