@@ -14,8 +14,7 @@ import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.json.JSONArray
@@ -664,14 +663,15 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit, // Added 'suspend' here!
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = "",
 ) {
     coroutineScope {
-        loadExtractor(url, referer, subtitleCallback) { link ->
+        val scope = this
 
-            launch {
+        loadExtractor(url, referer, subtitleCallback) { link ->
+            scope.launch {
                 val isDownload = link.source.contains("Download") ||
                                  link.url.contains("video-downloads.googleusercontent")
 
@@ -694,6 +694,7 @@ suspend fun loadSourceNameExtractor(
                     this.headers = link.headers
                     this.extractorData = link.extractorData
                 }
+
                 callback.invoke(newLink)
             }
         }
@@ -709,9 +710,10 @@ suspend fun loadCustomExtractor(
     quality: Int? = null,
 ) {
     coroutineScope {
-        loadExtractor(url, referer, subtitleCallback) { link ->
+        val scope = this
 
-            launch {
+        loadExtractor(url, referer, subtitleCallback) { link ->
+            scope.launch {
                 val newLink = newExtractorLink(
                     name ?: link.source,
                     name ?: link.name,
