@@ -43,7 +43,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        parallelScrape(
+        runAllAsync(
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -55,6 +55,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
+        )
+
+        runAllAsync(
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
             { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -69,6 +72,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
+        )
+
+        runAllAsync(
             { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeAkwam(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
@@ -86,6 +92,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
+        )
+
+        runAllAsync(
             // { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -114,7 +123,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        parallelScrape(
+        runAllAsync(
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -129,6 +138,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+        )
+
+        runAllAsync(
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -143,6 +155,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+        )
+
+        runAllAsync(
             // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },

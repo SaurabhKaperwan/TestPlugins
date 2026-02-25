@@ -19,10 +19,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -214,27 +210,6 @@ fun getSimplifiedTitle(title: String): String {
     ).joinToString(" | ")
 
     return if (result.isEmpty()) "" else "\n$result"
-}
-
-suspend fun parallelScrape(vararg scrapers: suspend () -> Unit) = supervisorScope {
-    val concurrencyLimiter = Semaphore(7)
-
-    scrapers.forEach { scraper ->
-        launch(Dispatchers.IO) {
-            try {
-                concurrencyLimiter.withPermit {
-
-                    withTimeoutOrNull(10_000L) {
-                        scraper()
-                    }
-
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-            }
-        }
-    }
 }
 
 val languageMap = mapOf(
