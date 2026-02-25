@@ -1214,6 +1214,16 @@ object CineStreamExtractors : CineStreamProvider() {
                     link = bypassXDM(link) ?: return@amap
                 }
 
+                callback.invoke(
+                    ExtractorLink(
+                        "XDmovies",
+                        "XDmovies",
+                        link
+                    )
+                )
+
+                HubCloud().getUrl(link, referer, subtitleCallback, callback)
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1234,6 +1244,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     link = bypassXDM(link) ?: return@amap
                 }
 
+                HubCloud().getUrl(link, referer, subtitleCallback, callback)
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }
