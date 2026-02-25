@@ -29,6 +29,7 @@ import kotlin.math.pow
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withTimeoutOrNull
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -661,11 +662,17 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 suspend fun safeScrape(block: suspend () -> Unit) {
     supervisorScope {
         try {
-            block()
+            // THE GUILLOTINE: If a scraper takes longer than 10 seconds (10,000 milliseconds),
+            // Kotlin instantly kills it and moves on.
+            // This guarantees the master 15-second Cloudstream timeout NEVER triggers!
+            withTimeoutOrNull(10_000L) {
+                block()
+            }
         } catch (e: CancellationException) {
+            // Let the user safely exit the movie without crashing the app
             throw e
         } catch (e: Exception) {
-            println("XDM DEBUG: Shield caught a crash -> ${e.message}")
+            // Silently absorb 404s and Cloudflare blocks
         }
     }
 }

@@ -44,8 +44,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { safeScrape { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) } },
+            { safeScrape { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) } },
             { safeScrape { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) } },
@@ -115,9 +115,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
+            { safeScrape { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },
             { safeScrape { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) } },
             { safeScrape { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },
-            { safeScrape { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },
             { safeScrape { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },
             { safeScrape { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },
             { safeScrape { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) } },

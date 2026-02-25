@@ -487,37 +487,12 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                name,
-                name,
-                url
-            )
-        )
-        // var baseUrl = getBaseUrl(url)
-        var baseUrl = "https://hubcloud.one"
-
-        callback.invoke(
-            newExtractorLink(
-                "baseUrl",
-                "baseUrl",
-                baseUrl
-            )
-        )
-
+        var baseUrl = getBaseUrl(url)
         val latestBaseUrl = if(url.contains("hubcloud")) {
             getLatestBaseUrl(baseUrl, "hubcloud")
         } else {
             getLatestBaseUrl(baseUrl, "vcloud")
         }
-
-        callback.invoke(
-            newExtractorLink(
-                "latestBaseUrl",
-                "latestBaseUrl",
-                latestBaseUrl
-            )
-        )
 
         var newUrl = url
 
@@ -525,14 +500,6 @@ open class HubCloud : ExtractorApi() {
             newUrl = url.replace(baseUrl, latestBaseUrl)
             baseUrl = latestBaseUrl
         }
-
-        callback.invoke(
-            newExtractorLink(
-                "newUrl",
-                "newUrl",
-                newUrl
-            )
-        )
 
         val doc = app.get(newUrl).document
 
