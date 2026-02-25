@@ -643,13 +643,13 @@ suspend fun getHindMoviezLinks(
 
 //For Extractor new domain
 suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
-    val link = JSONObject(
-        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
-    ).optString(source)
-    if(link.isNullOrEmpty()) {
-        return baseUrl
+    return try {
+        val dynamicUrls = app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json")
+            .parsedSafe<Map<String, String>>()
+        dynamicUrls?.get(source)?.takeIf { it.isNotBlank() } ?: baseUrl
+    } catch (e: Exception) {
+        baseUrl
     }
-    return link
 }
 
 //Bold String

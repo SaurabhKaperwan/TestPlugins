@@ -53,7 +53,7 @@ open class HubCloud : ExtractorApi() {
 
         var newUrl = url
 
-        val newUrl = if(baseUrl != latestBaseUrl) {
+        if(baseUrl != latestBaseUrl) {
             newUrl = url.replace(baseUrl, latestBaseUrl)
             baseUrl = latestBaseUrl
         }
