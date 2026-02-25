@@ -726,7 +726,7 @@ suspend fun loadSourceNameExtractor(
                     type = link.type
                 ) {
                     // Added a fallback to the original referer just in case the link dropped it!
-                    this.referer = link.referer ?: referer
+                    this.referer = link.referer ?: referer ?: ""
                     this.quality = quality ?: link.quality
                     this.headers = link.headers
                     this.extractorData = link.extractorData
@@ -778,7 +778,7 @@ suspend fun loadCustomExtractor(
                     type = link.type
                 ) {
                     this.quality = quality ?: link.quality
-                    this.referer = link.referer ?: referer
+                    this.referer = link.referer ?: referer ?: ""
                     this.headers = link.headers
                     this.extractorData = link.extractorData
                 }
