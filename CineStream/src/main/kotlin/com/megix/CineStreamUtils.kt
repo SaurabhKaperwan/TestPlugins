@@ -657,6 +657,14 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
     }
 }
 
+suspend fun safeScrape(block: suspend () -> Unit) {
+        try {
+        block()
+    } catch (e: Exception) {
+        // Silently ignore the crash and let the other scrapers keep running!
+    }
+}
+
 //Bold String
 fun String.toSansSerifBold(): String {
     val builder = StringBuilder()
