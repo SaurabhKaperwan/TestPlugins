@@ -494,7 +494,8 @@ open class HubCloud : ExtractorApi() {
                 url
             )
         )
-        var baseUrl = getBaseUrl(url)
+        // var baseUrl = getBaseUrl(url)
+        var baseUrl = "https://hubcloud.one"
 
         callback.invoke(
             newExtractorLink(

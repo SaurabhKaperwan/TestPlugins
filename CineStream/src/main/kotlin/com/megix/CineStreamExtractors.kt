@@ -44,8 +44,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { safeScrape { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) } },
+            { safeScrape { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) } },
             { safeScrape { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) } },
             { safeScrape { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) } },
