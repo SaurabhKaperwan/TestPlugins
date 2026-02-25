@@ -42,7 +42,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        callback: suspend (ExtractorLink) -> Unit
     ) {
         runAllAsync(
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -1182,7 +1182,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        callback: suspend (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
