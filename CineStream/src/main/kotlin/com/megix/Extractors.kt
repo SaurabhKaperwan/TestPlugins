@@ -36,14 +36,28 @@ open class HubCloud : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                url,
+            )
+        )
         var baseUrl = getBaseUrl(url)
-        val latestUrl = if(url.contains("hubcloud")) {
-            getLatestUrl(baseUrl, "hubcloud")
+
+        val latestBaseUrl = if(url.contains("hubcloud")) {
+            getLatestBaseUrl(baseUrl, "hubcloud")
         } else {
-            getLatestUrl(baseUrl, "vcloud")
+            getLatestBaseUrl(baseUrl, "vcloud")
         }
-        val newUrl = url.replace(baseUrl, latestUrl)
-        baseUrl = getBaseUrl(newUrl)
+
+        var newUrl = url
+
+        val newUrl = if(baseUrl != latestBaseUrl) {
+            newUrl = url.replace(baseUrl, latestBaseUrl)
+            baseUrl = latestBaseUrl
+        }
+
         val doc = app.get(newUrl).document
 
         var link = if(newUrl.contains("/video/")) {

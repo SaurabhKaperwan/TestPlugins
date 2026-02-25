@@ -1209,11 +1209,20 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = response.document
 
         if(season == null) {
-            document.select("div.download-item a").amap { source ->
+            document.select("div.download-item a").apmap { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@amap
+                    link = bypassXDM(link) ?: return@apmap
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "XDmovies",
+                        "XDmovies",
+                        link
+                    )
+                )
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1228,10 +1237,20 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             episodeCards.amap { episodeCard ->
-                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
+                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@apmap
+
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@amap
+                    link = bypassXDM(link) ?: return@apmap
                 }
+
+                callback.invoke(
+                    newExtractorLink(
+                        "XDmovies",
+                        "XDmovies",
+                        link
+                    )
+                )
+
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         }

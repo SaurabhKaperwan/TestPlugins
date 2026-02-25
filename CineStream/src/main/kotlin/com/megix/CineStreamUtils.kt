@@ -642,7 +642,7 @@ suspend fun getHindMoviezLinks(
 }
 
 //For Extractor new domain
-suspend fun getLatestUrl(baseUrl: String, source: String): String {
+suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
     val link = JSONObject(
         app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
     ).optString(source)
@@ -661,7 +661,6 @@ fun String.toSansSerifBold(): String {
             in 'A'..'Z' -> 0x1D5D4 + (char - 'A')
             in 'a'..'z' -> 0x1D5EE + (char - 'a')
             in '0'..'9' -> 0x1D7EC + (char - '0')
-            '-' -> 0x2014
             else -> char.code
         }
         builder.append(Character.toChars(codePoint))
