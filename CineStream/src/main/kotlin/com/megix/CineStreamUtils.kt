@@ -678,7 +678,7 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = ""
 ) {
@@ -723,7 +723,7 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
     loadExtractor(url, referer, subtitleCallback) { link ->
