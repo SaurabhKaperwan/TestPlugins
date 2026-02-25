@@ -27,8 +27,9 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
-import kotlinx.coroutines.delay
 import kotlin.random.Random
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -660,14 +661,27 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 
 suspend fun safeScrape(block: suspend () -> Unit) {
     try {
-        //Give each scraper a random delay between 10ms and 500ms.
-        // delay(Random.nextLong(10, 500))
-
-        block()
+        // 2. The scrapers politely wait in line here instead of crashing the network.
+        // As soon as a slot opens up, the next scraper fires instantly.
+        Semaphore(5).withPermit {
+            block()
+        }
     } catch (e: Exception) {
+        // Silently ignore the crash and let the other scrapers keep running!
         println("Scraper crashed, but we saved the others! Error: ${e.message}")
     }
 }
+
+// suspend fun safeScrape(block: suspend () -> Unit) {
+//     try {
+//         //Give each scraper a random delay between 10ms and 500ms.
+//         // delay(Random.nextLong(10, 500))
+
+//         block()
+//     } catch (e: Exception) {
+//         println("Scraper crashed, but we saved the others! Error: ${e.message}")
+//     }
+// }
 
 //Bold String
 fun String.toSansSerifBold(): String {
