@@ -450,8 +450,12 @@ fun getFirstCharacterOrZero(input: String): String {
 }
 
 fun getBaseUrl(url: String): String {
-    return URI(url).let {
-        "${it.scheme}://${it.host}"
+    try {
+        return URI(url).let {
+            "${it.scheme}://${it.host}"
+        }
+    } catch (e: Exception) {
+        return url
     }
 }
 
@@ -707,7 +711,7 @@ suspend fun loadSourceNameExtractor(
         }
     }
 
-    if (url.contains("hubcloud", ignoreCase = true)) {
+    if (url.contains("hubcloud.", ignoreCase = true)) {
         HubCloud().getUrl(url, referer, subtitleCallback, processLink)
     } else {
         loadExtractor(url, referer, subtitleCallback, processLink)
