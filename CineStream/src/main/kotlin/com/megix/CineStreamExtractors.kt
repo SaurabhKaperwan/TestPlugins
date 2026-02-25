@@ -1182,7 +1182,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
