@@ -14,7 +14,8 @@ import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.json.JSONArray
@@ -677,47 +678,43 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
     size: String = ""
 ) {
-    coroutineScope {
-        val scope = this
+    // 1. We create the reusable logic block, but we use Dispatchers.IO
+    // so it survives even if the parent function has already returned.
+    val processLink: (ExtractorLink) -> Unit = { link ->
+        CoroutineScope(Dispatchers.IO).launch {
+            val isDownload = link.source.contains("Download") ||
+                             link.url.contains("video-downloads.googleusercontent")
 
-        val processLink: (ExtractorLink) -> Unit = { link ->
-            scope.launch {
-                val isDownload = link.source.contains("Download") ||
-                                 link.url.contains("video-downloads.googleusercontent")
+            val simplifiedTitle = getSimplifiedTitle(link.name)
+            val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+            val fixSize = if (size.isNotEmpty()) " $size" else ""
+            val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-                val simplifiedTitle = getSimplifiedTitle(link.name)
-                val combined = if (source.contains("(Combined)")) " (Combined)" else ""
-                val fixSize = if (size.isNotEmpty()) " $size" else ""
-                val sourceBold = "$source [${link.source}]".toSansSerifBold()
+            val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+            val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-                val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
-                val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
-
-                val newLink = newExtractorLink(
-                    newSourceName,
-                    newName,
-                    link.url,
-                    type = link.type
-                ) {
-                    this.referer = link.referer
-                    this.quality = quality ?: link.quality
-                    this.headers = link.headers
-                    this.extractorData = link.extractorData
-                }
-
-                callback.invoke(newLink)
+            // This is safely executed in the IO scope, satisfying the compiler's suspend rule
+            val newLink = newExtractorLink(
+                newSourceName,
+                newName,
+                link.url,
+                type = link.type
+            ) {
+                this.referer = link.referer
+                this.quality = quality ?: link.quality
+                this.headers = link.headers
+                this.extractorData = link.extractorData
             }
+
+            callback.invoke(newLink)
         }
+    }
 
-        when {
-            url.contains("hubcloud", ignoreCase = true) -> {
-                HubCloud().getUrl(url, referer, subtitleCallback, processLink)
-            }
-            // url.contains("streamtape", ignoreCase = true) -> StreamTape().getUrl(...)
-            else -> {
-                loadExtractor(url, referer, subtitleCallback, processLink)
-            }
-        }
+    // 2. The Smart Router
+    if (url.contains("hubcloud", ignoreCase = true)) {
+        HubCloud().getUrl(url, referer, subtitleCallback, processLink)
+    } else {
+        loadExtractor(url, referer, subtitleCallback, processLink)
     }
 }
 

@@ -1215,13 +1215,13 @@ object CineStreamExtractors : CineStreamProvider() {
                     link = bypassXDM(link) ?: return@amap
                 }
 
-                callback.invoke(
-                    newExtractorLink(
-                        "XDmovies",
-                        "XDmovies",
-                        link
-                    )
-                )
+                // callback.invoke(
+                //     newExtractorLink(
+                //         "XDmovies",
+                //         "XDmovies",
+                //         link
+                //     )
+                // )
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
@@ -1243,13 +1243,13 @@ object CineStreamExtractors : CineStreamProvider() {
                     link = bypassXDM(link) ?: return@amap
                 }
 
-                callback.invoke(
-                    newExtractorLink(
-                        "XDmovies",
-                        "XDmovies",
-                        link
-                    )
-                )
+                // callback.invoke(
+                //     newExtractorLink(
+                //         "XDmovies",
+                //         "XDmovies",
+                //         link
+                //     )
+                // )
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
