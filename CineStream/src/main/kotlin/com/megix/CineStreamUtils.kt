@@ -27,6 +27,8 @@ import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
 import kotlin.random.Random
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.supervisorScope
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -657,24 +659,16 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 }
 
 suspend fun safeScrape(block: suspend () -> Unit) {
-    try {
-        block()
-    } catch (e: Exception) {
-        // Silently ignore the crash and let the other scrapers keep running!
-        println("Scraper crashed, but we saved the others! Error: ${e.message}")
+    supervisorScope {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            println("XDM DEBUG: Shield caught a crash -> ${e.message}")
+        }
     }
 }
-
-// suspend fun safeScrape(block: suspend () -> Unit) {
-//     try {
-//         //Give each scraper a random delay between 10ms and 500ms.
-//         // delay(Random.nextLong(10, 500))
-
-//         block()
-//     } catch (e: Exception) {
-//         println("Scraper crashed, but we saved the others! Error: ${e.message}")
-//     }
-// }
 
 //Bold String
 fun String.toSansSerifBold(): String {
