@@ -1209,10 +1209,10 @@ object CineStreamExtractors : CineStreamProvider() {
         val document = response.document
 
         if(season == null) {
-            document.select("div.download-item a").apmap { source ->
+            document.select("div.download-item a").amap { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@apmap
+                    link = bypassXDM(link) ?: return@amap
                 }
 
                 callback.invoke(
@@ -1237,10 +1237,10 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             episodeCards.amap { episodeCard ->
-                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@apmap
+                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@amap
 
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@apmap
+                    link = bypassXDM(link) ?: return@amap
                 }
 
                 callback.invoke(
@@ -1836,7 +1836,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val embed_resp = app.get("$animekaiAPI/ajax/links/view?id=$lid&_=$enc_lid", headers = headers).text
             val encrypted = JSONObject(embed_resp).getString("result")
             val embed_url = decrypt(encrypted)
-            loadExtractor(embed_url, "Animekai[$type]" ,subtitleCallback, callback)
+            MegaUp().getUrl(embed_url, "Animekai[$type]", subtitleCallback, callback)
         }
     }
 
