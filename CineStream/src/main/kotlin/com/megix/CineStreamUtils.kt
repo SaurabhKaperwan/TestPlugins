@@ -519,7 +519,7 @@ suspend fun loadNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int,
 ) {
     callback.invoke(
@@ -604,7 +604,7 @@ fun String.encodeUrl(): String {
 suspend fun getHindMoviezLinks(
     source: String,
     url: String,
-    callback: (ExtractorLink) -> Unit
+    callback: suspend (ExtractorLink) -> Unit
 ) {
     val response = app.get(url)
     val doc = response.document
@@ -1102,7 +1102,7 @@ suspend fun getProtonEmbed(
     text: String,
     protonmoviesAPI: String,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
 ) {
     val regex = """([^\"]*strm\.json)""".toRegex()
     val match = regex.find(text)
@@ -1126,7 +1126,7 @@ suspend fun getProtonStream(
     doc: Document,
     protonmoviesAPI: String,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
 ) {
     doc.select("tr.infotr").amap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
@@ -1305,7 +1305,7 @@ suspend fun getGojoStreams(
     provider: String,
     gojoBaseAPI: String,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
+    callback: suspend (ExtractorLink) -> Unit
 ) {
     try {
         val headers = mapOf(
