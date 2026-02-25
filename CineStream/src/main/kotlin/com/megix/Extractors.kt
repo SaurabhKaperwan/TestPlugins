@@ -43,6 +43,7 @@ open class HubCloud : ExtractorApi() {
                 url,
             )
         )
+
         var baseUrl = getBaseUrl(url)
 
         val latestBaseUrl = if(url.contains("hubcloud")) {
@@ -57,6 +58,14 @@ open class HubCloud : ExtractorApi() {
             newUrl = url.replace(baseUrl, latestBaseUrl)
             baseUrl = latestBaseUrl
         }
+
+        callback.invoke(
+            newExtractorLink(
+                "newUrl",
+                "newUrl",
+                newUrl,
+            )
+        )
 
         val doc = app.get(newUrl).document
 
