@@ -658,8 +658,7 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 
 suspend fun safeScrape(block: suspend () -> Unit) {
     try {
-            block()
-        }
+        block()
     } catch (e: Exception) {
         // Silently ignore the crash and let the other scrapers keep running!
         println("Scraper crashed, but we saved the others! Error: ${e.message}")
