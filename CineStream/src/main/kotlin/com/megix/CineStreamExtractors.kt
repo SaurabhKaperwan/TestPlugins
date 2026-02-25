@@ -45,68 +45,68 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: suspend (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
-            { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
-            { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
-            { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
-            { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
-            { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
-            { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
-            { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeAkwam(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
-            { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
-            { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
-            { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
-            { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
-            { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
-            { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
-            { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
-            { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
-            { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
-            { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
-            // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
-            // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-            // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-            { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-            // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            // { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
-            { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
-            { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
+            // { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
+            // { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) },
+            // { invokeStremioSubtitles(res.imdbId, res.season, res.episode, subtitleCallback) },
+            // { invokeNetflix(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokePrimeVideo(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeDisney(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeCinemacity(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeMovies4u(res.imdbId, res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!res.isBollywood) invokeUhdmovies(res.title, res.year, res.season, res.episode, callback, subtitleCallback) },
+            // { invokeMultimovies(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeBollywood(res.title, res.year ,res.season, res.episode, callback) },
+            // { invokeAllmovieland(res.imdbId, res.season, res.episode, callback) },
+            // { invokeProtonmovies(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (res.isAsian) invokeDramafull(res.title, res.year ,res.season, res.episode, subtitleCallback, callback) },
+            // { invokeHexa(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeYflix(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeAkwam(res.imdbId ,res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeRtally(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeVidlink(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (res.isAsian) invokeKisskh(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
+            // { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
+            // { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
+            // { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
+            // { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
+            // { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
+            // { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
+            // { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
+            // // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
+            // { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
+            // // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
+            // // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            // { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            // // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            // // { invokeVidFastPro(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            // // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
+            // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            // { invokeVicSrcWtf(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            // { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
+            // { invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Dramayo", daramayoAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            // { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
         )
     }
 
@@ -116,45 +116,45 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: suspend (ExtractorLink) -> Unit
     ) {
         runAllAsync(
-            { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
-            { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
+            // { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
-            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
-            { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
-            { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
-            { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
-            { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
-            // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
-            // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
+            // { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeMultimovies(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeHindmoviez(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
+            // { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+            // { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            // { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
+            // { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback ,callback) },
+            // { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
+            // { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            // { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            // { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            // { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
+            // { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokePrimeVideo(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeMoviebox(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
+            // { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            // { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
+            // // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)},
+            // // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            // { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
         )
     }
 
@@ -164,7 +164,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         if(title == null) return
         val res = app.get(flixIndiaAPI)
@@ -211,7 +211,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
 
         suspend fun getLink(url: String) : String? {
@@ -295,7 +295,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val jsonString = app.get("$dramafullAPI/api/live-search/$title").text
         val searchTypeId = if(season != null) 1 else 2
@@ -368,7 +368,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = "$cinemacityAPI/index.php?do=search&subaction=search&search_start=1&full_search=0&story=$imdbId"
 
@@ -469,7 +469,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val json = app.get("$multiDecryptAPI/enc-vidstack").text
         val result = JSONObject(json).getJSONObject("result")
@@ -562,7 +562,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val m3u8 = if(season == null) {
             "https://cdn.madplay.site/api/hls/unknown/${tmdbId}/master.m3u8"
@@ -581,7 +581,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
             "https://madplay.site/api/movies/holly?id=${tmdbId}&token=direct"
@@ -623,7 +623,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
             "$xpassAPI/feb/${tmdbId}/0/0/0/playlist.json"
@@ -651,7 +651,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
 
         fun getStreamUrl(
@@ -699,7 +699,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         data class ServerItem(val name: String, val lid: String)
 
@@ -813,7 +813,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeStremioStreams(
         sourceName: String, api: String, imdbId: String? = null,
         season: Int? = null, episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit, callback: suspend (ExtractorLink) -> Unit
+        subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit
     ) {
         val isMovie = season == null
         val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
@@ -850,7 +850,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val url = if (season == null) {
             "$dahmerMoviesAPI/movies/${title?.replace(":", "")} ($year)/"
@@ -898,7 +898,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
 
         fun quote(text: String): String {
@@ -1008,7 +1008,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         if(tmdbId == null) return
         var mediaType = ""
@@ -1093,7 +1093,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
             "$hexaAPI/api/tmdb/movie/$tmdbId/images"
@@ -1144,7 +1144,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = "$multiDecryptAPI/enc-vidlink?text=$tmdbId"
         val json = app.get(url).text
@@ -1261,7 +1261,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int?  = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
             "$toonStreamAPI/movies/${title.createSlug()}/"
@@ -1287,7 +1287,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeAnimez(
         title: String? = null,
         episode: Int?  = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         if(title == null) return
         val document = app.get("$animezAPI/?act=search&f[keyword]=$title").document
@@ -1357,7 +1357,7 @@ object CineStreamExtractors : CineStreamProvider() {
         aniId: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "Referer" to sudatchiAPI,
@@ -1402,7 +1402,7 @@ object CineStreamExtractors : CineStreamProvider() {
         aniId: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         if (aniId == null) return
 
@@ -1445,7 +1445,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     tmdbId: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
-    //     callback: suspend (ExtractorLink) -> Unit
+    //     callback: (ExtractorLink) -> Unit
     // ) {
     //     val headers = mapOf(
     //         "Referer" to xprimeBaseAPI,
@@ -1491,7 +1491,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     season: Int? = null,
     //     episode: Int? = null,
     //     subtitleCallback: (SubtitleFile) -> Unit,
-    //     callback: suspend (ExtractorLink) -> Unit
+    //     callback: (ExtractorLink) -> Unit
     // ) {
     //     val headers = mapOf(
     //         "Referer" to xprimeBaseAPI,
@@ -1555,7 +1555,7 @@ object CineStreamExtractors : CineStreamProvider() {
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "Referer" to twoembedAPI,
@@ -1624,7 +1624,7 @@ object CineStreamExtractors : CineStreamProvider() {
         episode: Int? = null,
         year: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val searchUrl = """https://api.asiaflix.net/v1/drama/search?q=$title&page=1&projections=["releaseYear","status","casts"]"""
         val headers = mapOf(
@@ -1668,7 +1668,7 @@ object CineStreamExtractors : CineStreamProvider() {
         id : String? = null,
         season : Int? = null,
         episode : Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val playerScript = app.get("https://allmovieland.link/player.js?v=60%20128").toString()
         val domainRegex = Regex("const AwsIndStreamDomain.*'(.*)';")
@@ -1731,7 +1731,7 @@ object CineStreamExtractors : CineStreamProvider() {
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         app.get("$hindMoviezAPI/?s=$id", timeout = 50L).document.select("h2.entry-title > a").amap {
             val doc = app.get(it.attr("href"), timeout = 50L).document
@@ -1760,7 +1760,7 @@ object CineStreamExtractors : CineStreamProvider() {
         title: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
@@ -1846,7 +1846,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val slug = title.createSlug() ?: return
         val type = if (season == null) "2" else "1"
@@ -1936,7 +1936,7 @@ object CineStreamExtractors : CineStreamProvider() {
         title: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val tvtype = if(episode == null) "_(Movie)" else "_(TV)"
         val firstChar = getFirstCharacterOrZero("$title").uppercase()
@@ -1966,7 +1966,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int?,
         season: Int?,
         episode: Int?,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         serviceName: String,
         ottCode: String,
         urlPrefix: String,
@@ -2044,7 +2044,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         invokeNetmirror(title, year, season, episode, callback,
             serviceName = "Hotstar",
@@ -2060,7 +2060,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         invokeNetmirror(title, year, season, episode, callback,
             serviceName = "PrimeVideo",
@@ -2075,7 +2075,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         invokeNetmirror(title, year, season, episode, callback,
             serviceName = "Netflix",
@@ -2091,7 +2091,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf(
             "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
@@ -2184,7 +2184,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val url = "$skymoviesAPI/search.php?search=$title ($year)&cat=All"
         val (sSlug, eSlug) = getEpisodeSlug(1, episode)
@@ -2246,7 +2246,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
@@ -2296,7 +2296,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val searchQuery = "$title $year".trim()
         val searchUrl = "$movies4uAPI/?s=$searchQuery"
@@ -2363,7 +2363,7 @@ object CineStreamExtractors : CineStreamProvider() {
         id: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val url = if(season == null) {
             "$api/stream/movie/$id.json"
@@ -2412,7 +2412,7 @@ object CineStreamExtractors : CineStreamProvider() {
         kitsuId: String? = null,
         malId: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val id = malId ?: kitsuId?.toIntOrNull() ?: return
         val type = if(malId == null) "kitsu_id" else "mal_id"
@@ -2465,7 +2465,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = CloudflareKiller()).document
         val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
@@ -2500,7 +2500,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val fixTitle = title.createSlug()
         val url = if (season == null) {
@@ -2546,7 +2546,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         origin: String,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}")
             .parsedSafe<MALSyncResponses>()
@@ -2622,7 +2622,7 @@ object CineStreamExtractors : CineStreamProvider() {
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
@@ -2684,7 +2684,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val document = app.get("$fourkhdhubAPI/?s=$title").document
         val link = document.select("div.card-grid > a").firstOrNull { element ->
@@ -2727,7 +2727,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeMostraguarda(
         id: String? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
         val url = "$MostraguardaAPI/movie/$id"
         val doc = app.get(
@@ -2772,7 +2772,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val api = if (sourceName == "VegaMovies") vegamoviesAPI else rogmoviesAPI
         val searchUrl = "$api/search.php?q=$id&page=1"
@@ -2815,7 +2815,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = "$moviesdriveAPI/searchapi.php?q=$imdbId"
         val jsonString = app.get(url).text
@@ -2875,7 +2875,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
         val url = app.get("$uhdmoviesAPI/search/$title $year").document
@@ -2925,7 +2925,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val hTag = if (season == null) "h3" else "div.single_post h3"
         val aTag = if (season == null) "Download" else "G-Drive"
@@ -2969,7 +2969,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         invokeModflix(
             id,
@@ -2987,7 +2987,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         api: String
     ) {
         var url = ""
@@ -3031,7 +3031,7 @@ object CineStreamExtractors : CineStreamProvider() {
         title: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val url = "$anizoneAPI/anime?search=$title"
         val link = app.get(url).document.select("div.truncate > a").firstOrNull {
@@ -3066,7 +3066,7 @@ object CineStreamExtractors : CineStreamProvider() {
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
         val hiId = url?.substringAfterLast("/") ?: return
@@ -3128,7 +3128,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val privatereferer = "https://allmanga.to"
         val ephash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0"
@@ -3239,7 +3239,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
 
         val headers = mapOf(
@@ -3273,7 +3273,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     season: Int?,
     //     episode: Int?,
     //     year: Int? = null,
-    //     callback: suspend (ExtractorLink) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
     //     if (season == null) {
@@ -3323,7 +3323,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         year: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val sourceHeaders = mapOf(
@@ -3374,7 +3374,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     tmdbId: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
-    //     callback: suspend (ExtractorLink) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
     //     val STATIC_PATH = "fcd552c4321aeac1e62c5304913b3420be75a19d390807281a425aabbb5dc4c0"
@@ -3438,7 +3438,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     season: Int? = null,
     //     episode: Int? = null,
     //     year: Int? = null,
-    //     callback: suspend (ExtractorLink) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
     //     val headers = mapOf(
@@ -3662,7 +3662,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val headers = mapOf("User-Agent" to USER_AGENT)
@@ -3712,7 +3712,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val referer = "https://www.vidsrc.wtf"
@@ -3773,7 +3773,7 @@ object CineStreamExtractors : CineStreamProvider() {
         tmdbId: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit,
+        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val KEY_HEX = "6966796f75736372617065796f75617265676179000000000000000000000000"
@@ -3841,7 +3841,7 @@ object CineStreamExtractors : CineStreamProvider() {
         year: Int? = null,
         season: Int? = null,
         episode: Int? = null,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val titleSlug = title?.replace(" ", ".")
@@ -3897,7 +3897,7 @@ object CineStreamExtractors : CineStreamProvider() {
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         fun unwrapData(json: JSONObject): JSONObject {
             val data = json.optJSONObject("data") ?: return json
@@ -4026,7 +4026,7 @@ object CineStreamExtractors : CineStreamProvider() {
     //     tmdbId: Int? = null,
     //     season: Int? = null,
     //     episode: Int? = null,
-    //     callback: suspend (ExtractorLink) -> Unit,
+    //     callback: (ExtractorLink) -> Unit,
     //     subtitleCallback: (SubtitleFile) -> Unit,
     // ) {
     //     val STATIC_PATH =
