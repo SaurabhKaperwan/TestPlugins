@@ -678,8 +678,6 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
     size: String = ""
 ) {
-    // 1. We create the reusable logic block, but we use Dispatchers.IO
-    // so it survives even if the parent function has already returned.
     val processLink: (ExtractorLink) -> Unit = { link ->
         CoroutineScope(Dispatchers.IO).launch {
             val isDownload = link.source.contains("Download") ||
@@ -693,7 +691,6 @@ suspend fun loadSourceNameExtractor(
             val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
             val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-            // This is safely executed in the IO scope, satisfying the compiler's suspend rule
             val newLink = newExtractorLink(
                 newSourceName,
                 newName,
@@ -710,7 +707,6 @@ suspend fun loadSourceNameExtractor(
         }
     }
 
-    // 2. The Smart Router
     if (url.contains("hubcloud", ignoreCase = true)) {
         HubCloud().getUrl(url, referer, subtitleCallback, processLink)
     } else {
@@ -726,25 +722,21 @@ suspend fun loadCustomExtractor(
     callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
-    coroutineScope {
-        val scope = this
-
-        loadExtractor(url, referer, subtitleCallback) { link ->
-            scope.launch {
-                val newLink = newExtractorLink(
-                    name ?: link.source,
-                    name ?: link.name,
-                    link.url,
-                    type = link.type
-                ) {
-                    this.quality = quality ?: link.quality
-                    this.referer = link.referer
-                    this.headers = link.headers
-                    this.extractorData = link.extractorData
-                }
-
-                callback.invoke(newLink)
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        CoroutineScope(Dispatchers.IO).launch {
+            val newLink = newExtractorLink(
+                name ?: link.source,
+                name ?: link.name,
+                link.url,
+                type = link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
             }
+
+            callback.invoke(newLink)
         }
     }
 }
