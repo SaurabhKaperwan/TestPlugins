@@ -1214,14 +1214,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     link = bypassXDM(link) ?: return@amap
                 }
 
-                // callback.invoke(
-                //     newExtractorLink(
-                //         "XDmovies",
-                //         "XDmovies",
-                //         link
-                //     )
-                // )
-
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
         } else {
@@ -1241,14 +1233,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@amap
                 }
-
-                // callback.invoke(
-                //     newExtractorLink(
-                //         "XDmovies",
-                //         "XDmovies",
-                //         link
-                //     )
-                // )
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }

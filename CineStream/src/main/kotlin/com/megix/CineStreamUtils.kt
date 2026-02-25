@@ -660,8 +660,8 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 
 suspend fun safeScrape(block: suspend () -> Unit) {
     try {
-        // THE NETWORK FIX: Give each scraper a random delay between 10ms and 500ms.
-        delay(Random.nextLong(10, 500))
+        //Give each scraper a random delay between 10ms and 500ms.
+        // delay(Random.nextLong(10, 500))
 
         block()
     } catch (e: Exception) {
@@ -723,7 +723,7 @@ suspend fun loadSourceNameExtractor(
         }
     }
 
-    if (url.contains("hubcloud.")) {
+    if (url.contains("hubcloud.") || url.contains("vcloud.")) {
         HubCloud().getUrl(url, referer, subtitleCallback, processLink)
     } else if(url.contains("gofile.")) {
         Gofile().getUrl(url, referer, subtitleCallback, processLink)
