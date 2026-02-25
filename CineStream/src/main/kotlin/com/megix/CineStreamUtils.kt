@@ -14,8 +14,16 @@ import com.lagradost.nicehttp.NiceResponse
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
+
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+
 import org.json.JSONObject
 import org.json.JSONArray
 import org.jsoup.Jsoup
@@ -27,9 +35,6 @@ import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
 import kotlin.random.Random
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withTimeoutOrNull
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -209,6 +214,27 @@ fun getSimplifiedTitle(title: String): String {
     ).joinToString(" | ")
 
     return if (result.isEmpty()) "" else "\n$result"
+}
+
+suspend fun parallelScrape(vararg scrapers: suspend () -> Unit) = supervisorScope {
+    val concurrencyLimiter = Semaphore(7)
+
+    scrapers.forEach { scraper ->
+        launch(Dispatchers.IO) {
+            try {
+                concurrencyLimiter.withPermit {
+
+                    withTimeoutOrNull(10_000L) {
+                        scraper()
+                    }
+
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+            }
+        }
+    }
 }
 
 val languageMap = mapOf(
@@ -564,7 +590,6 @@ fun getIndexQuality(str: String?): Int {
     }
 }
 
-
 //Dahmer
 fun getIndexQualityTags(str: String?, fullTag: Boolean = false): String {
     return if (fullTag) Regex("(?i)(.*)\\.(?:mkv|mp4|avi)").find(str ?: "")?.groupValues?.get(1)
@@ -659,23 +684,6 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
     }
 }
 
-suspend fun safeScrape(block: suspend () -> Unit) {
-    supervisorScope {
-        try {
-            // THE GUILLOTINE: If a scraper takes longer than 10 seconds (10,000 milliseconds),
-            // Kotlin instantly kills it and moves on.
-            // This guarantees the master 15-second Cloudstream timeout NEVER triggers!
-            withTimeoutOrNull(10_000L) {
-                block()
-            }
-        } catch (e: CancellationException) {
-            // Let the user safely exit the movie without crashing the app
-            throw e
-        } catch (e: Exception) {
-            // Silently absorb 404s and Cloudflare blocks
-        }
-    }
-}
 
 //Bold String
 fun String.toSansSerifBold(): String {

@@ -488,6 +488,7 @@ open class HubCloud : ExtractorApi() {
         callback: (ExtractorLink) -> Unit
     ) {
         var baseUrl = getBaseUrl(url)
+
         val latestBaseUrl = if(url.contains("hubcloud")) {
             getLatestBaseUrl(baseUrl, "hubcloud")
         } else {
