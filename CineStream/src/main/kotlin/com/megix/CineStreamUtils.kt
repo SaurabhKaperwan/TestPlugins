@@ -27,6 +27,7 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
+import kotlinx.coroutines.delay
 import kotlin.random.Random
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -658,10 +659,13 @@ suspend fun getLatestBaseUrl(baseUrl: String, source: String): String {
 }
 
 suspend fun safeScrape(block: suspend () -> Unit) {
-        try {
+    try {
+        // THE NETWORK FIX: Give each scraper a random delay between 10ms and 500ms.
+        delay(Random.nextLong(10, 500))
+
         block()
     } catch (e: Exception) {
-        // Silently ignore the crash and let the other scrapers keep running!
+        println("Scraper crashed, but we saved the others! Error: ${e.message}")
     }
 }
 
@@ -719,8 +723,22 @@ suspend fun loadSourceNameExtractor(
         }
     }
 
-    if (url.contains("hubcloud.", ignoreCase = true)) {
+    if (url.contains("hubcloud.")) {
         HubCloud().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("gofile.")) {
+        Gofile().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("gdflix.") || url.contains("gdlink.")) {
+        GDFlix().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("fastdlserver.")) {
+        fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("linksmod.")) {
+        Linksmod().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("hubdrive.")) {
+        Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("driveleech.") || url.contains("driveseed.")) {
+        Driveleech().getUrl(url, referer, subtitleCallback, processLink)
+    } else if(url.contains("howblogs")) {
+        Howblogs().getUrl(url, referer, subtitleCallback, processLink)
     } else {
         loadExtractor(url, referer, subtitleCallback, processLink)
     }

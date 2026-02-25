@@ -21,5 +21,17 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Rapidairmax())
         registerExtractorAPI(HubCloud())
         registerExtractorAPI(VCloud())
+        registerExtractorAPI(Gofile())
+        registerExtractorAPI(GDLink())
+        registerExtractorAPI(GDFlixApp())
+        registerExtractorAPI(GdFlix1())
+        registerExtractorAPI(GdFlix2())
+        registerExtractorAPI(GDFlixNet())
+        registerExtractorAPI(GDFlix())
+        registerExtractorAPI(fastdlserver())
+        registerExtractorAPI(Hubdrive())
+        registerExtractorAPI(Driveseed())
+        registerExtractorAPI(Driveleech())
+        registerExtractorAPI(Howblogs())
     }
 }
