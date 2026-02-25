@@ -641,6 +641,17 @@ suspend fun getHindMoviezLinks(
     )
 }
 
+//For Extractor new domain
+suspend fun getLatestUrl(baseUrl: String, source: String): String {
+    val link = JSONObject(
+        app.get("https://raw.githubusercontent.com/SaurabhKaperwan/Utils/refs/heads/main/urls.json").text
+    ).optString(source)
+    if(link.isNullOrEmpty()) {
+        return baseUrl
+    }
+    return link
+}
+
 //Bold String
 fun String.toSansSerifBold(): String {
     val builder = StringBuilder()
