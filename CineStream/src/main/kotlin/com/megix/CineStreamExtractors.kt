@@ -113,7 +113,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeAllAnimeSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: suspend (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit
     ) {
         runAllAsync(
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
