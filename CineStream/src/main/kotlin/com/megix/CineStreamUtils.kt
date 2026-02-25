@@ -665,12 +665,12 @@ suspend fun loadSourceNameExtractor(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
-    size: String = "",
+    size: String = ""
 ) {
     coroutineScope {
         val scope = this
 
-        loadExtractor(url, referer, subtitleCallback) { link ->
+        val processLink: (ExtractorLink) -> Unit = { link ->
             scope.launch {
                 val isDownload = link.source.contains("Download") ||
                                  link.url.contains("video-downloads.googleusercontent")
@@ -696,6 +696,16 @@ suspend fun loadSourceNameExtractor(
                 }
 
                 callback.invoke(newLink)
+            }
+        }
+
+        when {
+            url.contains("hubcloud", ignoreCase = true) -> {
+                HubCloud().getUrl(url, referer, subtitleCallback, processLink)
+            }
+            // url.contains("streamtape", ignoreCase = true) -> StreamTape().getUrl(...)
+            else -> {
+                loadExtractor(url, referer, subtitleCallback, processLink)
             }
         }
     }
