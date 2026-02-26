@@ -312,15 +312,9 @@ object CineStreamExtractors : CineStreamProvider() {
             "$levidiaAPI/search.php?q=$safeTitle+$year&v=episodes"
         }
 
-        callback.invoke(
-            newExtractorLink(
-                "url",
-                "url",
-                url
-            )
-        )
-
-        val document = app.get(url).document
+        val res = app.get(url)
+        val sessionId = res.cookies["PHPSESSID"] ?: return
+        val document = res.document
 
         val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
             val parsedTitle = aTag.selectFirst("strong")?.text()?.trim()
@@ -334,32 +328,16 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "href",
-                "href",
-                href
-            )
-        )
-
         val doc = app.get(href).document
 
         if(season == null) {
             doc.select("a.xxx").amap {
-
-                callback.invoke(
-                    newExtractorLink(
-                        "link",
-                        "link",
-                        it.attr("href")
-                    )
-                )
-
                 val embedUrl = app.get(
                     it.attr("href"),
                     headers = mapOf(
                         "User-Agent" to USER_AGENT,
-                        "Referer" to href
+                        "Referer" to href,
+                        "Cookie" to "PHPSESSID=$sessionId"
                     )
                 ).headers["location"] ?: return@amap
 
