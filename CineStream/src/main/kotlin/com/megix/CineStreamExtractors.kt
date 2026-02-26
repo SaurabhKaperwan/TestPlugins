@@ -762,7 +762,6 @@ object CineStreamExtractors : CineStreamProvider() {
             if (!visitedFolders.add(id)) return
 
             try {
-                // 1. REFACTORED: Using Cloudstream's native json parameter
                 val files = JSONObject(
                     app.post(
                         FALLBACK,
@@ -815,7 +814,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     callback.invoke(
                         newExtractorLink(
                             "SucccBots",
-                            "SucccBots " + cleanTitle(name),
+                            "SucccBots " + getSimplifiedTitle(name),
                             url,
                             INFER_TYPE
                         )
