@@ -350,7 +350,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val embedUrl = app.get(
                     it.attr("href"),
                     headers = headers,
-                ).headers["location"] ?: return@amap
+                ).url ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
@@ -378,9 +378,8 @@ object CineStreamExtractors : CineStreamProvider() {
             doc2.select("a.xxx").amap {
                 val embedUrl = app.get(
                     it.attr("href"),
-                    allowRedirects = false,
                     headers = headers
-                ).headers["location"] ?: return@amap
+                ).url ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
