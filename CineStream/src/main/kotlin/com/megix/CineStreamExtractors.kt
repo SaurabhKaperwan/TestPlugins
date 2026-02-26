@@ -314,7 +314,22 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val res = app.get(url)
         val sessionId = res.cookies["PHPSESSID"] ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "sessionId",
+                "sessionId",
+                sessionId,
+            )
+        )
+
         val document = res.document
+
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer" to "$levidiaAPI/",
+            "Cookie" to "PHPSESSID=$sessionId"
+        )
 
         val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
             val parsedTitle = aTag.selectFirst("strong")?.text()?.trim()
@@ -328,24 +343,20 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } ?: return
 
-        val doc = app.get(href).document
+        val doc = app.get(href, headers = headers).document
 
         if(season == null) {
             doc.select("a.xxx").amap {
                 val embedUrl = app.get(
                     it.attr("href"),
-                    headers = mapOf(
-                        "User-Agent" to USER_AGENT,
-                        "Referer" to href,
-                        "Cookie" to "PHPSESSID=$sessionId"
-                    )
+                    headers = headers,
                 ).headers["location"] ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
                         "embedUrl",
                         "embedUrl",
-                        embedUrl
+                        embedUrl,
                     )
                 )
 
@@ -363,18 +374,22 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             } ?: return
 
-            callback.invoke(
-                newExtractorLink(
-                    "episodePath",
-                    "episodePath",
-                    "$levidiaAPI/" + episodePath
-                )
-            )
-
-            val doc2 = app.get("$levidiaAPI/" + episodePath).document
-
+            val doc2 = app.get("$levidiaAPI/" + episodePath, headers = headers).document
             doc2.select("a.xxx").amap {
-                val embedUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"] ?: return@amap
+                val embedUrl = app.get(
+                    it.attr("href"),
+                    allowRedirects = false,
+                    headers = headers
+                ).headers["location"] ?: return@amap
+
+                callback.invoke(
+                    newExtractorLink(
+                        "embedUrl",
+                        "embedUrl",
+                        embedUrl,
+                    )
+                )
+
                 loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
             }
         }
