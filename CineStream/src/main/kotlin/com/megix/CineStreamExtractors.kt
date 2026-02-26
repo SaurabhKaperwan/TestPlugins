@@ -312,6 +312,14 @@ object CineStreamExtractors : CineStreamProvider() {
             "$levidiaAPI/search.php?q=$safeTitle+$year&v=episodes"
         }
 
+        callback.invoke(
+            newExtractorLink(
+                "url",
+                "url",
+                url
+            )
+        )
+
         val document = app.get(url).document
 
         val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
@@ -326,11 +334,37 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "href",
+                "href",
+                href
+            )
+        )
+
         val doc = app.get(href).document
 
         if(season == null) {
             doc.select("a.xxx").amap {
+
+                callback.invoke(
+                    newExtractorLink(
+                        "link",
+                        "link",
+                        it.attr("href")
+                    )
+                )
+
                 val embedUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"] ?: return@amap
+
+                callback.invoke(
+                    newExtractorLink(
+                        "embedUrl",
+                        "embedUrl",
+                        embedUrl
+                    )
+                )
+
                 loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
             }
         } else {
@@ -345,7 +379,16 @@ object CineStreamExtractors : CineStreamProvider() {
                 }
             } ?: return
 
+            callback.invoke(
+                newExtractorLink(
+                    "episodePath",
+                    "episodePath",
+                    "$levidiaAPI/" + episodePath
+                )
+            )
+
             val doc2 = app.get("$levidiaAPI/" + episodePath).document
+
             doc2.select("a.xxx").amap {
                 val embedUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"] ?: return@amap
                 loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
