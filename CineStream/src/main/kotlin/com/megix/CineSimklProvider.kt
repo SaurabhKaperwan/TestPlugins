@@ -35,6 +35,7 @@ class CineSimklProvider: MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = true
     // override val providerType = ProviderType.MetaProvider
+    override val loadLinksTimeoutMs = 60000
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private val simklDataAPI = "https://data.simkl.in"
@@ -279,8 +280,8 @@ class CineSimklProvider: MainAPI() {
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
-            anilist_meta?.posterUrl
-            ?: getPosterUrl(imdbId, "imdb:bg")
+            getPosterUrl(imdbId, "imdb:bg")
+            ?: anilist_meta?.posterUrl
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 

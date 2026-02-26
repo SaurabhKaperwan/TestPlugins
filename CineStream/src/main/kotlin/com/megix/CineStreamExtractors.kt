@@ -7,6 +7,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.jsoup.Jsoup
 import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
@@ -43,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-         runLimitedAsync( concurrency = 10,
+         runAllAsync(
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -80,13 +81,14 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
+            { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title ,res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
-            // { invokeStremioTorrents("Meteor", meteorAPI, res.imdbId, res.season, res.episode, callback) },
+            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokePrimeSrc(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invoke2embed(res.imdbId, res.season, res.episode, callback) },
@@ -114,7 +116,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-         runLimitedAsync( concurrency = 10,
+         runAllAsync(
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -136,7 +138,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
             { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
-            // { invokeStremioTorrents("Meteor", meteorAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
+            { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
             { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -557,6 +559,50 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokePlaysrc(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+
+        data class VideoResponse(
+            @JsonProperty("file") val file: String?,
+            @JsonProperty("headers") val headers: Map<String, String>?
+        )
+
+        val url = if(season == null) {
+            "https://api.madplay.site/api/playsrc?id=$tmdbId&token=direct"
+        } else {
+            "https://madplay.site/api/movies/holly?id=${tmdbId}&season=${season}&episode=${episode}&token=direct"
+        }
+
+        val jsonText = app.get(url).text
+
+        val parsedList = try {
+            parseJson<List<VideoResponse>>(jsonText)
+        } catch (e: Exception) {
+            println("Failed to parse JSON: ${e.message}")
+            return
+        }
+
+        val firstItem = parsedList.firstOrNull() ?: return
+
+        val videoUrl = firstItem.file ?: return
+        val headerMap = firstItem.headers ?: emptyMap()
+
+        callback.invoke(
+            newExtractorLink(
+                "Playsrc",
+                "Playsrc",
+                videoUrl,
+                ExtractorLinkType.M3U8
+            ) {
+                headers = headerMap
+            }
+        )
+    }
+
     suspend fun invokeMadplayCDN(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -608,6 +654,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     "Vidflix",
                     "Vidflix",
                     file,
+                    ExtractorLinkType.M3U8
                 ) {
                     this.headers = mapOf(
                         "Referer" to referer,
@@ -2360,28 +2407,18 @@ object CineStreamExtractors : CineStreamProvider() {
 
         res?.streams?.forEach { stream ->
 
-            val title = if(sourceName == "Meteor") {
-                stream.description ?: stream.title ?: stream.name ?: ""
-            } else {
-                stream.title ?: stream.name ?: ""
-            }
-
+            val title = stream.title ?: stream.name ?: ""
             val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
             var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
             val fileSize = match?.groupValues?.get(2) ?: ""
-
-            if (seeders < 25 && sourceName != "Meteor") return@forEach
-
-            if(sourceName == "Meteor") seeders = 25
-
-            val seedersText = if(sourceName == "Meteor") "25+" else "$seeders"
+            if (seeders < 25) return@forEach
 
             val magnet = buildMagnetString(stream)
             callback.invoke(
                 newExtractorLink(
                     "$sourceName🧲",
-                    sourceName.toSansSerifBold() + " 🧲 | 👤 $seedersText ⬆️ | " + getSimplifiedTitle(title + fileSize),
+                    sourceName.toSansSerifBold() + " 🧲 | 👤 $seeders ⬆️ | " + getSimplifiedTitle(title + fileSize),
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
