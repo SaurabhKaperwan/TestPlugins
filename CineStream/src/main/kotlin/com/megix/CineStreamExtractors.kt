@@ -355,7 +355,13 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 )
 
-                val embedUrl = app.get(it.attr("href")).url ?: return@amap
+                val embedUrl = app.get(
+                    it.attr("href"),
+                    headers = mapOf(
+                        "User-Agent" to USER_AGENT,
+                        "Referer" to href
+                    )
+                ).headers["location"] ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
