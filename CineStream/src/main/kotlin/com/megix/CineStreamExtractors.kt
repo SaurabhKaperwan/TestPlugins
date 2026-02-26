@@ -710,7 +710,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-     suspend fun invokeSucccbots(
+    suspend fun invokeSucccbots(
         title: String?,
         season: Int? = null,
         episode: Int? = null,
@@ -722,7 +722,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
         if (title.isNullOrBlank()) return
 
-        val media = "application/json".toMediaType()
         val isMovie = season == null || episode == null
         val emitted = mutableSetOf<String>()
 
@@ -763,21 +762,18 @@ object CineStreamExtractors : CineStreamProvider() {
             if (!visitedFolders.add(id)) return
 
             try {
-                val body = """
-            {
-              "id":"$id",
-              "type":"folder",
-              "password":"",
-              "page_token":"",
-              "page_index":0
-            }
-            """.trimIndent().toRequestBody(media)
-
+                // 1. REFACTORED: Using Cloudstream's native json parameter
                 val files = JSONObject(
                     app.post(
                         FALLBACK,
                         headers = fallbackHeaders,
-                        requestBody = body
+                        json = mapOf(
+                            "id" to id,
+                            "type" to "folder",
+                            "password" to "",
+                            "page_token" to "",
+                            "page_index" to 0
+                        )
                     ).text
                 ).getJSONObject("data")
                     .getJSONArray("files")
@@ -816,9 +812,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     val url = "$succcbots$link"
                     if (!emitted.add(url)) continue
 
-                    //Log.d("SuccMatch", "MATCH FILE -> $name")
-                    //Log.d("SuccMatch", "URL -> $url")
-
                     callback.invoke(
                         newExtractorLink(
                             "SucccBots",
@@ -843,18 +836,18 @@ object CineStreamExtractors : CineStreamProvider() {
 
         do {
             try {
+                val jsonResponse = JSONObject(
+                    app.post(
+                        SEARCH,
+                        json = mapOf(
+                            "q" to title,
+                            "page_token" to token,
+                            "page_index" to pageIndex
+                        )
+                    ).text
+                )
 
-                val body = """
-            {
-              "q":"$title",
-              "page_token":${token?.let { "\"$it\"" } ?: "null"},
-              "page_index":$pageIndex
-            }
-            """.trimIndent().toRequestBody(media)
-
-                val json = JSONObject(app.post(SEARCH, requestBody = body).text)
-
-                val files = json
+                val files = jsonResponse
                     .getJSONObject("data")
                     .getJSONArray("files")
 
@@ -900,9 +893,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     )
                 }
 
-                token =
-                    json.optString("nextPageToken").takeIf { it.isNotBlank() }
-                        ?: json.getJSONObject("data")
+                token = jsonResponse.optString("nextPageToken").takeIf { it.isNotBlank() }
+                        ?: jsonResponse.getJSONObject("data")
                             .optString("nextPageToken")
                             .takeIf { it.isNotBlank() }
 
