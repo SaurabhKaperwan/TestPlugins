@@ -26,7 +26,6 @@ open class CineStreamProvider : MainAPI() {
     override var lang = "en"
     // override val providerType = ProviderType.MetaProvider
     override val hasDownloadSupport = true
-    override val loadLinksTimeoutMs = 60000L
     private val skipMap: MutableMap<String, Int> = mutableMapOf()
     val cinemeta_url = "https://v3-cinemeta.strem.io"
     val kitsu_url = "https://anime-kitsu.strem.fun"

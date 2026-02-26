@@ -35,7 +35,6 @@ class CineSimklProvider: MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = true
     // override val providerType = ProviderType.MetaProvider
-    override val loadLinksTimeoutMs = 60000L
     override val supportedSyncNames = setOf(SyncIdName.Simkl)
     private val apiUrl = "https://api.simkl.com"
     private val simklDataAPI = "https://data.simkl.in"
@@ -375,7 +374,7 @@ class CineSimklProvider: MainAPI() {
                     this.episode = it.episode
                     this.description = it.description
                     this.posterUrl = getPosterUrl(it.img, "episode") ?: "https://github.com/SaurabhKaperwan/Utils/raw/refs/heads/main/missing_thumbnail.png"
-                    addDate(convertToLocalTime(it.date), "yyyy-MM-dd'T'HH:mm:ss")
+                    addDate(it.date, "yyyy-MM-dd'T'HH:mm:ss")
                 }
             }
 
