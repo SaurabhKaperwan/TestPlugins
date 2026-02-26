@@ -44,15 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString()
-            )
-        )
-
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeHindmoviez(res.imdbId, res.season, res.episode, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -88,6 +80,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
             { invokeMadplayCDN(res.tmdbId, res.season, res.episode, callback) },
+            { invokeLevidia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeXpass(res.tmdbId, res.season, res.episode, callback) },
             { invokePlaysrc(res.tmdbId, res.season, res.episode, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -125,15 +118,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        callback.invoke(
-            newExtractorLink(
-                "CineStream",
-                "CineStream",
-                res.toString()
-            )
-        )
-
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -164,6 +149,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeProtonmovies(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             // { invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeLevidia(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeSucccbots(res.imdbTitle, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeMapple(res.tmdbId, res.imdbSeason, res.imdbSeason, callback) },
@@ -306,6 +292,65 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         )
+    }
+
+    suspend fun invokeLevidia(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if(title == null || year == null) return
+
+        val safeTitle = URLEncoder.encode(title, "utf-8")
+
+        val url = if(season == null) {
+            "$levidiaAPI/search.php?q=$safeTitle+$year&v=movies"
+        } else {
+            "$levidiaAPI/search.php?q=$safeTitle+$year&v=episodes"
+        }
+
+        val document = app.get(url).document
+
+        val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
+            val parsedTitle = aTag.selectFirst("strong")?.text()?.trim()
+            ?: return@firstNotNullOfOrNull null
+            val parsedYear = aTag.ownText().replace(Regex("""[^\d]"""), "").toIntOrNull()
+
+            if (parsedTitle.equals(title, ignoreCase = true) && parsedYear == year) {
+                aTag.attr("href")
+            } else {
+                null
+            }
+        } ?: return
+
+        val doc = app.get(href).document
+
+        if(season == null) {
+            doc.select("a.xxx").amap {
+                val embedUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"] ?: return@amap
+                loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
+            }
+        } else {
+            val epRegex = Regex("""(?i)[^a-z]s0?${season}e0?${episode}[^0-9]""")
+
+            val episodePath = doc.select("li.mlist.links b a").firstNotNullOfOrNull { aTag ->
+                val href = aTag.attr("href")
+                if (epRegex.containsMatchIn(href)) {
+                    href
+                } else {
+                    null
+                }
+            } ?: return
+
+            val doc2 = app.get("$levidiaAPI/" + episodePath).document
+            doc2.select("a.xxx").amap {
+                val embedUrl = app.get(it.attr("href"), allowRedirects = false).headers["location"] ?: return@amap
+                loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
+            }
+        }
     }
 
     suspend fun invokeDramafull(
@@ -816,7 +861,7 @@ object CineStreamExtractors : CineStreamProvider() {
                             "SucccBots",
                             "SucccBots " + getSimplifiedTitle(name),
                             url,
-                            INFER_TYPE
+                            ExtractorLinkType.VIDEO
                         )
                         {
                             this.quality = getIndexQuality(name)
