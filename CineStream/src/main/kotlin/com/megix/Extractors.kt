@@ -34,7 +34,24 @@ open class Wootly : ExtractorApi() {
         val res1 = app.get(url)
 
         val iframeUrl = Regex("""<iframe.+?src="([^"]+)\"""").find(res1.text)?.groupValues?.get(1) ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "iframeUrl",
+                "iframeUrl",
+                iframeUrl,
+            )
+        )
+
         val cookie = res1.headers.firstOrNull { it.first.equals("set-cookie", true) }?.second?.substringBefore(";") ?: ""
+
+        callback.invoke(
+            newExtractorLink(
+                "cookie",
+                "cookie",
+                cookie,
+            )
+        )
 
         val postHeaders = mapOf(
             "Referer" to url,
@@ -50,14 +67,39 @@ open class Wootly : ExtractorApi() {
 
         val html2 = res2.text
 
+        callback.invoke(
+            newExtractorLink(
+                "html2",
+                "html2",
+                html2,
+            )
+        )
+
         val tk = Regex("""tk="([^"]+)\"""").find(html2)?.groupValues?.get(1)
         val vd = Regex("""vd="([^"]+)\"""").find(html2)?.groupValues?.get(1)
         val c = Regex(""",\s*c="([^"]+)\"""").find(html2)?.groupValues?.get(1)
 
         if (tk != null && vd != null && c != null) {
 
+            callback.invoke(
+                newExtractorLink(
+                    "tk",
+                    "tk",
+                    "tk=$tk, vd=$vd, c=$c",
+                )
+            )
+
             val resolvedUri = URI(iframeUrl).resolve(c).toString()
+
             val url2 = "$resolvedUri?t=$tk&id=$vd"
+
+            callback.invoke(
+                newExtractorLink(
+                    "url2",
+                    "url2",
+                    url2,
+                )
+            )
 
             val getHeaders = mapOf(
                 "Referer" to url,
@@ -71,7 +113,13 @@ open class Wootly : ExtractorApi() {
                 respText = redirectRes.url
             }
 
-            val type = if(respText.contains(".m3u8")) ExtractorLinkType.M3U8 else INFER_TYPE
+            callback.invoke(
+                newExtractorLink(
+                    "respText",
+                    "respText",
+                    respText,
+                )
+            )
 
             if (respText.startsWith("http")) {
                 callback.invoke(
@@ -79,9 +127,9 @@ open class Wootly : ExtractorApi() {
                         name,
                         name,
                         respText,
-                        type
+                        ExtractorLinkType.VIDEO
                     ) {
-                        this.referer = url
+                        this.referer = mainUrl
                     }
                 )
             }
