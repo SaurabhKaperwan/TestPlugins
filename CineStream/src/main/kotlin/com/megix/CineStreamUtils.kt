@@ -885,6 +885,9 @@ suspend fun bypassHrefli(url: String): String? {
 
 //XDM
 suspend fun bypassXDM(url: String): String? {
+
+    if(url.contains("hubcloud")) return url
+
     val link = app.get(
         url,
         allowRedirects = false,
@@ -931,6 +934,7 @@ suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
                     romaji
                 }
                 bannerImage
+                description(asHtml: false)
             }
         }
     """.trimIndent()
@@ -945,12 +949,20 @@ suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
         json = requestData
     ).parsedSafe<AniListResponse>()
 
-    val media = response?.data?.media ?: return null
+    val media = response?.data?.Media ?: return null
 
     val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
-    val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
 
-    return AnimeInfo(finalTitle, finalBanner)
+    val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
+        ?: media.title?.romaji
+
+    val finalDescription = media.description?.takeUnless { it.isBlank() || it == "null" }
+
+    return AnimeInfo(
+        title = finalTitle,
+        banner = finalBanner,
+        description = finalDescription
+    )
 }
 
 suspend fun convertTmdbToAnimeId(

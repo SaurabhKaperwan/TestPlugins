@@ -57,27 +57,21 @@ data class KisskhSubtitle(
 //Anilist
 data class AnimeInfo(
     val title: String?,
-    val posterUrl: String?
+    val banner: String?,
+    val description: String?
 )
-
 // --- Data Classes for AniList ---
-data class AniListResponse(
-    @param:JsonProperty("data") val data: AniListData? = null
-)
+data class AniListResponse(val data: AniListData?)
 
-data class AniListData(
-    @param:JsonProperty("Media") val media: AniListMedia? = null
-)
+data class AniListData(val Media: AniListMedia?)
 
 data class AniListMedia(
-    @param:JsonProperty("title") val title: AniListTitle? = null,
-    @param:JsonProperty("bannerImage") val bannerImage: String? = null
+    val title: AniListTitle?,
+    val bannerImage: String?,
+    val description: String?
 )
 
-data class AniListTitle(
-    @param:JsonProperty("english") val english: String? = null,
-    @param:JsonProperty("romaji") val romaji: String? = null
-)
+data class AniListTitle(val english: String?, val romaji: String?)
 
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {

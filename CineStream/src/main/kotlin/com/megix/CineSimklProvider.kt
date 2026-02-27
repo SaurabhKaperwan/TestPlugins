@@ -265,19 +265,17 @@ class CineSimklProvider: MainAPI() {
         val malId = ids?.mal?.toIntOrNull()
         val tmdbId = ids?.tmdb?.toIntOrNull()
         val imdbId = ids?.imdb
+        val anilist_meta = anilistId?.let { getAniListInfo(it) }
+        val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
 
-        val anilist_meta = if(anilistId != null) getAniListInfo(anilistId) else null
+        val plot = if (anilistId != null) {
+            val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
+                .filter { it.isNotBlank() }.distinct().takeIf { it.isNotEmpty() }
+                ?.joinToString(", ", prefix = "Alt Titles: ")
 
-        var enTitle =
-            anilist_meta?.title
-            ?: json.en_title
-            ?: json.title
-
-        enTitle = enTitle?.replace("\\'", "'")?.replace("\\\"", "\"")
-
-        val plot = if(anilistId != null) {
-            null
-        } else {
+                listOfNotNull(anilist_meta?.description?.takeIf { it.isNotBlank() }, altTitles)
+                    .joinToString("\n\n")
+            } else {
             json.overview
         }
 
@@ -290,21 +288,22 @@ class CineSimklProvider: MainAPI() {
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
-        val users_recommendations = json.users_recommendations?.map {
-            val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
-                this.posterUrl = rec_poster
-            }
-        } ?: emptyList()
+        val recommendations = buildList {
+            json.relations?.forEach {
+                val prefix = it.relation_type?.replaceFirstChar { c -> c.uppercase() }?.let { "($it) " } ?: ""
 
-        val relations = json.relations?.map {
-            val rec_poster = getPosterUrl(it.poster, "poster")
-            newMovieSearchResponse("(${it.relation_type?.replaceFirstChar { it.uppercase() }})${it.en_title ?: it.title}", "$mainUrl/tv/${it.ids.simkl}") {
-                this.posterUrl = rec_poster
+                add(newMovieSearchResponse("$prefix${it.en_title ?: it.title}", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
+                    posterUrl = getPosterUrl(it.poster, "poster")
+                })
             }
-        } ?: emptyList()
 
-        val recommendations = relations + users_recommendations
+            json.users_recommendations?.forEach {
+                add(newMovieSearchResponse(it.en_title ?: it.title ?: "", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
+                    posterUrl = getPosterUrl(it.poster, "poster")
+                })
+            }
+        }
+
         val duration = json.runtimeInMinutes?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
 
         val imdbType = if (tvType == "show") "series" else tvType
@@ -349,7 +348,7 @@ class CineSimklProvider: MainAPI() {
                 this.addTrailer(trailerLink)
             }
         } else {
-            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
+            val epsJson = app.get("$apiUrl/$tvType/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
