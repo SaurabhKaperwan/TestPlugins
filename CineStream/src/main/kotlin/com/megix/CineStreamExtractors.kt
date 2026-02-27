@@ -323,12 +323,28 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
+        val regex = Regex("""_3chk\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\)""")
+        val match = regex.find(res.text)
+
+        if(match == null) return
+
+        val value1 = match.groupValues[1]
+        val value2 = match.groupValues[2]
+
+        callback.invoke(
+            newExtractorLink(
+                "values",
+                "values",
+                "$value1=$value2",
+            )
+        )
+
         val document = res.document
 
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
             "Referer" to "$levidiaAPI/",
-            "Cookie" to "PHPSESSID=$sessionId"
+            "Cookie" to "PHPSESSID=$sessionId;$value1=$value2"
         )
 
         val href = document.select("li.mlist div.mainlink a").firstNotNullOfOrNull { aTag ->
@@ -350,7 +366,8 @@ object CineStreamExtractors : CineStreamProvider() {
                 val embedUrl = app.get(
                     it.attr("href"),
                     headers = headers,
-                ).url ?: return@amap
+                    allowRedirects = false
+                ).headers["Location"] ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
@@ -375,11 +392,13 @@ object CineStreamExtractors : CineStreamProvider() {
             } ?: return
 
             val doc2 = app.get("$levidiaAPI/" + episodePath, headers = headers).document
+
             doc2.select("a.xxx").amap {
                 val embedUrl = app.get(
                     it.attr("href"),
-                    headers = headers
-                ).url ?: return@amap
+                    headers = headers,
+                    allowRedirects = false
+                ).headers["Location"] ?: return@amap
 
                 callback.invoke(
                     newExtractorLink(
