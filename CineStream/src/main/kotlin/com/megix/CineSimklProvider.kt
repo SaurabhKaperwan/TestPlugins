@@ -240,7 +240,7 @@ class CineSimklProvider: MainAPI() {
         )
 
         if(res.code in 300..399) {
-            var location = res.headers["Location"]
+            var location = res.headers["Location"] ?: res.headers["location"]
             if(location != null) {
                 if(!location.contains("extended=full")) location += "&extended=full"
                 res = app.get(fixUrl(location, apiUrl), headers = headers)
@@ -284,7 +284,7 @@ class CineSimklProvider: MainAPI() {
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
         val backgroundPosterUrl =
             getPosterUrl(imdbId, "imdb:bg")
-            ?: anilist_meta?.posterUrl
+            ?: anilist_meta?.banner
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
