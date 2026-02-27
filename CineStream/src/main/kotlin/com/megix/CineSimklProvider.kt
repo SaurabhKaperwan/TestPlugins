@@ -273,9 +273,11 @@ class CineSimklProvider: MainAPI() {
                 .filter { it.isNotBlank() }.distinct().takeIf { it.isNotEmpty() }
                 ?.joinToString(", ", prefix = "Alt Titles: ")
 
-                listOfNotNull(anilist_meta?.description?.takeIf { it.isNotBlank() }, altTitles)
-                    .joinToString("\n\n")
-            } else {
+            val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
+
+            listOfNotNull(description?.takeIf { it.isNotBlank() }, altTitles)
+                .joinToString("\n\n")
+        } else {
             json.overview
         }
 
@@ -348,7 +350,7 @@ class CineSimklProvider: MainAPI() {
                 this.addTrailer(trailerLink)
             }
         } else {
-            val epsJson = app.get("$apiUrl/$tvType/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
+            val epsJson = app.get("$apiUrl/tv/episodes/$simklId?client_id=$auth2&extended=full", headers = headers).text
             val eps = parseJson<Array<Episodes>>(epsJson)
             val episodes = eps.filter { it.type != "special" }.map {
                 newEpisode(
