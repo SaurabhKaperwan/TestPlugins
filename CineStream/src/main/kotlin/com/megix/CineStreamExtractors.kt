@@ -45,6 +45,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runLimitedAsync( concurrency = 10,
+            { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { invokeSucccbots(res.title, res.season, res.episode, callback) },
+            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, callback) },
             { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
             { invokeVidflix(res.tmdbId, res.season, res.episode, callback) },
@@ -107,9 +110,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVidzee(res.tmdbId, res.season,res.episode, callback,subtitleCallback) },
             // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if(res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
-            { invokeSucccbots(res.title, res.season, res.episode, callback) },
-            { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
         )
     }
 
@@ -119,6 +119,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runLimitedAsync( concurrency = 10,
+            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
+            { invokeSucccbots(res.imdbTitle, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
@@ -157,9 +160,6 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimebox(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)} },
             // { invokePrimenet(res.tmdbId, res.imdbSeason, res.imdbEpisode, callback) },
             { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
-            { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
-            { invokeSucccbots(res.imdbTitle, res.imdbSeason, res.imdbEpisode, callback) },
         )
     }
 
@@ -314,15 +314,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val res = app.get(url)
         val sessionId = res.cookies["PHPSESSID"] ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "sessionId",
-                "sessionId",
-                sessionId,
-            )
-        )
-
         val regex = Regex("""_3chk\(['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\)""")
         val match = regex.find(res.text)
 
@@ -330,15 +321,6 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val value1 = match.groupValues[1]
         val value2 = match.groupValues[2]
-
-        callback.invoke(
-            newExtractorLink(
-                "values",
-                "values",
-                "$value1=$value2",
-            )
-        )
-
         val document = res.document
 
         val headers = mapOf(
@@ -369,14 +351,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     allowRedirects = false
                 ).headers["Location"] ?: return@amap
 
-                callback.invoke(
-                    newExtractorLink(
-                        "embedUrl",
-                        "embedUrl",
-                        embedUrl,
-                    )
-                )
-
                 loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
             }
         } else {
@@ -399,14 +373,6 @@ object CineStreamExtractors : CineStreamProvider() {
                     headers = headers,
                     allowRedirects = false
                 ).headers["Location"] ?: return@amap
-
-                callback.invoke(
-                    newExtractorLink(
-                        "embedUrl",
-                        "embedUrl",
-                        embedUrl,
-                    )
-                )
 
                 loadSourceNameExtractor("Levidia", embedUrl, "", subtitleCallback, callback)
             }
