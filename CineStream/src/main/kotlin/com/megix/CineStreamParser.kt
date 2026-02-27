@@ -61,17 +61,25 @@ data class AnimeInfo(
     val description: String?
 )
 // --- Data Classes for AniList ---
-data class AniListResponse(val data: AniListData?)
 
-data class AniListData(val Media: AniListMedia?)
-
-data class AniListMedia(
-    val title: AniListTitle?,
-    val bannerImage: String?,
-    val description: String?
+data class AniListResponse(
+    @JsonProperty("data") val data: AniListData?
 )
 
-data class AniListTitle(val english: String?, val romaji: String?)
+data class AniListData(
+    @JsonProperty("Media") val media: AniListMedia?
+)
+
+data class AniListMedia(
+    @JsonProperty("title") val title: AniListTitle?,
+    @JsonProperty("bannerImage") val bannerImage: String?,
+    @JsonProperty("description") val description: String?
+)
+
+data class AniListTitle(
+    @JsonProperty("english") val english: String?,
+    @JsonProperty("romaji") val romaji: String?
+)
 
 //XDmovies
 class XDMoviesSearchResponse: ArrayList<XDMoviesSearchResponse.SearchDataItem>() {

@@ -949,7 +949,7 @@ suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
         json = requestData
     ).parsedSafe<AniListResponse>()
 
-    val media = response?.data?.Media ?: return null
+    val media = response?.data?.media ?: return null
 
     val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
 
