@@ -511,6 +511,7 @@ data class Streamify(
 
 data class StreamifyBehaviorHints(
     @SerializedName("proxyHeaders" ) var proxyHeaders: StreamifyProxyHeaders? = StreamifyProxyHeaders()
+    @SerializedName("headers") var headers: Map<String, String>? = null
 )
 
 data class StreamifyProxyHeaders(
