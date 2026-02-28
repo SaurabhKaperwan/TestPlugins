@@ -55,7 +55,7 @@ class CineTmdbProvider: MainAPI() {
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val type = if (request.data.contains("/movie")) "movie" else "tv"
-        val home = app.get("$apiUrl/${request.data}&page=$page", timeout = 10000)
+        val home = app.get("$apiUrl/${request.data}&without_keywords=190370|13059|226161|195669&page=$page", timeout = 10000)
             .parsedSafe<Results>()?.results?.mapNotNull { media ->
                 media.toSearchResponse(type)
             } ?: throw ErrorLoadingException("Invalid Json reponse")
@@ -102,6 +102,7 @@ class CineTmdbProvider: MainAPI() {
     override suspend fun search(query: String, page: Int): SearchResponseList? {
         return app.get("$apiUrl/search/multi?api_key=$apiKey&language=en-US&query=$query&page=$page")
             .parsedSafe<Results>()?.results?.mapNotNull { media ->
+                if (media.mediaType.toString() == "person") return@mapNotNull null
                 media.toSearchResponse()
             }?.toNewSearchResponseList()
     }
