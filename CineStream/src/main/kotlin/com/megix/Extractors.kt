@@ -31,7 +31,12 @@ class Wootly : ExtractorApi() {
     override var mainUrl = "https://www.wootly.ch"
     override val requiresReferer = true
 
-    override suspend fun getUrl(url: String, referer: String?): List<ExtractorLink>? {
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
         val iframe = app.get(url).document.selectFirst("iframe")?.attr("src") ?: return null
 
         val iframeHtml = app.post(
@@ -57,7 +62,7 @@ class Wootly : ExtractorApi() {
 
         if (streamUrl.isBlank() || !streamUrl.startsWith("http")) return null
 
-        return listOf(
+        callback.invoke(
             newExtractorLink(
                 this.name,
                 this.name,
