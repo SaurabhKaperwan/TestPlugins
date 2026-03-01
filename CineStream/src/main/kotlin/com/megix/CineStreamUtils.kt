@@ -23,6 +23,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.supervisorScope
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -323,7 +324,7 @@ fun String.getHost(): String {
 suspend fun runLimitedAsync(
     concurrency: Int = 5,
     vararg tasks: suspend () -> Unit
-) = coroutineScope {
+) = supervisorScope {
     val semaphore = Semaphore(concurrency)
 
     tasks.map { task ->
@@ -331,8 +332,9 @@ suspend fun runLimitedAsync(
             semaphore.withPermit {
                 try {
                     task()
-                } catch (e: Exception) {
-                    // Log error but continue
+                } catch (e: CancellationException) {
+                    throw e // Let Cloudstream cleanly cancel the task if the user leaves the page
+                } catch (e: Throwable) {
                     Log.e("runLimitedAsync", "Task failed: ${e.message}")
                 }
             }
@@ -696,55 +698,41 @@ suspend fun loadSourceNameExtractor(
     quality: Int? = null,
     size: String = ""
 ) {
-    coroutineScope {
-        val scope = this
+    val processLink: (ExtractorLink) -> Unit = { link ->
+        val isDownload = link.source.contains("Download", ignoreCase = true) ||
+                link.url.contains("video-downloads.googleusercontent")
 
-        val processLink: (ExtractorLink) -> Unit = { link ->
-            scope.launch {
-                val isDownload = link.source.contains("Download") ||
-                                 link.url.contains("video-downloads.googleusercontent")
+        val simplifiedTitle = getSimplifiedTitle(link.name)
+        val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+        val fixSize = if (size.isNotEmpty()) " $size" else ""
+        val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-                val simplifiedTitle = getSimplifiedTitle(link.name)
-                val combined = if (source.contains("(Combined)")) " (Combined)" else ""
-                val fixSize = if (size.isNotEmpty()) " $size" else ""
-                val sourceBold = "$source [${link.source}]".toSansSerifBold()
+        val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+        val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-                val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
-                val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
-
-                val newLink = newExtractorLink(
-                    newSourceName,
-                    newName,
-                    link.url,
-                    type = link.type
-                ) {
-                    this.referer = link.referer
-                    this.quality = quality ?: link.quality
-                    this.headers = link.headers
-                    this.extractorData = link.extractorData
-                }
-
-                callback.invoke(newLink)
-            }
+        val newLink = newExtractorLink(
+            newSourceName,
+            newName,
+            link.url,
+            type = link.type
+        ) {
+            this.referer = link.referer
+            this.quality = quality ?: link.quality
+            this.headers = link.headers
+            this.extractorData = link.extractorData
         }
+        callback(newLink)
+    }
 
-        if (url.contains("hubcloud.") || url.contains("vcloud.")) {
-            HubCloud().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("gdflix.") || url.contains("gdlink.")) {
-            GDFlix().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("fastdlserver.")) {
-            fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("linksmod.")) {
-            Linksmod().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("hubdrive.")) {
-            Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("driveleech.") || url.contains("driveseed.")) {
-            Driveleech().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("howblogs.")) {
-            Howblogs().getUrl(url, referer, subtitleCallback, processLink)
-        } else {
-            loadExtractor(url, referer, subtitleCallback, processLink)
-        }
+    when {
+        url.contains("hubcloud.") || url.contains("vcloud.") -> HubCloud().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("gdflix.") || url.contains("gdlink.") -> GDFlix().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("fastdlserver.") -> fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("linksmod.") -> Linksmod().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("hubdrive.") -> Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("driveleech.") || url.contains("driveseed.") -> Driveleech().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("howblogs.") -> Howblogs().getUrl(url, referer, subtitleCallback, processLink)
+        else -> loadExtractor(url, referer, subtitleCallback, processLink)
     }
 }
 
@@ -756,26 +744,20 @@ suspend fun loadCustomExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
 ) {
-    coroutineScope {
-        val scope = this
-
-        loadExtractor(url, referer, subtitleCallback) { link ->
-            scope.launch {
-                val newLink = newExtractorLink(
-                    name ?: link.source,
-                    name ?: link.name,
-                    link.url,
-                    type = link.type
-                ) {
-                    this.quality = quality ?: link.quality
-                    this.referer = link.referer
-                    this.headers = link.headers
-                    this.extractorData = link.extractorData
-                }
-
-                callback.invoke(newLink)
-            }
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        val newLink = newExtractorLink(
+            name ?: link.source,
+            name ?: link.name,
+            link.url,
+            type = link.type
+        ) {
+            this.quality = quality ?: link.quality
+            this.referer = link.referer
+            this.headers = link.headers
+            this.extractorData = link.extractorData
         }
+
+        callback(newLink)
     }
 }
 
