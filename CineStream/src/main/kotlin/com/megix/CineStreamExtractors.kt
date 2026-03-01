@@ -4188,7 +4188,8 @@ object CineStreamExtractors : CineStreamProvider() {
         val serversUrl = decodedData.servers ?: return
         val streamBaseUrl = decodedData.stream ?: return
 
-        val serversList = app.get(serversUrl, headers = headers).parsedSafe<List<VidfastServer>>() ?: return
+        val serversListJson = app.get(serversUrl, headers = headers).text
+        val serverList =  tryParseJson<List<VidfastServer>>(serversListJson) ?: return
 
         callback.invoke(
             newExtractorLink(
