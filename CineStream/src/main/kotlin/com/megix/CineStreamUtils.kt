@@ -701,7 +701,7 @@ suspend fun loadSourceNameExtractor(
 ) = coroutineScope {
 
     val processLink: (ExtractorLink) -> Unit = { link ->
-        launch {
+        launch(Dispatchers.IO) {
             val isDownload = link.source.contains("Download", ignoreCase = true) ||
                              link.url.contains("video-downloads.googleusercontent")
 
@@ -751,7 +751,7 @@ suspend fun loadCustomExtractor(
 ) = coroutineScope {
 
     loadExtractor(url, referer, subtitleCallback) { link ->
-        launch {
+        launch(Dispatchers.IO) {
             val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
