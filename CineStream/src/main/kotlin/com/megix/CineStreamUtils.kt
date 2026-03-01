@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.CancellationException
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -333,7 +334,7 @@ suspend fun runLimitedAsync(
                 try {
                     task()
                 } catch (e: CancellationException) {
-                    throw e // Let Cloudstream cleanly cancel the task if the user leaves the page
+                    throw e
                 } catch (e: Throwable) {
                     Log.e("runLimitedAsync", "Task failed: ${e.message}")
                 }
@@ -694,34 +695,38 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = ""
-) {
+) = coroutineScope {
+
     val processLink: (ExtractorLink) -> Unit = { link ->
-        val isDownload = link.source.contains("Download", ignoreCase = true) ||
-                link.url.contains("video-downloads.googleusercontent")
+        launch {
+            val isDownload = link.source.contains("Download", ignoreCase = true) ||
+                             link.url.contains("video-downloads.googleusercontent")
 
-        val simplifiedTitle = getSimplifiedTitle(link.name)
-        val combined = if (source.contains("(Combined)")) " (Combined)" else ""
-        val fixSize = if (size.isNotEmpty()) " $size" else ""
-        val sourceBold = "$source [${link.source}]".toSansSerifBold()
+            val simplifiedTitle = getSimplifiedTitle(link.name)
+            val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+            val fixSize = if (size.isNotEmpty()) " $size" else ""
+            val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-        val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
-        val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
+            val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+            val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-        val newLink = newExtractorLink(
-            newSourceName,
-            newName,
-            link.url,
-            type = link.type
-        ) {
-            this.referer = link.referer
-            this.quality = quality ?: link.quality
-            this.headers = link.headers
-            this.extractorData = link.extractorData
+            val newLink = newExtractorLink(
+                newSourceName,
+                newName,
+                link.url,
+                type = link.type
+            ) {
+                this.referer = link.referer
+                this.quality = quality ?: link.quality
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+
+            callback(newLink)
         }
-        callback(newLink)
     }
 
     when {
@@ -741,23 +746,26 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit,
+    callback: suspend (ExtractorLink) -> Unit,
     quality: Int? = null,
-) {
-    loadExtractor(url, referer, subtitleCallback) { link ->
-        val newLink = newExtractorLink(
-            name ?: link.source,
-            name ?: link.name,
-            link.url,
-            type = link.type
-        ) {
-            this.quality = quality ?: link.quality
-            this.referer = link.referer
-            this.headers = link.headers
-            this.extractorData = link.extractorData
-        }
+) = coroutineScope {
 
-        callback(newLink)
+    loadExtractor(url, referer, subtitleCallback) { link ->
+        launch {
+            val newLink = newExtractorLink(
+                name ?: link.source,
+                name ?: link.name,
+                link.url,
+                type = link.type
+            ) {
+                this.quality = quality ?: link.quality
+                this.referer = link.referer
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
+
+            callback(newLink)
+        }
     }
 }
 
