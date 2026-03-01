@@ -4163,28 +4163,10 @@ object CineStreamExtractors : CineStreamProvider() {
             "Referer" to "$vidfastProApi/",
         )
         val response = app.get(url, headers = headers).text
-
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "encodedText",
-                "encodedText",
-                encodedText
-            )
-        )
-
         val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
-        val decodedData = app.get(decApiUrl).parsedSafe<EncDecResponse>()?.result ?: return
-
-        callback.invoke(
-            newExtractorLink(
-                "decodedData",
-                "decodedData",
-                decodedData.toString()
-            )
-        )
-
+        val decodedDataJson = app.get(decApiUrl).text
+        val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
         val serversUrl = decodedData.servers ?: return
         val streamBaseUrl = decodedData.stream ?: return
 
@@ -4202,16 +4184,8 @@ object CineStreamExtractors : CineStreamProvider() {
         serversList.forEach { server ->
             val serverHash = server.data ?: return@forEach
             val finalStreamUrl = "$streamBaseUrl/$serverHash"
-
-            callback.invoke(
-                newExtractorLink(
-                    "finalStreamUrl",
-                    "finalStreamUrl",
-                    finalStreamUrl
-                )
-            )
-
-            val streamData = app.get(finalStreamUrl, headers = headers).parsedSafe<VidfastStreamResponse>() ?: return@forEach
+            val streamDataJson = app.get(finalStreamUrl, headers = headers).text
+            val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
 
             callback.invoke(
                 newExtractorLink(
