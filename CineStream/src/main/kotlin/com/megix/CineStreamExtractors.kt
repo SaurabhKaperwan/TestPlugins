@@ -3379,10 +3379,36 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val serverJson = app.get(url, timeout = 30, headers = headers).text
+
+        callback.invoke(
+            newExtractorLink(
+                "serverJson",
+                "serverJson",
+                serverJson
+            )
+        )
+
         val serverList = tryParseJson<PrimeSrcServerList>(serverJson) ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "serverList",
+                "serverList",
+                serverList.toString()
+            )
+        )
 
         serverList.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
+
+            callback.invoke(
+                newExtractorLink(
+                    "rawServerJson",
+                    "rawServerJson",
+                    rawServerJson
+                )
+            )
+
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
@@ -3405,12 +3431,30 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val seacrhUrl = "$projectfreetvAPI/data/browse/?lang=3&keyword=$query&year=$year&networks=&rating=&votes=&genre=&country=&cast=&directors=&type=&order_by=&page=1&limit=1"
         val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI, timeout = 60L).text
+
+        callback.invoke(
+            newExtractorLink(
+                "searchJson",
+                "searchJson",
+                searchJson
+            )
+        )
+
         val searchObject = JSONObject(searchJson)
         val moviesArray = searchObject.getJSONArray("movies")
         if (moviesArray.length() == 0) return
         val id = moviesArray.getJSONObject(0).getString("_id")
         if(id.isEmpty()) return
         val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
+
+        callback.invoke(
+            newExtractorLink(
+                "jsonString",
+                "jsonString",
+                jsonString
+            )
+        )
+
         val rootObject = JSONObject(jsonString)
 
         if (rootObject.has("streams")) {

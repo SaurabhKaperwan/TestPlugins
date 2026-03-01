@@ -681,16 +681,15 @@ data class TripleOneMoviesStream(
 
 
 data class PrimeSrcServerList(
-    val servers: List<PrimeSrcServer>,
+    @JsonProperty("servers") val servers: List<PrimeSrcServer>?
 )
 
 data class PrimeSrcServer(
-    val name: String,
-    val key: String,
-    @param:JsonProperty("file_size")
-    val fileSize: String?,
-    @param:JsonProperty("file_name")
-    val fileName: String?,
+    @param:JsonProperty("name") val name: String?,
+    @param:JsonProperty("key") val key: String?,
+    @param:JsonProperty("quality") val quality: String?,
+    @param:JsonProperty("file_size") val fileSize: String?,
+    @param:JsonProperty("file_name") val fileName: String?
 )
 
 
