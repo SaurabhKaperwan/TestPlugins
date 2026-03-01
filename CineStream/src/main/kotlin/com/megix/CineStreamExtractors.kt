@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 10,
+        apmap(
             { invokeXDmovies(res.title ,res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.title, res.year, res.season, res.episode, callback) },
@@ -119,7 +119,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 10,
+        apmap(
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3385,15 +3385,6 @@ object CineStreamExtractors : CineStreamProvider() {
         serverList.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
-
-            callback.invoke(
-                newExtractorLink(
-                    "PrimeWire",
-                    "PrimeWire",
-                    jsonObject.optString("link","")
-                )
-            )
-
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
 
@@ -3431,15 +3422,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "ProjectFreeTV",
-                            "ProjectFreeTV",
-                            source
-                        )
-                    )
-
                     loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
                 }
             }
