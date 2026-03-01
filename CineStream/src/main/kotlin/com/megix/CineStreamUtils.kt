@@ -718,7 +718,7 @@ suspend fun loadSourceNameExtractor(
                     link.url,
                     type = link.type
                 ) {
-                    this.referer = link.referer ?: referer ?: ""
+                    this.referer = link.referer ?: referer
                     this.quality = quality ?: link.quality
                     this.headers = link.headers
                     this.extractorData = link.extractorData
@@ -768,7 +768,7 @@ suspend fun loadCustomExtractor(
                     type = link.type
                 ) {
                     this.quality = quality ?: link.quality
-                    this.referer = link.referer ?: referer ?: ""
+                    this.referer = link.referer ?: referer
                     this.headers = link.headers
                     this.extractorData = link.extractorData
                 }

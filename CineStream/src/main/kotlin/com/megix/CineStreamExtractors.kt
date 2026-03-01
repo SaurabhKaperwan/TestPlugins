@@ -657,8 +657,8 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
 
         data class VideoResponse(
-            @JsonProperty("file") val file: String?,
-            @JsonProperty("headers") val headers: Map<String, String>?
+            @param:JsonProperty("file") val file: String?,
+            @param:JsonProperty("headers") val headers: Map<String, String>?
         )
 
         val url = if(season == null) {
@@ -4166,19 +4166,51 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "encodedText",
+                "encodedText",
+                encodedText
+            )
+        )
+
         val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
         val decodedData = app.get(decApiUrl).parsedSafe<EncDecResponse>()?.result ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                "decodedData",
+                "decodedData",
+                decodedData.toString()
+            )
+        )
 
         val serversUrl = decodedData.servers ?: return
         val streamBaseUrl = decodedData.stream ?: return
 
         val serversList = app.get(serversUrl, headers = headers).parsedSafe<List<VidfastServer>>() ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "serversList",
+                "serversList",
+                serversList.toString()
+            )
+        )
+
         serversList.forEach { server ->
             val serverHash = server.data ?: return@forEach
             val finalStreamUrl = "$streamBaseUrl/$serverHash"
 
             val streamData = app.get(finalStreamUrl, headers = headers).parsedSafe<VidfastStreamResponse>() ?: return@forEach
+
+            callback.invoke(
+                newExtractorLink(
+                    "streamData",
+                    "streamData",
+                    streamData.toString()
+                )
+            )
 
             streamData.tracks?.forEach { track ->
                 if (track.file != null && track.label != null) {
