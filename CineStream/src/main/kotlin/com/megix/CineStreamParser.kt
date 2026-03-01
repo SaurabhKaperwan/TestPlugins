@@ -681,7 +681,7 @@ data class TripleOneMoviesStream(
 
 
 data class PrimeSrcServerList(
-    @JsonProperty("servers") val servers: List<PrimeSrcServer>?
+    @param:JsonProperty("servers") val servers: List<PrimeSrcServer>?
 )
 
 data class PrimeSrcServer(
