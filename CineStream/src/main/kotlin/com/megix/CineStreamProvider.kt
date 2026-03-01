@@ -60,7 +60,7 @@ open class CineStreamProvider : MainAPI() {
         // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val cinemaOSApi = "https://cinemaos.tech"
         // const val tripleOneMoviesApi = "https://111movies.com"
-        // const val vidfastProApi = "https://vidfast.pro"
+        const val vidfastProApi = "https://vidfast.pro"
         // const val vidPlusApi = "https://player.vidplus.to"
         const val multiEmbededApi = "https://multiembed.mov"
         const val vidSrcApi = "https://api.rgshows.ru"

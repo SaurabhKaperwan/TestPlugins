@@ -730,8 +730,6 @@ suspend fun loadSourceNameExtractor(
 
         if (url.contains("hubcloud.") || url.contains("vcloud.")) {
             HubCloud().getUrl(url, referer, subtitleCallback, processLink)
-        } else if(url.contains("gofile.")) {
-            Gofile().getUrl(url, referer, subtitleCallback, processLink)
         } else if(url.contains("gdflix.") || url.contains("gdlink.")) {
             GDFlix().getUrl(url, referer, subtitleCallback, processLink)
         } else if(url.contains("fastdlserver.")) {
@@ -1667,48 +1665,6 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 //         Log.e("salman731", "Manual parsing failed: ${e.message}")
 //     }
 //     return servers
-// }
-
-//  fun customEncode(input: ByteArray): String {
-//     val sourceChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-//     val targetChars = "yfhNJUs1-djqrDczw08Mk7CeQF4AvWltRGO3ao5Ypn9HKPBbEVSi_X2Zg6IuLmTx"
-
-//     val translationMap = sourceChars.zip(targetChars).toMap()
-//     val encoded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//         Base64.getUrlEncoder().withoutPadding().encodeToString(input)
-//     } else {
-//         TODO("VERSION.SDK_INT < O")
-//     }
-
-//     return encoded.map { char ->
-//         translationMap[char] ?: char
-//     }.joinToString("")
-// }
-
-
-/**
- * Utility function to convert hex string to byte array
- */
-//  fun hexStringToByteArray2(hex: String): ByteArray {
-//     val result = ByteArray(hex.length / 2)
-//     for (i in hex.indices step 2) {
-//         val value = hex.substring(i, i + 2).toInt(16)
-//         result[i / 2] = value.toByte()
-//     }
-//     return result
-// }
-
-/**
- * PKCS7 padding implementation
- */
-//  fun padData(data: ByteArray, blockSize: Int): ByteArray {
-//     val padding = blockSize - (data.size % blockSize)
-//     val result = ByteArray(data.size + padding)
-//     System.arraycopy(data, 0, result, 0, data.size)
-//     for (i in data.size until result.size) {
-//         result[i] = padding.toByte()
-//     }
-//     return result
 // }
 
 /**

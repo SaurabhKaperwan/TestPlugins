@@ -20,12 +20,6 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
-import com.lagradost.cloudstream3.app
-import com.lagradost.cloudstream3.utils.ExtractorApi
-import com.lagradost.cloudstream3.utils.ExtractorLink
-import com.lagradost.cloudstream3.utils.INFER_TYPE
-import com.lagradost.cloudstream3.utils.Qualities
-
 class Wootly : ExtractorApi() {
     override var name = "Wootly"
     override var mainUrl = "https://www.wootly.ch"
@@ -37,7 +31,7 @@ class Wootly : ExtractorApi() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val iframe = app.get(url).document.selectFirst("iframe")?.attr("src") ?: return null
+        val iframe = app.get(url).document.selectFirst("iframe")?.attr("src") ?: return
 
         val iframeHtml = app.post(
             iframe,
@@ -52,7 +46,7 @@ class Wootly : ExtractorApi() {
         val tk = tkRegex.find(iframeHtml)?.groupValues?.get(1)
 
         if (vd.isNullOrBlank() || tk.isNullOrBlank()) {
-            return null
+            return
         }
 
         val streamUrl = app.get(
@@ -60,7 +54,7 @@ class Wootly : ExtractorApi() {
             headers = mapOf("Referer" to iframe)
         ).text.trim()
 
-        if (streamUrl.isBlank() || !streamUrl.startsWith("http")) return null
+        if (streamUrl.isBlank() || !streamUrl.startsWith("http")) return
 
         callback.invoke(
             newExtractorLink(
@@ -73,90 +67,6 @@ class Wootly : ExtractorApi() {
             }
         )
     }
-}
-
-open class Gofile : ExtractorApi() {
-    override val name = "Gofile"
-    override val mainUrl = "https://gofile.io"
-    override val requiresReferer = false
-    private val mainApi = "https://api.gofile.io"
-
-    override suspend fun getUrl(
-        url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
-
-        val token = app.post(
-            "$mainApi/accounts",
-        ).parsedSafe<AccountResponse>()?.data?.token ?: return
-
-        val globalRes = app.get("$mainUrl/dist/js/config.js").text
-        val wt = Regex("""appdata\.wt\s*=\s*[\"']([^\"']+)[\"']""").find(globalRes)?.groupValues?.get(1) ?: return
-
-        val headers = mapOf(
-            "Authorization" to "Bearer $token",
-            "X-Website-Token" to wt
-        )
-
-        val parsedResponse = app.get(
-            "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
-            headers = headers
-        ).parsedSafe<GofileResponse>()
-
-        val childrenMap = parsedResponse?.data?.children ?: return
-
-        for ((_, file) in childrenMap) {
-            if (file.type != "file" || file.link.isNullOrEmpty()) continue
-            val fileName = file.name ?: ""
-            val size = file.size ?: 0L
-            val formattedSize = formatBytes(size)
-
-            callback.invoke(
-                newExtractorLink(
-                    "Gofile",
-                    "[Gofile] $fileName [$formattedSize]",
-                    file.link,
-                    ExtractorLinkType.VIDEO
-                ) {
-                    this.quality = getIndexQuality(fileName)
-                    this.headers = mapOf("Cookie" to "accountToken=$token")
-                }
-            )
-        }
-    }
-
-    private fun formatBytes(bytes: Long): String {
-        return when {
-            bytes < 1024L * 1024 * 1024 -> "%.2f MB".format(bytes.toDouble() / (1024 * 1024))
-            else -> "%.2f GB".format(bytes.toDouble() / (1024 * 1024 * 1024))
-        }
-    }
-
-    data class AccountResponse(
-        @param:JsonProperty("data") val data: AccountData? = null
-    )
-
-    data class AccountData(
-        @param:JsonProperty("token") val token: String? = null
-    )
-
-    data class GofileResponse(
-        @param:JsonProperty("data") val data: GofileData? = null
-    )
-
-    data class GofileData(
-        @param:JsonProperty("children") val children: Map<String, GofileFile>? = null
-    )
-
-    data class GofileFile(
-        @param:JsonProperty("type") val type: String? = null,
-        @param:JsonProperty("name") val name: String? = null,
-        @param:JsonProperty("link") val link: String? = null,
-        @param:JsonProperty("size") val size: Long? = 0L
-    )
 }
 
 class GDLink : GDFlix() {
@@ -283,7 +193,7 @@ open class GDFlix : ExtractorApi() {
                             .select(".row .row a").amap { gofileAnchor ->
                                 val link = gofileAnchor.attr("href")
                                 if (link.contains("gofile")) {
-                                    Gofile().getUrl(link, "", subtitleCallback, callback)
+                                    loadExtractor(link, "", subtitleCallback, callback)
                                 }
                             }
                     } catch (e: Exception) {
@@ -499,7 +409,7 @@ open class Driveleech : ExtractorApi() {
                 }
 
                 text.contains("gofile") -> {
-                    Gofile().getUrl(href, "", subtitleCallback, callback)
+                    loadExtractor(href, "", subtitleCallback, callback)
                 }
                 else -> {
                     Log.d("Error", "No Server matched")
@@ -810,6 +720,7 @@ class Rapidairmax : MegaUp() {
     override var mainUrl = "https://rapidairmax.site"
     override val requiresReferer = true
 }
+
 //Thanks to https://github.com/AzartX47/EncDecEndpoints
 open class MegaUp : ExtractorApi() {
     override var name = "MegaUp"

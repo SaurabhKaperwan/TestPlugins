@@ -29,6 +29,34 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//Enc-dec
+data class EncDecResponse(
+    @param:JsonProperty("result") val result: EncDecResult?
+)
+
+data class EncDecResult(
+    @param:JsonProperty("servers") val servers: String?,
+    @param:JsonProperty("stream") val stream: String?
+)
+
+// Vidfast
+data class VidfastServer(
+    @param:JsonProperty("name") val name: String?,
+    @param:JsonProperty("description") val description: String?,
+    @param:JsonProperty("data") val data: String?
+)
+
+data class VidfastStreamResponse(
+    @param:JsonProperty("url") val url: String?,
+    @param:JsonProperty("tracks") val tracks: List<VidfastTrack>?,
+    @param:JsonProperty("4kAvailable") val is4kAvailable: Boolean?
+)
+
+data class VidfastTrack(
+    @param:JsonProperty("file") val file: String?,
+    @param:JsonProperty("label") val label: String?
+)
+
 //Kisskh
 data class KisskhResults(
     @param:JsonProperty("id") val id: Int?,
