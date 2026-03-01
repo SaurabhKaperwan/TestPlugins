@@ -90,6 +90,7 @@ open class CineStreamProvider : MainAPI() {
         const val flixIndiaAPI = "https://m.flixindia.xyz"
         const val levidiaAPI = "https://www.levidia.ch"
         const val streamvixAPI = "https://streamvix.hayd.uk"
+        const val projectfreetvAPI = "https://projectfreetv.sx"
         const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
         private val apiConfig by lazy {

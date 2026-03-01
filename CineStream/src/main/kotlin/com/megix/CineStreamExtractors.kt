@@ -94,6 +94,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if(res.isAnime || res.isCartoon) invokeToonstream(res.title, res.season, res.episode, subtitleCallback, callback) },
             { if(!res.isAnime) invokeAsiaflix(res.title, res.season, res.episode, res.airedYear, subtitleCallback, callback) },
             { invokeMapple(res.tmdbId, res.season, res.episode, callback) },
+            { invokeProjectfreetv(res.title, res.airedYear, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidstack(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
@@ -102,7 +103,7 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
             // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-            { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -3368,15 +3369,8 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
 
         val headers = mapOf(
-            "accept" to "*/*",
-            "referer" to if(season == null) "$PrimeSrcApi/embed/movie?imdb=$imdbId" else "$PrimeSrcApi/embed/tv?imdb=$imdbId&season=$season&episode=$episode",
-            "sec-ch-ua" to "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Windows\"",
-            "sec-fetch-dest" to "empty",
-            "sec-fetch-mode" to "cors",
-            "sec-fetch-site" to "same-origin",
-            "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            "Referer" to "$PrimeSrcApi/",
+            "User-Agent" to USER_AGENT
         )
         val url = if (season == null) {
             "$PrimeSrcApi/api/v1/s?imdb=$imdbId&type=movie"
@@ -3385,22 +3379,52 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val serverJson = app.get(url, timeout = 30, headers = headers).text
+        val serverList = tryParseJson<PrimeSrcServerList>(serverJson) ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "server",
-                "server",
-                serverJson,
-            )
-        )
-
-        val serverList = app.get(url, timeout = 30, headers = headers).parsedSafe<PrimeSrcServerList>()
-        serverList?.servers?.amap {
+        serverList.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
             loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
 
+    }
+
+    suspend fun invokeProjectfreetv(
+        title: String? = null,
+        year: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val query = if(season == null) {
+            "$title".replace(" ", "+")
+        } else {
+            "${title?.replace(" ", "+")}+-+season+$season"
+        }
+
+        val seacrhUrl = "$projectfreetvAPI/data/browse/?lang=3&keyword=$query&year=$year&networks=&rating=&votes=&genre=&country=&cast=&directors=&type=&order_by=&page=1&limit=1"
+        val searchJson = app.get(seacrhUrl, referer = projectfreetvAPI, timeout = 60L).text
+        val searchObject = JSONObject(searchJson)
+        val moviesArray = searchObject.getJSONArray("movies")
+        if (moviesArray.length() == 0) return
+        val id = moviesArray.getJSONObject(0).getString("_id")
+        if(id.isEmpty()) return
+        val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
+        val rootObject = JSONObject(jsonString)
+
+        if (rootObject.has("streams")) {
+            val streamsArray = rootObject.getJSONArray("streams")
+
+            for (i in 0 until streamsArray.length()) {
+                val item = streamsArray.getJSONObject(i)
+                val currentEpisode = item.optString("e").toIntOrNull() ?: -1
+                if (episode == null || currentEpisode == episode) {
+                    val source = item.optString("stream")
+                    loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
+                }
+            }
+        }
     }
 
     // suspend fun invokeMp4Moviez(
