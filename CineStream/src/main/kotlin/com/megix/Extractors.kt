@@ -133,7 +133,7 @@ open class GDFlix : ExtractorApi() {
             .substringAfter("Size : ").orEmpty()
         val quality = getIndexQuality(fileName)
 
-        suspend fun myCallback(link: String, server: String = "") {
+        fun myCallback(link: String, server: String = "") {
             callback.invoke(
                 newExtractorLink(
                     "${name}${server}",
@@ -354,7 +354,7 @@ open class Driveleech : ExtractorApi() {
         val fileSize = document.select("ul > li.list-group-item:contains(Size)").text().substringAfter("Size : ")
         val quality = getIndexQuality(fileName)
 
-        suspend fun myCallback(link: String, server: String = "") {
+        fun myCallback(link: String, server: String = "") {
             callback.invoke(
                 newExtractorLink(
                     "${name}${server}",
@@ -484,7 +484,7 @@ open class HubCloud : ExtractorApi() {
         val size = document.select("i#size").text()
         val quality = getIndexQuality(header)
 
-        suspend fun myCallback( link: String, server: String = "") {
+        fun myCallback( link: String, server: String = "") {
             callback.invoke(
                 newExtractorLink(
                     "${name}${server}",

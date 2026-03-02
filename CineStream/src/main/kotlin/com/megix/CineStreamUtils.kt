@@ -15,9 +15,15 @@ import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.nicehttp.RequestBodyTypes
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.supervisorScope
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -524,6 +530,27 @@ suspend fun loadNameExtractor(
     )
 }
 
+suspend fun runLimitedAsync(
+    concurrency: Int = 5,
+    vararg tasks: suspend () -> Unit
+) = supervisorScope {
+    val semaphore = Semaphore(concurrency)
+
+    tasks.map { task ->
+        async(Dispatchers.IO) {
+            semaphore.withPermit {
+                try {
+                    task()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Log.e("runLimitedAsync", "Task failed: ${e.message}")
+                }
+            }
+        }
+    }.awaitAll()
+}
+
 fun getEpisodeSlug(
     season: Int? = null,
     episode: Int? = null,
@@ -667,38 +694,36 @@ suspend fun loadSourceNameExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = ""
 ) = coroutineScope {
 
     val processLink: (ExtractorLink) -> Unit = { link ->
-        launch(Dispatchers.IO) {
-            val isDownload = link.source.contains("Download", ignoreCase = true) ||
-                             link.url.contains("video-downloads.googleusercontent")
+        val isDownload = link.source.contains("Download", ignoreCase = true) ||
+                         link.url.contains("video-downloads.googleusercontent")
 
-            val simplifiedTitle = getSimplifiedTitle(link.name)
-            val combined = if (source.contains("(Combined)")) " (Combined)" else ""
-            val fixSize = if (size.isNotEmpty()) " $size" else ""
-            val sourceBold = "$source [${link.source}]".toSansSerifBold()
+        val simplifiedTitle = getSimplifiedTitle(link.name)
+        val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+        val fixSize = if (size.isNotEmpty()) " $size" else ""
+        val sourceBold = "$source [${link.source}]".toSansSerifBold()
 
-            val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
-            val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
+        val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+        val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-            val newLink = newExtractorLink(
-                newSourceName,
-                newName,
-                link.url,
-                type = link.type
-            ) {
-                this.referer = link.referer
-                this.quality = quality ?: link.quality
-                this.headers = link.headers
-                this.extractorData = link.extractorData
-            }
-
-            callback(newLink)
+        val newLink = newExtractorLink(
+            newSourceName,
+            newName,
+            link.url,
+            type = link.type
+        ) {
+            this.referer = link.referer
+            this.quality = quality ?: link.quality
+            this.headers = link.headers
+            this.extractorData = link.extractorData
         }
+
+        callback(newLink)
     }
 
     when {
