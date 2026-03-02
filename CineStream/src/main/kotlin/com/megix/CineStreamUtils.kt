@@ -530,10 +530,9 @@ suspend fun loadNameExtractor(
     )
 }
 
-suspend fun <A, B> List<A>.saf.safeAmap(
-    concurrency: Int = 5,
-    f: suspend (A) -> B?
-): List<B> = supervisorScope {
+suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
+
+suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int, f: suspend (A) -> B?): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
 
     map { item ->
@@ -544,7 +543,7 @@ suspend fun <A, B> List<A>.saf.safeAmap(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    Log.e("saf.safeAmap", "Item failed to process: ${e.message}")
+                    Log.e("safeAmap", "Item failed: ${e.message}")
                     null
                 }
             }
