@@ -530,8 +530,30 @@ suspend fun loadNameExtractor(
     )
 }
 
-suspend fun runLimitedAsync(
+suspend fun <A, B> List<A>.saf.safeAmap(
     concurrency: Int = 5,
+    f: suspend (A) -> B?
+): List<B> = supervisorScope {
+    val semaphore = Semaphore(concurrency)
+
+    map { item ->
+        async(Dispatchers.IO) {
+            semaphore.withPermit {
+                try {
+                    f(item)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Log.e("saf.safeAmap", "Item failed to process: ${e.message}")
+                    null
+                }
+            }
+        }
+    }.awaitAll().filterNotNull()
+}
+
+suspend fun runLimitedAsync(
+    concurrency: Int = 7,
     vararg tasks: suspend () -> Unit
 ) = supervisorScope {
     val semaphore = Semaphore(concurrency)
@@ -1160,7 +1182,7 @@ suspend fun getProtonStream(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
 ) {
-    doc.select("tr.infotr").amap { tr ->
+    doc.select("tr.infotr").safeAmap { tr ->
         val id = tr.select("button:contains(Info)").attr("id").split("-").getOrNull(1)
         if(id != null) {
             val uid = "uid_${System.currentTimeMillis()}_${
