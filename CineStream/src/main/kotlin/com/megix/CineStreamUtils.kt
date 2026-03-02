@@ -697,33 +697,32 @@ suspend fun loadSourceNameExtractor(
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
     size: String = ""
-) = coroutineScope {
-
+) = supervisorScope {
     val processLink: (ExtractorLink) -> Unit = { link ->
-        val isDownload = link.source.contains("Download", ignoreCase = true) ||
-                         link.url.contains("video-downloads.googleusercontent")
+        launch {
+            val isDownload = link.source.contains("Download", ignoreCase = true) ||
+                             link.url.contains("video-downloads.googleusercontent")
+            val simplifiedTitle = getSimplifiedTitle(link.name)
+            val combined = if (source.contains("(Combined)")) " (Combined)" else ""
+            val fixSize = if (size.isNotEmpty()) " $size" else ""
+            val sourceBold = "$source [${link.source}]".toSansSerifBold()
+            val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
+            val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
 
-        val simplifiedTitle = getSimplifiedTitle(link.name)
-        val combined = if (source.contains("(Combined)")) " (Combined)" else ""
-        val fixSize = if (size.isNotEmpty()) " $size" else ""
-        val sourceBold = "$source [${link.source}]".toSansSerifBold()
+            val newLink = newExtractorLink(
+                newSourceName,
+                newName,
+                link.url,
+                type = link.type
+            ) {
+                this.referer = link.referer
+                this.quality = quality ?: link.quality
+                this.headers = link.headers
+                this.extractorData = link.extractorData
+            }
 
-        val newSourceName = if (isDownload) "Download$combined" else "${link.source}$combined"
-        val newName = "$sourceBold $simplifiedTitle$fixSize".trim()
-
-        val newLink = newExtractorLink(
-            newSourceName,
-            newName,
-            link.url,
-            type = link.type
-        ) {
-            this.referer = link.referer
-            this.quality = quality ?: link.quality
-            this.headers = link.headers
-            this.extractorData = link.extractorData
+            callback(newLink)
         }
-
-        callback(newLink)
     }
 
     when {
@@ -743,12 +742,12 @@ suspend fun loadCustomExtractor(
     url: String,
     referer: String? = null,
     subtitleCallback: (SubtitleFile) -> Unit,
-    callback: suspend (ExtractorLink) -> Unit,
+    callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
-) = coroutineScope {
+) = supervisorScope {
 
     loadExtractor(url, referer, subtitleCallback) { link ->
-        launch(Dispatchers.IO) {
+        launch {
             val newLink = newExtractorLink(
                 name ?: link.source,
                 name ?: link.name,
