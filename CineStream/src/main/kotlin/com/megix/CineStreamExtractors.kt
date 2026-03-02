@@ -966,7 +966,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 listOf("4KHDHub", "Instant Download", "IOSMIRROR", "XDM").any { name.contains(it) } ||
                 title.contains("redirecting")) return@forEach
 
-            val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
+            val type = if (sourceName.contains("Castle") || sourceName.contains("Dramayo") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
             val streamUrl =  s.url
 
@@ -1057,7 +1057,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         var headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "User-Agent" to USER_AGENT,
             "Connection" to "keep-alive",
             "Origin" to "https://player.videasy.net",
         )
@@ -2548,15 +2548,18 @@ object CineStreamExtractors : CineStreamProvider() {
         val gson = Gson()
         val listType = object : TypeToken<List<Animetosho>>() {}.type
         val items: List<Animetosho> = gson.fromJson(json2, listType)
-        val filtered = items.filter { (it.seeders ?: 0) > 20 }
-        val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
+        // val filtered = items.filter { (it.seeders ?: 0) > 25 }
+        // val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
+
+        val sorted = items
+        .filter { (it.seeders ?: 0) >= 25 && !it.magnetUri.isNullOrBlank() }
+        .sortedBy { it.totalSize?.toLongOrNull() ?: Long.MAX_VALUE }
 
          for (it in sorted) {
             val title = it.title ?: ""
             val s = it.seeders ?: 0
-            if (s < 20) continue
             val l = it.leechers ?: 0
-            val magnet = it.magnetUri ?: ""
+            val magnet = it.magnetUri ?: continue
             val size = it.totalSize?.toLongOrNull() ?: 0L
             val sizeStr = formatSize(size)
             val type = if(
