@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -119,7 +119,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3385,7 +3385,7 @@ object CineStreamExtractors : CineStreamProvider() {
         serverList.servers?.amap {
             val rawServerJson = app.get("$PrimeSrcApi/api/v1/l?key=${it.key}", timeout = 30, headers = headers).text
             val jsonObject = JSONObject(rawServerJson)
-            loadSourceNameExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
+            loadCustomExtractor("PrimeWire", jsonObject.optString("link",""), PrimeSrcApi, subtitleCallback, callback)
         }
 
     }
@@ -3422,7 +3422,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
-                    loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
+                    loadCustomExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
                 }
             }
         }
