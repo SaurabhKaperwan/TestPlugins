@@ -29,6 +29,14 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+//AIO
+data class ExtractedMediaData(
+    val cast: List<ActorData>?,
+    val poster: String?,
+    val background: String?,
+    val logo: String?
+)
+
 //Enc-dec
 data class EncDecResponse(
     @param:JsonProperty("result") val result: EncDecResult?

@@ -321,33 +321,34 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-//get Cast Data
-suspend fun parseCastData(tvType: String, imdbId: String? = null): List<ActorData>? {
-    return if (tvType != "anime") {
-        try {
-            val url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
-            val json = app.get(url, timeout = 6L).text
-            val gson = Gson()
-            val data = gson.fromJson(json, TmdbResponse::class.java)
-            data.meta?.appExtras?.cast?.mapNotNull { castMember ->
-                if (castMember.name != null) {
-                    ActorData(
-                        Actor(
-                            name = castMember.name,
-                            image = castMember.photo
-                        ),
-                        roleString = castMember.character
-                    )
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            null
+//get tvdb data
+suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaData? {
+    val url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
+
+    val jsonText = app.get(url, timeout = 6L).text
+    val meta = JSONObject(jsonText).optJSONObject("meta") ?: return null
+
+    val castArray = meta.optJSONObject("app_extras")?.optJSONArray("cast")
+    val castList = castArray?.let { array ->
+        (0 until array.length()).mapNotNull { i ->
+            val castMember = array.optJSONObject(i) ?: return@mapNotNull null
+            val name = castMember.optString("name")
+
+            if (name.isNotEmpty()) {
+                ActorData(
+                    Actor(name, castMember.optString("photo").takeIf { it.isNotEmpty() }),
+                    castMember.optString("character").takeIf { it.isNotEmpty() }
+                )
+            } else null
         }
-    } else {
-        null
     }
+
+    return ExtractedMediaData(
+        cast = castList,
+        poster = meta.optString("poster").takeIf { it.isNotEmpty() },
+        background = meta.optString("background").takeIf { it.isNotEmpty() },
+        logo = meta.optString("logo").takeIf { it.isNotEmpty() }
+    )
 }
 
 suspend fun NFBypass(mainUrl: String): String {

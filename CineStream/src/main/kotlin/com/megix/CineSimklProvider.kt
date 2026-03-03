@@ -155,8 +155,7 @@ class CineSimklProvider: MainAPI() {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
                     val title = it.title_en ?: it.title ?: return@mapNotNull null
-                    val cleanTitle = title.replace("\\'", "'").replace("\\\"", "\"")
-                    newMovieSearchResponse(cleanTitle, "${mainUrl}${it.url}") {
+                    newMovieSearchResponse(title, "${mainUrl}${it.url}") {
                         posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
                     }
@@ -213,7 +212,7 @@ class CineSimklProvider: MainAPI() {
                 .parsedSafe<Array<SimklResponse>>()?.mapNotNull {
                     val allratings = it.ratings
                     val score = allratings?.mal?.rating ?: allratings?.imdb?.rating
-                    val title = it.title?.replace("\\'", "'")?.replace("\\\"", "\"") ?: return@mapNotNull null
+                    val title = it.title ?: return@mapNotNull null
                     newMovieSearchResponse(title, "${mainUrl}${it.url?.replace("movie", "movies")}") {
                         this.posterUrl = getPosterUrl(it.poster, "poster")
                         this.score = Score.from10(score)
@@ -277,7 +276,7 @@ class CineSimklProvider: MainAPI() {
             val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
 
             when {
-                altTitles != null && !description.isNullOrBlank() -> "$altTitles<br><br>$description"
+                altTitles != null && !description.isNullOrBlank() -> "$altTitles<br>$description"
                 altTitles != null -> altTitles
                 else -> description ?: ""
             }
@@ -285,11 +284,16 @@ class CineSimklProvider: MainAPI() {
             json.overview
         }
 
-        val logo = imdbId?.let { getPosterUrl(it, "imdb:lg") }
+        val imdbType = if (tvType == "show" || json.anime_type?.equals("tv") == true) "series" else tvType
+        val tvdbData = getTvdbData(imdbType, imdbId)
+
+        val logo = tvdbData?.logo ?: imdbId?.let { getPosterUrl(it, "imdb:lg") }
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube
         val trailerLink = firstTrailerId?.let { "https://www.youtube.com/watch?v=$it" }
+
         val backgroundPosterUrl =
-            getPosterUrl(imdbId, "imdb:bg")
+            tvdbData?.background
+            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: anilist_meta?.banner
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
@@ -311,9 +315,6 @@ class CineSimklProvider: MainAPI() {
         }
 
         val duration = json.runtimeInMinutes?.let { rt -> json.total_episodes?.let { eps -> rt * eps } ?: rt }
-
-        val imdbType = if (tvType == "show") "series" else tvType
-        val cast = parseCastData(imdbType, imdbId)
 
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
@@ -344,7 +345,7 @@ class CineSimklProvider: MainAPI() {
                 this.duration = duration
                 this.score = Score.from10(rating)
                 this.year = json.year
-                this.actors = cast
+                this.actors = tvdbData?.cast
                 try { this.logoUrl = logo} catch(_:Throwable){}
                 this.recommendations = recommendations
                 this.contentRating = json.certification
@@ -399,7 +400,7 @@ class CineSimklProvider: MainAPI() {
                 this.score = Score.from10(rating)
                 this.year = json.year
                 try { this.logoUrl = logo} catch(_:Throwable){}
-                this.actors = cast
+                this.actors = tvdbData?.cast
                 this.showStatus = getStatus(json.status)
                 this.recommendations = recommendations
                 this.contentRating = json.certification
