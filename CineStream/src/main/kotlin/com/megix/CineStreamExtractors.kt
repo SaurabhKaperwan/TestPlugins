@@ -595,6 +595,14 @@ object CineStreamExtractors : CineStreamProvider() {
 
             val data_json = app.get(url, headers = headers).text
 
+            callback.invoke(
+                newExtractorLink(
+                    "$server data_json",
+                    "$server data_json",
+                    data_json,
+                )
+            )
+
             if(type == "1") {
                 val dataString = JSONObject(data_json).getString("data")
 
@@ -660,6 +668,14 @@ object CineStreamExtractors : CineStreamProvider() {
                     "type" to type
                 )
                 val decryptedJson = app.post("$multiDecryptAPI/dec-vidstack", json = jsonBody).text
+
+                callback.invoke(
+                    newExtractorLink(
+                        "$server decryptedJson",
+                        "$server decryptedJson",
+                        data_json,
+                    )
+                )
                 val decryptedResult = JSONObject(decryptedJson).optString("result")
 
                 if (decryptedResult.isEmpty()) return@safeAmap
@@ -3469,6 +3485,15 @@ object CineStreamExtractors : CineStreamProvider() {
         val id = moviesArray.getJSONObject(0).getString("_id")
         if(id.isEmpty()) return
         val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
+
+        callback.invoke(
+            newExtractorLink(
+                "ProjectFreeTV",
+                "ProjectFreeTV",
+                jsonString,
+            )
+        )
+
         val rootObject = JSONObject(jsonString)
 
         if (rootObject.has("streams")) {
