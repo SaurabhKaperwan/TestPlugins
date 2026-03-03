@@ -321,18 +321,7 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
-//get tvdb data
-import org.json.JSONObject
-
-// The container for your extracted data
-data class MediaImages(
-    val cast: List<ActorData>?,
-    val poster: String?,
-    val background: String?,
-    val logo: String?
-)
-
-suspend fun parseCastData(tvType: String, imdbId: String? = null): MediaImages? {
+suspend fun getTvdbData(tvType: String, imdbId: String? = null): MediaImages? {
     if (imdbId == null) return null
     val primaryUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
     var jsonText = try {
