@@ -277,7 +277,7 @@ open class CineStreamProvider : MainAPI() {
         var actors = if(isKitsu) {
             null
         } else {
-           parseCastData(tvtype, id)
+           getTvdbData(tvtype, id)
         }
 
         if(actors == null && !isKitsu) {
