@@ -285,7 +285,7 @@ class CineSimklProvider: MainAPI() {
         }
 
         val imdbType = if (tvType == "show" || json.anime_type?.equals("tv") == true) "series" else tvType
-        val tvdbData = getTvdbData(imdbType, imdbId)
+        val tvdbData = if(!isAnime) getTvdbData(imdbType, imdbId) else null
 
         val logo = tvdbData?.logo ?: imdbId?.let { getPosterUrl(it, "imdb:lg") }
         val firstTrailerId = json.trailers?.firstOrNull()?.youtube

@@ -322,33 +322,61 @@ fun String.getHost(): String {
 }
 
 //get tvdb data
-suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaData? {
-    val url = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
+import org.json.JSONObject
 
-    val jsonText = app.get(url, timeout = 6L).text
-    val meta = JSONObject(jsonText).optJSONObject("meta") ?: return null
+// The container for your extracted data
+data class MediaImages(
+    val cast: List<ActorData>?,
+    val poster: String?,
+    val background: String?,
+    val logo: String?
+)
 
-    val castArray = meta.optJSONObject("app_extras")?.optJSONArray("cast")
-    val castList = castArray?.let { array ->
-        (0 until array.length()).mapNotNull { i ->
-            val castMember = array.optJSONObject(i) ?: return@mapNotNull null
-            val name = castMember.optString("name")
+suspend fun parseCastData(tvType: String, imdbId: String? = null): MediaImages? {
+    if (imdbId == null) return null
+    val primaryUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
+    var jsonText = try {
+        app.get(primaryUrl, timeout = 6L).text
+    } catch (e: Exception) {
+        ""
+    }
 
-            if (name.isNotEmpty()) {
-                ActorData(
-                    Actor(name, castMember.optString("photo").takeIf { it.isNotEmpty() }),
-                    castMember.optString("character").takeIf { it.isNotEmpty() }
-                )
-            } else null
+    if (jsonText.isEmpty()) {
+        val fallbackUrl = "https://94c8cb9f702d-tmdb-addon.baby-beamup.club/meta/$tvType/$imdbId.json"
+        jsonText = try {
+            app.get(fallbackUrl, timeout = 6L).text
+        } catch (e: Exception) {
+            ""
         }
     }
 
-    return ExtractedMediaData(
-        cast = castList,
-        poster = meta.optString("poster").takeIf { it.isNotEmpty() },
-        background = meta.optString("background").takeIf { it.isNotEmpty() },
-        logo = meta.optString("logo").takeIf { it.isNotEmpty() }
-    )
+    if (jsonText.isEmpty()) return null
+
+    val root = JSONObject(jsonText)
+    val meta = root.optJSONObject("meta") ?: return null
+
+    val posterUrl = meta.optString("poster").takeIf { it.isNotEmpty() }
+    val backgroundUrl = meta.optString("background").takeIf { it.isNotEmpty() }
+    val logoUrl = meta.optString("logo").takeIf { it.isNotEmpty() }
+
+    val castArray = meta.optJSONObject("app_extras")?.optJSONArray("cast")
+    val castList = if (castArray != null) {
+        (0 until castArray.length()).mapNotNull { i ->
+            val castMember = castArray.optJSONObject(i) ?: return@mapNotNull null
+            val name = castMember.optString("name")
+            if (name.isNotEmpty()) {
+                ActorData(
+                    Actor(
+                        name = name,
+                        image = castMember.optString("photo").takeIf { it.isNotEmpty() }
+                    ),
+                    roleString = castMember.optString("character").takeIf { it.isNotEmpty() }
+                )
+            } else null
+        }
+    } else null
+
+    return MediaImages(castList, posterUrl, backgroundUrl, logoUrl)
 }
 
 suspend fun NFBypass(mainUrl: String): String {
