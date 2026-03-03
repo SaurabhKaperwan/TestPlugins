@@ -250,7 +250,6 @@ class CineSimklProvider: MainAPI() {
         val genres = json.genres?.map { it }
         val tvType = json.type.orEmpty()
         val country = json.country.orEmpty()
-        val poster = getPosterUrl(json.poster, "poster")
         val isAnime = tvType == "anime"
         val isBollywood = country == "IN"
         val isCartoon = genres?.contains("Animation") == true
@@ -298,20 +297,20 @@ class CineSimklProvider: MainAPI() {
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
-        val posterUrl = tvdbData?.poster ?: getPosterUrl(json.poster, "poster")
+        val poster = tvdbData?.poster ?: getPosterUrl(json.poster, "poster")
 
         val recommendations = buildList {
             json.relations?.forEach {
                 val prefix = it.relation_type?.replaceFirstChar { c -> c.uppercase() }?.let { "($it) " } ?: ""
 
                 add(newMovieSearchResponse("$prefix${it.en_title ?: it.title}", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
-                    posterUrl = posterUrl
+                    this.posterUrl = getPosterUrl(it.poster, "poster")
                 })
             }
 
             json.users_recommendations?.forEach {
                 add(newMovieSearchResponse(it.en_title ?: it.title ?: "", "$mainUrl/$tvType/${it.ids.simkl}/${it.ids.slug}") {
-                    posterUrl = posterUrl
+                    this.posterUrl = getPosterUrl(it.poster, "poster")
                 })
             }
         }
@@ -394,7 +393,7 @@ class CineSimklProvider: MainAPI() {
 
             return newAnimeLoadResponse("${enTitle}", url, if(tvType == "anime") TvType.Anime else TvType.TvSeries) {
                 addEpisodes(DubStatus.Subbed, episodes)
-                this.posterUrl = posterUrl
+                this.posterUrl = poster
                 this.backgroundPosterUrl = backgroundPosterUrl
                 this.plot = plot
                 this.tags = genres
