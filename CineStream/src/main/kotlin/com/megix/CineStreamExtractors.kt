@@ -574,9 +574,13 @@ object CineStreamExtractors : CineStreamProvider() {
             "Referer" to vidstackBaseAPI
         )
 
+        // val servers = listOf(
+        //     "videosmashyi", "smashystream",
+        //     "short2embed", "videoophim", "videofsh"
+        // )
+
         val servers = listOf(
-            "videosmashyi", "smashystream",
-            "short2embed", "videoophim", "videofsh"
+            "videosmashyi"
         )
 
         servers.safeAmap { server ->
@@ -594,14 +598,6 @@ object CineStreamExtractors : CineStreamProvider() {
             }
 
             val data_json = app.get(url, headers = headers).text
-
-            callback.invoke(
-                newExtractorLink(
-                    "$server data_json",
-                    "$server data_json",
-                    data_json,
-                )
-            )
 
             if(type == "1") {
                 val dataString = JSONObject(data_json).getString("data")
@@ -625,8 +621,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                 callback.invoke(
                     newExtractorLink(
-                        "Vidstack [$server]",
-                        "Vidstack [$server]",
+                        "Vidstack",
+                        "Vidstack",
                         m3u8,
                         ExtractorLinkType.M3U8
                     ) {
@@ -648,66 +644,6 @@ object CineStreamExtractors : CineStreamProvider() {
                             newSubtitleFile(
                                 getLanguage(languageName) ?: languageName,
                                 fullUrl
-                            )
-                        )
-                    }
-                }
-            } else {
-                val responseObj = JSONObject(data_json)
-                val dataObj = responseObj.optJSONObject("data") ?: return@safeAmap
-                val sourcesArray = dataObj.optJSONArray("sources")
-                if (sourcesArray == null || sourcesArray.length() == 0) return@safeAmap
-
-                val encryptedFile = sourcesArray.getJSONObject(0).optString("file")
-                if (encryptedFile.isEmpty()) return@safeAmap
-
-                val tracksStr = dataObj.optString("tracks")
-
-                val jsonBody = mapOf(
-                    "text" to encryptedFile,
-                    "type" to type
-                )
-                val decryptedJson = app.post("$multiDecryptAPI/dec-vidstack", json = jsonBody).text
-
-                callback.invoke(
-                    newExtractorLink(
-                        "$server decryptedJson",
-                        "$server decryptedJson",
-                        data_json,
-                    )
-                )
-                val decryptedResult = JSONObject(decryptedJson).optString("result")
-
-                if (decryptedResult.isEmpty()) return@safeAmap
-
-                val sliceRegex = Regex("""\[([^\]]+)\]([^,]+)""")
-
-                sliceRegex.findAll(decryptedResult).forEach { match ->
-                    val qualityLabel = match.groupValues[1]
-                    val videoUrl = match.groupValues[2]
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "Vidstack [$server]",
-                            "Vidstack [$server] $qualityLabel",
-                            videoUrl,
-                            ExtractorLinkType.M3U8
-                        ) {
-                            this.referer = vidstackBaseAPI
-                            this.quality = getQualityFromName(qualityLabel)
-                        }
-                    )
-                }
-
-                if (tracksStr.isNotEmpty()) {
-                    sliceRegex.findAll(tracksStr).forEach { match ->
-                        val language = match.groupValues[1]
-                        val subUrl = match.groupValues[2]
-
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(language) ?: language,
-                                subUrl
                             )
                         )
                     }
@@ -877,11 +813,12 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val linkPattern = Regex("""\\"(small|medium|large|extraLarge)\\":\\"(https?://[^\\"]+)""")
 
-        linkPattern.findAll(doc.toString()).forEach { match ->
-            val quality = match.groupValues[1]
-            val durl = match.groupValues[2]
+        val sourceList = mutableListOf<String>()
 
-            loadSourceNameExtractor("Rtally", durl, "", subtitleCallback, callback)
+        linkPattern.findAll(doc.toString()).forEach { match ->
+            // val quality = match.groupValues[1]
+            val durl = match.groupValues[2]
+            if (durl.isNotEmpty()) sourceList.add(durl)
         }
 
         val streamPattern = Regex("""\\"(lulustream|strmup|filemoon|turbo|vidhide|doodStream|streamwish)Url\\":\\"?([^\\"]+)""")
@@ -892,9 +829,11 @@ object CineStreamExtractors : CineStreamProvider() {
 
             if (id != "null") {
                 val eurl = getStreamUrl(id, service) ?: return@forEach
-                loadSourceNameExtractor("Rtally", eurl, "", subtitleCallback, callback)
+                if (eurl.isNotEmpty()) sourceList.add(eurl)
             }
         }
+
+        sourceList.safeAmap { loadSourceNameExtractor("Rtally", it, "", subtitleCallback, callback) }
     }
 
     //Thanks to https://github.com/AzartX47/EncDecEndpoints
@@ -1852,6 +1791,8 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         }
 
+        val sourceList = mutableListOf<String>()
+
         if(matchedId != null && matchedName != null) {
             val titleSlug = matchedName.replace(" ", "-")
             val episodeUrl = "$asiaflixAPI/play/$titleSlug-1/$matchedId/1"
@@ -1861,8 +1802,12 @@ object CineStreamExtractors : CineStreamProvider() {
             val urlRegex = Regex("""\"url\"\s*:\s*\"(.*?)\"""")
             urlRegex.findAll(epJson).forEach { match ->
                 val source =  httpsify(match.groupValues[1])
-                loadSourceNameExtractor("Asiaflix", source, episodeUrl, subtitleCallback, callback)
+                if (source.isNotEmpty()) sourceList.add(source)
             }
+        }
+
+        sourceList.safeAmap {
+            loadSourceNameExtractor("Asiaflix", it, "", subtitleCallback, callback)
         }
     }
 
@@ -3486,15 +3431,9 @@ object CineStreamExtractors : CineStreamProvider() {
         if(id.isEmpty()) return
         val jsonString = app.get("$projectfreetvAPI/data/watch/?_id=$id", referer = projectfreetvAPI, timeout = 60L).text
 
-        callback.invoke(
-            newExtractorLink(
-                "ProjectFreeTV",
-                "ProjectFreeTV",
-                jsonString,
-            )
-        )
-
         val rootObject = JSONObject(jsonString)
+
+        val sourceList = mutableListOf<String>()
 
         if (rootObject.has("streams")) {
             val streamsArray = rootObject.getJSONArray("streams")
@@ -3504,9 +3443,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 val currentEpisode = item.optString("e").toIntOrNull() ?: -1
                 if (episode == null || currentEpisode == episode) {
                     val source = item.optString("stream")
-                    loadSourceNameExtractor("ProjectFreeTV", source, "", subtitleCallback, callback)
+                    if (source.isNotEmpty()) {
+                        sourceList.add(source)
+                    }
                 }
             }
+        }
+
+        sourceList.safeAmap {
+            loadSourceNameExtractor("ProjectFreeTV", it, "", subtitleCallback, callback)
         }
     }
 
