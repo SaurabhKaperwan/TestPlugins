@@ -1524,15 +1524,15 @@ private fun calculateHmacSha256(data: String, key: String): String {
 }
 
 // Helper function to convert byte array to hex string
-// fun bytesToHex(bytes: ByteArray): String {
-//     val hexChars = CharArray(bytes.size * 2)
-//     for (i in bytes.indices) {
-//         val v = bytes[i].toInt() and 0xFF
-//         hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
-//         hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
-//     }
-//     return String(hexChars)
-// }
+fun bytesToHex(bytes: ByteArray): String {
+    val hexChars = CharArray(bytes.size * 2)
+    for (i in bytes.indices) {
+        val v = bytes[i].toInt() and 0xFF
+        hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
+        hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
+    }
+    return String(hexChars)
+}
 
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
     val encrypted = e?.encrypted
