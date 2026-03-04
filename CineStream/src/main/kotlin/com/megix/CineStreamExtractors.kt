@@ -3564,7 +3564,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val STATIC_PATH = "1APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
+        val STATIC_PATH = "APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
         val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
         val headers = mapOf(
             "Referer" to tripleOneMoviesApi,
