@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeVidFastPro(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -103,7 +103,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -118,7 +118,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3557,135 +3557,65 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    suspend fun invokeTripleOneMovies(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
-        subtitleCallback: (SubtitleFile) -> Unit,
-    ) {
-        val STATIC_PATH = "APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
-        val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
-        val headers = mapOf(
-            "Referer" to tripleOneMoviesApi,
-            "Content-Type" to "application/gzip",
-            "User-Agent" to USER_AGENT
-        )
-        val response = app.get(url, headers = headers, timeout = 20).text
+    // suspend fun invokeTripleOneMovies(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    // ) {
+    //     val STATIC_PATH = "APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
+    //     val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
+    //     val headers = mapOf(
+    //         "Referer" to tripleOneMoviesApi,
+    //         "Content-Type" to "application/gzip",
+    //         "User-Agent" to USER_AGENT
+    //     )
+    //     val response = app.get(url, headers = headers, timeout = 20).text
+    //     val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
+    //     // AES encryption
+    //     val aesEncrypted = aesEncrypt(rawData)
+    //     // XOR operation
+    //     val xorResult = xorOperation(aesEncrypted)
+    //     // Custom encoding
+    //     val encodedFinal = customEncode(xorResult)
+    //     // Get servers
+    //     val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
+    //     val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
+    //     val servers = parseServers(serversResponse)
 
-        callback.invoke(
-            newExtractorLink(
-                "response",
-                "response",
-                response.toString(),
-            )
-        )
+    //     val urlList = mutableMapOf<String,String>()
 
-        val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
+    //     servers.forEach {
+    //         try {
+    //             val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
+    //             val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
 
-        callback.invoke(
-            newExtractorLink(
-                "rawData",
-                "rawData",
-                rawData.toString(),
-            )
-        )
+    //             if(streamResponse.isNotEmpty()) {
+    //                 val jsonObject = JSONObject(streamResponse)
+    //                 val url = jsonObject.getString("url")
 
-        // AES encryption
-        val aesEncrypted = aesEncrypt(rawData)
+    //                 urlList.put(it.name,url)
+    //             }
+    //         } catch (e: Exception) {
+    //             TODO("Not yet implemented")
+    //         }
+    //     }
 
-        callback.invoke(
-            newExtractorLink(
-                "aesEncrypted",
-                "aesEncrypted",
-                aesEncrypted.toString(),
-            )
-        )
-
-        // XOR operation
-        val xorResult = xorOperation(aesEncrypted)
-
-        callback.invoke(
-            newExtractorLink(
-                "xorResult",
-                "xorResult",
-                xorResult.toString(),
-            )
-        )
-
-        // Custom encoding
-        val encodedFinal = customEncode(xorResult)
-
-        callback.invoke(
-            newExtractorLink(
-                "encodedFinal",
-                "encodedFinal",
-                encodedFinal.toString(),
-            )
-        )
-
-        // Get servers
-        val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
-        val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
-
-        callback.invoke(
-            newExtractorLink(
-                "serversResponse",
-                "serversResponse",
-                serversResponse.toString(),
-            )
-        )
-
-        val servers = parseServers(serversResponse)
-
-        callback.invoke(
-            newExtractorLink(
-                "servers",
-                "servers",
-                servers.toString(),
-            )
-        )
-
-        val urlList = mutableMapOf<String,String>()
-
-        servers.forEach {
-            try {
-                val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
-                val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-
-                callback.invoke(
-                    newExtractorLink(
-                        "streamResponse",
-                        "streamResponse",
-                        streamResponse.toString(),
-                    )
-                )
-
-                if(streamResponse.isNotEmpty()) {
-                    val jsonObject = JSONObject(streamResponse)
-                    val url = jsonObject.getString("url")
-
-                    urlList.put(it.name,url)
-                }
-            } catch (e: Exception) {
-                TODO("Not yet implemented")
-            }
-        }
-
-        urlList.forEach {
-            callback.invoke(
-                newExtractorLink(
-                    "111Movies [${it.key}]",
-                    "111Movies [${it.key}]",
-                    url = it.value,
-                    type = ExtractorLinkType.M3U8
-                )
-                {
-                    this.quality = Qualities.P1080.value
-                }
-            )
-        }
-    }
+    //     urlList.forEach {
+    //         callback.invoke(
+    //             newExtractorLink(
+    //                 "111Movies [${it.key}]",
+    //                 "111Movies [${it.key}]",
+    //                 url = it.value,
+    //                 type = ExtractorLinkType.M3U8
+    //             )
+    //             {
+    //                 this.quality = Qualities.P1080.value
+    //             }
+    //         )
+    //     }
+    // }
 
     // suspend fun invokeVidPlus(
     //     tmdbId: Int? = null,

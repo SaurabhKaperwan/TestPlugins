@@ -1624,73 +1624,73 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 }
 
 /** Encodes input using Base64 with custom character mapping. */
-fun customEncode(input: String): String {
-    val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-    val dst = "Ckbl5ym-WLAev9dTuhpgK8PHtSGa2EBDnjMZR_Y0Xx7co1qrfFNJOQ6iUs4zIVw3"
-    val transMap = src.zip(dst).toMap()
-    val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Base64.getEncoder().encodeToString(input.toByteArray())
-            .replace("+", "-")
-            .replace("/", "_")
-            .replace("=", "")
-    } else {
-        android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
-    }
-    return base64.map { char -> transMap[char] ?: char }.joinToString("")
-}
+// fun customEncode(input: String): String {
+//     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+//     val dst = "Ckbl5ym-WLAev9dTuhpgK8PHtSGa2EBDnjMZR_Y0Xx7co1qrfFNJOQ6iUs4zIVw3"
+//     val transMap = src.zip(dst).toMap()
+//     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//         Base64.getEncoder().encodeToString(input.toByteArray())
+//             .replace("+", "-")
+//             .replace("/", "_")
+//             .replace("=", "")
+//     } else {
+//         android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
+//     }
+//     return base64.map { char -> transMap[char] ?: char }.joinToString("")
+// }
 
 /** Extracts data using regex pattern */
- fun extractData(pattern: String, input: String): String {
-    val regex = Regex(pattern)
-    val match = regex.find(input)
-    return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
-}
+//  fun extractData(pattern: String, input: String): String {
+//     val regex = Regex(pattern)
+//     val match = regex.find(input)
+//     return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
+// }
 
 /** Performs AES encryption */
- fun aesEncrypt(data: String): String {
-    val aesKey = hexStringToByteArray("ecc34a66edea3dcd48c8733812365f5caf7d28865993ae5fdc4a08436736a998")
-    val aesIv = hexStringToByteArray("4b47db0a764158dff36db37d27fdfcea")
+//  fun aesEncrypt(data: String): String {
+//     val aesKey = hexStringToByteArray("ecc34a66edea3dcd48c8733812365f5caf7d28865993ae5fdc4a08436736a998")
+//     val aesIv = hexStringToByteArray("4b47db0a764158dff36db37d27fdfcea")
 
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
+//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+//     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
 
-    val encryptedData = cipher.doFinal(data.toByteArray())
-    return bytesToHex(encryptedData)
-}
+//     val encryptedData = cipher.doFinal(data.toByteArray())
+//     return bytesToHex(encryptedData)
+// }
 
 /** Performs XOR operation */
- fun xorOperation(input: String): String {
-    val xorKey = hexStringToByteArray("fafd3f")
-    val result = StringBuilder()
+//  fun xorOperation(input: String): String {
+//     val xorKey = hexStringToByteArray("fafd3f")
+//     val result = StringBuilder()
 
-    for (i in input.indices) {
-        val char = input[i]
-        val xorByte = xorKey[i % xorKey.size].toInt()
-        result.append((char.code xor xorByte).toChar())
-    }
+//     for (i in input.indices) {
+//         val char = input[i]
+//         val xorByte = xorKey[i % xorKey.size].toInt()
+//         result.append((char.code xor xorByte).toChar())
+//     }
 
-    return result.toString()
-}
+//     return result.toString()
+// }
 
-fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
-    val servers = mutableListOf<TripleOneMoviesServer>()
-    try {
-        val jsonArray = JSONArray(jsonString)
-        for (i in 0 until jsonArray.length()) {
-            val jsonObject = jsonArray.getJSONObject(i)
-            val server = TripleOneMoviesServer(
-                name = jsonObject.getString("name"),
-                description = jsonObject.getString("description"),
-                image = jsonObject.getString("image"),
-                data = jsonObject.getString("data")
-            )
-            servers.add(server)
-        }
-    } catch (e: Exception) {
-        Log.e("salman731", "Manual parsing failed: ${e.message}")
-    }
-    return servers
-}
+// fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
+//     val servers = mutableListOf<TripleOneMoviesServer>()
+//     try {
+//         val jsonArray = JSONArray(jsonString)
+//         for (i in 0 until jsonArray.length()) {
+//             val jsonObject = jsonArray.getJSONObject(i)
+//             val server = TripleOneMoviesServer(
+//                 name = jsonObject.getString("name"),
+//                 description = jsonObject.getString("description"),
+//                 image = jsonObject.getString("image"),
+//                 data = jsonObject.getString("data")
+//             )
+//             servers.add(server)
+//         }
+//     } catch (e: Exception) {
+//         Log.e("salman731", "Manual parsing failed: ${e.message}")
+//     }
+//     return servers
+// }
 
 /**
  * PBKDF2 key derivation using Bouncy Castle

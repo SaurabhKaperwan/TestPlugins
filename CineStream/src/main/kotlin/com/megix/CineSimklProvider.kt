@@ -265,18 +265,22 @@ class CineSimklProvider: MainAPI() {
         val anilist_meta = anilistId?.let { getAniListInfo(it) }
         val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
 
-        val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
-        .filter { it.isNotBlank() }
-        .distinct()
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(", ", prefix = "[${"Alt Titles".toSansSerifBold()}: ", postfix = "]")
+        val plot = if (tvType == "anime") {
+            val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(", ", prefix = "[${"Alt Titles".toSansSerifBold()}: ", postfix = "]")
 
-        val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
+            val description = anilist_meta?.description?.takeIf { it.isNotBlank() } ?: json.overview
 
-        val plot = when {
-            altTitles != null && !description.isNullOrBlank() -> "$altTitles<br><br>$description"
-            altTitles != null -> altTitles
-            else -> description ?: ""
+            when {
+                altTitles != null && !description.isNullOrBlank() -> "$altTitles<br><br>$description"
+                altTitles != null -> altTitles
+                else -> description ?: ""
+            }
+        } else {
+            json.overview
         }
 
         val imdbType = if (tvType == "show" || json.anime_type?.equals("tv") == true) "series" else tvType
@@ -288,8 +292,8 @@ class CineSimklProvider: MainAPI() {
 
         val backgroundPosterUrl =
             tvdbData?.background
-            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: anilist_meta?.banner
+            ?: getPosterUrl(imdbId, "imdb:bg")
             ?: getPosterUrl(json.fanart, "fanart")
             ?: getPosterUrl(firstTrailerId, "youtube")
 
