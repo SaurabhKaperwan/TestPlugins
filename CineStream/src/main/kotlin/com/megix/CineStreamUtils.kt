@@ -352,14 +352,18 @@ suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaD
     val castList = if (castArray != null) {
         (0 until castArray.length()).mapNotNull { i ->
             val castMember = castArray.optJSONObject(i) ?: return@mapNotNull null
+
             val name = castMember.optString("name")
-            if (name.isNotEmpty()) {
+            if (name.isNotEmpty() && name != "null") {
                 ActorData(
                     Actor(
                         name = name,
-                        image = castMember.optString("photo").takeIf { it.isNotEmpty() }?.let { "$image_proxy$it" }
+                        image = castMember.optString("photo")
+                            .takeIf { it.isNotEmpty() && it != "null" }
+                            ?.let { "$image_proxy$it" }
                     ),
-                    roleString = castMember.optString("character").takeIf { it.isNotEmpty() }
+                    roleString = castMember.optString("character")
+                        .takeIf { it.isNotEmpty() && it != "null" }
                 )
             } else null
         }
