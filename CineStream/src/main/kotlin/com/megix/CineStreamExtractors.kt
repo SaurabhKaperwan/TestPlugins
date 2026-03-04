@@ -3572,27 +3572,96 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT
         )
         val response = app.get(url, headers = headers, timeout = 20).text
+
+        callback.invoke(
+            newExtractorLink(
+                "response",
+                "response",
+                response.toString(),
+            )
+        )
+
         val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
+
+        callback.invoke(
+            newExtractorLink(
+                "rawData",
+                "rawData",
+                rawData.toString(),
+            )
+        )
+
         // AES encryption
         val aesEncrypted = aesEncrypt(rawData)
+
+        callback.invoke(
+            newExtractorLink(
+                "aesEncrypted",
+                "aesEncrypted",
+                aesEncrypted.toString(),
+            )
+        )
 
         // XOR operation
         val xorResult = xorOperation(aesEncrypted)
 
+        callback.invoke(
+            newExtractorLink(
+                "xorResult",
+                "xorResult",
+                xorResult.toString(),
+            )
+        )
+
         // Custom encoding
         val encodedFinal = customEncode(xorResult)
+
+        callback.invoke(
+            newExtractorLink(
+                "encodedFinal",
+                "encodedFinal",
+                encodedFinal.toString(),
+            )
+        )
 
         // Get servers
         val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
         val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
+
+        callback.invoke(
+            newExtractorLink(
+                "serversResponse",
+                "serversResponse",
+                serversResponse.toString(),
+            )
+        )
+
         val servers = parseServers(serversResponse)
+
+        callback.invoke(
+            newExtractorLink(
+                "servers",
+                "servers",
+                servers.toString(),
+            )
+        )
+
         val urlList = mutableMapOf<String,String>()
+
         servers.forEach {
             try {
                 val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
                 val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-                if(streamResponse.isNotEmpty())
-                {
+
+                callback.invoke(
+                    newExtractorLink(
+                        "streamResponse",
+                        "streamResponse",
+                        streamResponse.toString(),
+                    )
+                )
+
+                if(streamResponse.isNotEmpty()) {
                     val jsonObject = JSONObject(streamResponse)
                     val url = jsonObject.getString("url")
 
