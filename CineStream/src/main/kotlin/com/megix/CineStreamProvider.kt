@@ -274,19 +274,10 @@ open class CineStreamProvider : MainAPI() {
         val tmdbId = movieData?.moviedb_id
         id = if(!isKitsu) movieData?.imdb_id.toString() else id
         val description = movieData?.awards?.let { "[${it.toSansSerifBold()}] ${movieData.description}" } ?: movieData?.description
-        var actors = if(isKitsu) {
+        val actors = if(isKitsu) {
             null
         } else {
-           getTvdbData(tvtype, id)
-        }
-
-        if(actors == null && !isKitsu) {
-            actors = movieData?.cast?.mapNotNull { name ->
-                ActorData(
-                    actor = Actor(name, null),
-                    roleString = null
-                )
-            } ?: emptyList()
+           getTvdbData(tvtype, id)?.cast
         }
 
         val country = movieData?.country ?: ""
