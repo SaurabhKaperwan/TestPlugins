@@ -59,7 +59,7 @@ open class CineStreamProvider : MainAPI() {
         const val webStreamrAPI = """https://webstreamr.hayd.uk/{"multi":"on","al":"on","de":"on","es":"on","fr":"on","it":"on","mx":"on","mediaFlowProxyUrl":"","mediaFlowProxyPassword":"","disableExtractor_hubcloud":"on","disableExtractor_hubdrive":"on"}"""
         // const val mp4MoviezAPI = "https://www.mp4moviez.talk"
         const val cinemaOSApi = "https://cinemaos.tech"
-        // const val tripleOneMoviesApi = "https://111movies.com"
+        const val tripleOneMoviesApi = "https://111movies.net"
         const val vidfastProApi = "https://vidfast.pro"
         // const val vidPlusApi = "https://player.vidplus.to"
         const val multiEmbededApi = "https://multiembed.mov"

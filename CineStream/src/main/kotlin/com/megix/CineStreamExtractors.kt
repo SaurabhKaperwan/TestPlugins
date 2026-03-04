@@ -103,7 +103,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
-            // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
             // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
@@ -3557,66 +3557,66 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    // suspend fun invokeTripleOneMovies(
-    //     tmdbId: Int? = null,
-    //     season: Int? = null,
-    //     episode: Int? = null,
-    //     callback: (ExtractorLink) -> Unit,
-    //     subtitleCallback: (SubtitleFile) -> Unit,
-    // ) {
-    //     val STATIC_PATH = "fcd552c4321aeac1e62c5304913b3420be75a19d390807281a425aabbb5dc4c0"
-    //     val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
-    //     val headers = mapOf(
-    //         "Referer" to tripleOneMoviesApi,
-    //         "Content-Type" to "application/octet-stream",
-    //         "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
-    //         "X-Requested-With" to "XMLHttpRequest")
-    //     val response = app.get(url,headers = headers, timeout = 20).text
-    //     val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
-    //     // AES encryption
-    //     val aesEncrypted = aesEncrypt(rawData)
+    suspend fun invokeTripleOneMovies(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val STATIC_PATH = "1APA91z6a9CYF3L6StzwNlIs5j2LKG0HDcvCgRGTeS9nNSWT_z-mUqshnN852FBiC-v6OgWXJhgDNpCJqsMjQHtnrkk-9OesJ9cTkKseogBTlaFObhfNNBTPT4VZ0TVqTLKH-9t5e_fkch2ehWDh25--V7sR874GNGLCqjrWRpCD0RoAb4EwquyU"
+        val url = if(season == null) "$tripleOneMoviesApi/movie/$tmdbId" else "$tripleOneMoviesApi/tv/$tmdbId/$season/$episode"
+        val headers = mapOf(
+            "Referer" to tripleOneMoviesApi,
+            "Content-Type" to "application/gzip",
+            "User-Agent" to USER_AGENT
+        )
+        val response = app.get(url, headers = headers, timeout = 20).text
+        val rawData = extractData("\\{\"data\":\"(.*?)\"", response)
+        // AES encryption
+        val aesEncrypted = aesEncrypt(rawData)
 
-    //     // XOR operation
-    //     val xorResult = xorOperation(aesEncrypted)
+        // XOR operation
+        val xorResult = xorOperation(aesEncrypted)
 
-    //     // Custom encoding
-    //     val encodedFinal = customEncode(xorResult)
+        // Custom encoding
+        val encodedFinal = customEncode(xorResult)
 
-    //     // Get servers
-    //     val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
-    //     val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
-    //     val servers = parseServers(serversResponse)
-    //     val urlList = mutableMapOf<String,String>()
-    //     servers.forEach {
-    //         try {
-    //             val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
-    //             val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
-    //             if(streamResponse.isNotEmpty())
-    //             {
-    //                 val jsonObject = JSONObject(streamResponse)
-    //                 val url = jsonObject.getString("url")
+        // Get servers
+        val apiServers = "$tripleOneMoviesApi/${STATIC_PATH}/$encodedFinal/sr"
+        val serversResponse = app.get(apiServers, timeout = 20, headers = headers).text
+        val servers = parseServers(serversResponse)
+        val urlList = mutableMapOf<String,String>()
+        servers.forEach {
+            try {
+                val apiStream = "$tripleOneMoviesApi/${STATIC_PATH}/${it.data}"
+                val streamResponse = app.get(apiStream, timeout = 20, headers = headers).text
+                if(streamResponse.isNotEmpty())
+                {
+                    val jsonObject = JSONObject(streamResponse)
+                    val url = jsonObject.getString("url")
 
-    //                 urlList.put(it.name,url)
-    //             }
-    //         } catch (e: Exception) {
-    //             TODO("Not yet implemented")
-    //         }
-    //     }
+                    urlList.put(it.name,url)
+                }
+            } catch (e: Exception) {
+                TODO("Not yet implemented")
+            }
+        }
 
-    //     urlList.forEach {
-    //         callback.invoke(
-    //             newExtractorLink(
-    //                 "111Movies [${it.key}]",
-    //                 "111Movies [${it.key}]",
-    //                 url = it.value,
-    //                 type = ExtractorLinkType.M3U8
-    //             )
-    //             {
-    //                 this.quality = Qualities.P1080.value
-    //             }
-    //         )
-    //     }
-    // }
+        urlList.forEach {
+            callback.invoke(
+                newExtractorLink(
+                    "111Movies [${it.key}]",
+                    "111Movies [${it.key}]",
+                    url = it.value,
+                    type = ExtractorLinkType.M3U8
+                )
+                {
+                    this.quality = Qualities.P1080.value
+                }
+            )
+        }
+    }
 
     // suspend fun invokeVidPlus(
     //     tmdbId: Int? = null,
