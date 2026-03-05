@@ -321,6 +321,21 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
+suspend fun checkPosterAvailable(posterUrl: String? = null): String? {
+    if(posterUrl == null) return null
+    return try {
+        val res = app.head(posterUrl)
+        if (res.code == 200) {
+            posterUrl
+        } else {
+            null
+        }
+
+    } catch (e: Exception) {
+        null
+    }
+}
+
 suspend fun getTvdbData(tvType: String, imdbId: String? = null): ExtractedMediaData? {
     if (imdbId == null) return null
     val primaryUrl = "https://aiometadata.elfhosted.com/stremio/9197a4a9-2f5b-4911-845e-8704c520bdf7/meta/$tvType/$imdbId.json"
@@ -1528,15 +1543,15 @@ private fun calculateHmacSha256(data: String, key: String): String {
 }
 
 // Helper function to convert byte array to hex string
-fun bytesToHex(bytes: ByteArray): String {
-    val hexChars = CharArray(bytes.size * 2)
-    for (i in bytes.indices) {
-        val v = bytes[i].toInt() and 0xFF
-        hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
-        hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
-    }
-    return String(hexChars)
-}
+// fun bytesToHex(bytes: ByteArray): String {
+//     val hexChars = CharArray(bytes.size * 2)
+//     for (i in bytes.indices) {
+//         val v = bytes[i].toInt() and 0xFF
+//         hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
+//         hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
+//     }
+//     return String(hexChars)
+// }
 
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): Any {
     val encrypted = e?.encrypted

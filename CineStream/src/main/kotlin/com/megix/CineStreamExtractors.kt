@@ -1061,10 +1061,11 @@ object CineStreamExtractors : CineStreamProvider() {
                 .replace("+", "%20")
         }
 
-        var headers = mapOf(
+        val headers = mapOf(
+            "Accept" to "*/*",
             "User-Agent" to USER_AGENT,
-            "Connection" to "keep-alive",
-            "Origin" to "https://player.videasy.net",
+            "Origin" to "https://cineby.gd",
+            "Referer" to "https://cineby.gd/"
         )
 
         val servers = listOf(
@@ -1107,26 +1108,13 @@ object CineStreamExtractors : CineStreamProvider() {
                     val obj = sourcesArray.getJSONObject(i)
                     val quality = obj.getString("quality")
                     val source = obj.getString("url")
-                    var type = INFER_TYPE
 
-                    if(source.contains(".m3u8")) {
-                        headers = headers + mapOf(
-                            "Accept" to "application/vnd.apple.mpegurl,application/x-mpegURL,*/*",
-                            "Referer" to "$videasyAPI/"
-                        )
-                        type = ExtractorLinkType.M3U8
-                    } else if(source.contains(".mp4")) {
-                        headers = headers + mapOf(
-                            "Accept" to "video/mp4,*/*",
-                            "Range" to "bytes=0-",
-                        )
-                        type = ExtractorLinkType.VIDEO
-                    } else if(source.contains(".mkv")) {
-                        headers = headers + mapOf(
-                            "Accept" to "video/x-matroska,*/*",
-                            "Range" to "bytes=0-",
-                        )
-                        type = ExtractorLinkType.VIDEO
+                    val type = if(source.contains(".m3u8")) {
+                        ExtractorLinkType.M3U8
+                    } else if(source.contains(".mp4") || source.contains(".mkv")) {
+                        ExtractorLinkType.VIDEO
+                    } else {
+                        INFER_TYPE
                     }
 
                     callback.invoke(
@@ -2834,7 +2822,16 @@ object CineStreamExtractors : CineStreamProvider() {
             matchTitle && matchYear
         }?.attr("href") ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "link",
+                "link",
+                link,
+            )
+        )
+
         val doc = app.get("$fourkhdhubAPI$link").document
+
         if(season == null) {
             doc.select("div.download-item a").safeAmap {
                val source = getRedirectLinks(it.attr("href"))
@@ -2847,11 +2844,29 @@ object CineStreamExtractors : CineStreamProvider() {
                 )
             }
         } else {
-            val seasonText = "S" + season.toString().padStart(2, '0')
-            val episodeText = "E" + episode.toString().padStart(2, '0')
-            doc.select("div.episode-download-item:has(div.episode-file-title:contains(${seasonText}${episodeText}))").safeAmap {
+            val (seasonText, episodeText) = getEpisodeSlug(season, episode)
+
+            doc.select("div.episode-download-item:has(div.episode-file-title:contains(S${seasonText}E${episodeText}))").safeAmap {
                 it.select("div.episode-links > a").safeAmap {
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "enc_link",
+                            "enc_link",
+                            it.attr("href"),
+                        )
+                    )
+
                     val source = getRedirectLinks(it.attr("href"))
+
+                    callback.invoke(
+                        newExtractorLink(
+                            "source",
+                            "source",
+                            source,
+                        )
+                    )
+
                     loadSourceNameExtractor(
                         "4Khdhub",
                         source,
@@ -3514,26 +3529,16 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
         val sourceHeaders = mapOf(
-            "Accept" to "*/*",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "Referer" to cinemaOSApi,
-            "Host" to "cinemaos.tech",
-            "Sec-Fetch-Dest" to "empty",
-            "Sec-Fetch-Mode" to "cors",
-            "Sec-Fetch-Site" to "same-origin",
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-            "sec-ch-ua" to "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
-            "sec-ch-ua-mobile" to "?0",
-            "sec-ch-ua-platform" to "\"Windows\"",
-            "Content-Type" to "application/json"
+            "Origin" to cinemaOSApi,
+            "Referer" to "$cinemaOSApi/",
+            "User-Agent" to USER_AGENT,
         )
 
         val fixTitle = title?.replace(" ", "+")
         val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(),imdbId= imdbId?.toString() ?: "", seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
         val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,season != null)
         val type = if(season == null) {"movie"}  else {"tv"}
-        val sourceUrl = if(season == null) {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
+        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
         val sourceResponse = app.get(sourceUrl, headers = sourceHeaders,timeout = 60).parsedSafe<CinemaOSReponse>()
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data,)
         val json = parseCinemaOSSources(decryptedJson.toString())
