@@ -47,8 +47,8 @@ object CineStreamExtractors : CineStreamProvider() {
         runLimitedAsync( concurrency = 5,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -99,7 +99,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { if (!res.isAnime) invokeSkymovies(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             { invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
-            { invokeCinemaOS(res.imdbId, res.tmdbId, res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
+            { invokeCinemaOS(res.imdbId, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { invokeVidzee(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
@@ -125,6 +125,9 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
+            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+            { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
+            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeVegamovies("VegaMovies", res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.imdbTitle, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -132,9 +135,6 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeMovies4u(res.imdbId, res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
-            { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
             { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
@@ -2821,6 +2821,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val matchYear = year?.toString()?.lowercase()?.let { it in content } ?: true
             matchTitle && matchYear
         }?.attr("href") ?: return
+
         val doc = app.get("$fourkhdhubAPI$link").document
 
         if(season == null) {
@@ -2836,6 +2837,7 @@ object CineStreamExtractors : CineStreamProvider() {
             }
         } else {
             val (seasonText, episodeText) = getEpisodeSlug(season, episode)
+
             doc.select("div.episode-download-item:has(div.episode-file-title:contains(S${seasonText}E${episodeText}))").safeAmap {
                 it.select("div.episode-links > a").safeAmap {
                     val source = getRedirectLinks(it.attr("href"))
@@ -3493,34 +3495,40 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeCinemaOS(
         imdbId: String? = null,
         tmdbId: Int? = null,
-        title: String? = null,
         season: Int? = null,
         episode: Int? = null,
-        year: Int? = null,
-        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit,
     ) {
-        val sourceHeaders = mapOf(
+        val headers = mapOf(
             "Origin" to cinemaOSApi,
             "Referer" to "$cinemaOSApi/",
             "User-Agent" to USER_AGENT,
         )
 
-        val fixTitle = title?.replace(" ", "+")
         val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(),imdbId= imdbId?.toString() ?: "", seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
-        val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest,season != null)
+        val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest, season != null)
+
+        callback.invoke(
+            newExtractorLink(
+                "secretHash",
+                "secretHash",
+                secretHash.toString()
+            )
+        )
+
         val type = if(season == null) {"movie"}  else {"tv"}
-        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=$fixTitle&ry=$year&secret=$secretHash"}
+        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=$fixTitle&ry=$year&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
 
         callback.invoke(
             newExtractorLink(
                 "sourceUrl",
                 "sourceUrl",
-                sourceUrl
+                sourceUrl.toString()
             )
         )
 
-        val sourceResponse = app.get(sourceUrl, headers = sourceHeaders, timeout = 60).parsedSafe<CinemaOSReponse>()
+        val sourceResponse = app.get(sourceUrl, headers = headers, timeout = 60).parsedSafe<CinemaOSReponse>()
 
         callback.invoke(
             newExtractorLink(
@@ -3530,7 +3538,7 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
-        val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data,)
+        val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
 
         callback.invoke(
             newExtractorLink(
@@ -3540,15 +3548,9 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         )
 
-        val json = parseCinemaOSSources(decryptedJson.toString())
+        if (decryptedJson.isNullOrEmpty()) return
 
-        callback.invoke(
-            newExtractorLink(
-                "json",
-                "json",
-                json.toString()
-            )
-        )
+        val json = parseCinemaOSSources(decryptedJson)
 
         json.safeAmap {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
@@ -3562,7 +3564,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     type = extractorLinkType
                 )
                 {
-                    this.headers = mapOf("Referer" to cinemaOSApi)
+                    this.headers = headers
                     this.quality = quality
                 }
             )

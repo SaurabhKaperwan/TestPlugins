@@ -655,7 +655,8 @@ data class CinemaOsSecretKeyRequest(
     val tmdbId: String,
     val imdbId: String,
     val seasonId: String,
-    val episodeId: String)
+    val episodeId: String
+)
 
 
 data class CinemaOSReponse(
