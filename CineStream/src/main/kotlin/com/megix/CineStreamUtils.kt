@@ -1495,7 +1495,7 @@ suspend fun getRedirectLinks(url: String): String {
 
         encodedUrl.ifEmpty { directLink }
     } catch (e: Exception) {
-        Log.e("LinkBypass", "Error processing links", e)
+        Log.e("LinkBypass", "Error processing link error: ${e.message}")
         ""
     }
 }

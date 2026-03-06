@@ -3944,7 +3944,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val KEY_HEX = "6966796f75736372617065796f75617265676179000000000000000000000000"
         val headers = mapOf(
             "Referer" to "",
-            "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            "User-Agent" to USER_AGENT
         )
         for (i in 1..10) {
             try {
