@@ -567,7 +567,7 @@ suspend fun loadNameExtractor(
     )
 }
 
-suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(3, f)
+suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
 
 suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int, f: suspend (A) -> B?): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
@@ -1511,8 +1511,7 @@ fun cinemaOSGenerateHash(tmdbId: Int?, imdbId: String?, season: Int?, episode: I
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
 
-    val safeImdbId = imdbId ?: "None"
-    var message = "tmdbId:$tmdbId|imdbId:$safeImdbId"
+    var message = "tmdbId:$tmdbId|imdbId:$ImdbId"
 
     if (season != null && episode != null) {
         message += "|seasonId:$season|episodeId:$episode"

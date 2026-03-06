@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -118,7 +118,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 5,
+        runLimitedAsync( concurrency = 7,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3517,7 +3517,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val type = if(season == null) {"movie"}  else {"tv"}
-        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=&ry=&secret=$secretHash"} else {"$cinemaOSApi/api/provider?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
+        val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=&ry=&secret=$secretHash"} else {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
 
         callback.invoke(
             newExtractorLink(

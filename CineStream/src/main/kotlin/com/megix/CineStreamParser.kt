@@ -651,7 +651,6 @@ data class Url(
     val resulation: String,
 )
 
-
 data class CinemaOSReponse(
     val data: CinemaOSReponseData,
     val encrypted: Boolean,
