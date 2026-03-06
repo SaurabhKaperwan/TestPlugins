@@ -691,7 +691,7 @@ suspend fun getHindMoviezLinks(
     val fileSize = doc.select("div.container p:contains(Size:)").text().substringAfter("Size: ")
     val simplifiedTitle = getSimplifiedTitle(name + fileSize)
 
-    runAllAsync(
+    runLimitedAsync( concurrency = 2,
         {
             val link = doc.select("a.btn-info").attr("href")
             val referer = response.url

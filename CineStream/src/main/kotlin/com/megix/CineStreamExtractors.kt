@@ -45,10 +45,8 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         runLimitedAsync( concurrency = 10,
-            { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
-            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { if (!res.isBollywood) invokeVegamovies("VegaMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.isBollywood) invokeVegamovies("RogMovies", res.imdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeBollyflix(res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -103,6 +101,8 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
+            { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            { if (!res.isBollywood) invoke4khdhub(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -1549,7 +1549,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if (servers.isEmpty()) return
 
         servers.safeAmap { server ->
-            runAllAsync (
+            runLimitedAsync ( concurrency = 3,
                 {
                     try {
                         val json = app.get("$gojoAPI/api/anime/oppai/$id/$episodeNumber?server=$server&source_type=sub", headers = headers).text
@@ -2406,7 +2406,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     episodeDiv?.selectFirst("a")?.attr("href")?.let {
                         val source = protonmoviesAPI + it
                         val doc2 = app.get(source, headers = headers).document
-                        runAllAsync(
+                        runLimitedAsync( concurrency = 2,
                             {
                                 val scriptText = doc2.selectFirst("script:containsData(strm.json)")?.data().toString()
                                 getProtonEmbed(scriptText, protonmoviesAPI, subtitleCallback, callback)
@@ -2687,7 +2687,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
         val aniXL = malsync?.AniXL?.values?.firstNotNullOfOrNull { it["url"] }
 
-        runAllAsync(
+        runLimitedAsync( concurrency = 3,
             {
                 invokeHianime(hianimeurl, episode, subtitleCallback, callback)
             },
@@ -2768,7 +2768,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
         val doc = app.get("$animepaheAPI/play/$id/$session", headers).document
 
-        runAllAsync(
+        runLimitedAsync( concurrency = 2,
             {
                 doc.select("div#pickDownload > a").safeAmap {
                     val href = it.attr("href")
@@ -3114,7 +3114,6 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun invokeModflix(
         id: String? = null,
         season: Int? = null,
@@ -4212,57 +4211,66 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        val url =
-            if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
+        val url = if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
 
         val headers = mapOf(
             "User-Agent" to USER_AGENT,
             "Referer" to "$vidfastProApi/",
+            "X-Requested-With" to "XMLHttpRequest",
         )
+
         val response = app.get(url, headers = headers).text
         val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
+
         val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
         val decodedDataJson = app.get(decApiUrl).text
         val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
+
         val serversUrl = decodedData.servers ?: return
         val streamBaseUrl = decodedData.stream ?: return
+
         val serversListJson = app.get(serversUrl, headers = headers).text
         val serversList = tryParseJson<List<VidfastServer>>(serversListJson) ?: return
 
         serversList.forEach { server ->
-            val serverHash = server.data ?: return@forEach
-            val finalStreamUrl = "$streamBaseUrl/$serverHash"
-            val streamDataJson = app.get(finalStreamUrl, headers = headers).text
-            val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
+            try {
+                val serverHash = server.data ?: return@forEach
+                val finalStreamUrl = "$streamBaseUrl/$serverHash"
 
-            streamData.tracks?.forEach { track ->
-                if (track.file != null && track.label != null) {
-                    subtitleCallback.invoke(
-                        newSubtitleFile(
-                            getLanguage(track.label) ?: track.label,
-                            track.file
+                val streamDataJson = app.get(finalStreamUrl, headers = headers).text
+                val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
+
+                streamData.tracks?.forEach { track ->
+                    if (track.file != null && track.label != null) {
+                        subtitleCallback.invoke(
+                            newSubtitleFile(
+                                getLanguage(track.label) ?: track.label,
+                                track.file
+                            )
                         )
-                    )
+                    }
                 }
+
+                val fileUrl = streamData.url ?: return@forEach
+                val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+
+                val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
+                val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Vidfast[${server.name}]",
+                        "Vidfast[${server.name}] ${server.description ?: ""}",
+                        fileUrl,
+                        type
+                    ) {
+                        this.headers = headers
+                        this.quality = quality
+                    }
+                )
+            } catch (e: Exception) {
+                Log.w("VidFastPro", "Failed to extract server: ${server.name}", e)
             }
-
-            val fileUrl = streamData.url ?: return@forEach
-
-            val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-
-            val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
-            val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
-            callback.invoke(
-                newExtractorLink(
-                    "Vidfast[${server.name}]",
-                    "Vidfast[${server.name}] ${server.description}",
-                    fileUrl,
-                    type
-                ) {
-                    this.headers = headers
-                    this.quality = quality
-                }
-            )
         }
     }
 
