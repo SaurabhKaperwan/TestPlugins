@@ -3946,18 +3946,47 @@ object CineStreamExtractors : CineStreamProvider() {
             "Referer" to "",
             "User-Agent" to USER_AGENT
         )
-        for (i in 1..10) {
-            try {
-                val mainUrl = if(season == null) "$vidzeeApi/api/server?id=$tmdbId&sr=$i" else "$vidzeeApi/api/server?id=$tmdbId&sr=$i&ss=$season&ep=$episode"
-                val response = app.get(mainUrl,headers, timeout = 30).text;
-                val json = JSONObject(response);
 
+        val serverList = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+        serverList.safeAmap { s ->
+            try {
+                val mainUrl = if(season == null) "$vidzeeApi/api/server?id=$tmdbId&sr=$s" else "$vidzeeApi/api/server?id=$tmdbId&sr=$s&ss=$season&ep=$episode"
+                val response = app.get(mainUrl, headers, timeout = 30).text
+
+                callback.invoke(
+                    newExtractorLink(
+                        "response",
+                        "response",
+                        response,
+                    )
+                )
+
+                val json = JSONObject(response)
                 val urlArray = json.optJSONArray("url")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "urlArray",
+                        "urlArray",
+                        urlArray.toString(),
+                    )
+                )
+
                 if (urlArray != null && urlArray.length() > 0) {
                     for (i in 0 until urlArray.length()) {
                         try {
                             val serverObj = urlArray.getJSONObject(i)
                             val encryptedUrl = serverObj.getString("link")
+
+                            callback.invoke(
+                                newExtractorLink(
+                                    "encryptedUrl",
+                                    "encryptedUrl",
+                                    encryptedUrl.toString(),
+                                )
+                            )
+
                             val serverName = serverObj.optString("name", "Unknown")
                             val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
                             val decoded = String(decodedBytes, Charsets.UTF_8)
@@ -3976,6 +4005,14 @@ object CineStreamExtractors : CineStreamProvider() {
                                 cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
                                 val decryptedData = cipher.doFinal(ciphertext)
                                 val videoUrl = String(decryptedData, Charsets.UTF_8).trim()
+
+                                callback.invoke(
+                                    newExtractorLink(
+                                        "videoUrl",
+                                        "videoUrl",
+                                        videoUrl.toString(),
+                                    )
+                                )
 
                                 callback.invoke(
                                     newExtractorLink(
