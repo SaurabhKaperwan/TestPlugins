@@ -5,7 +5,7 @@ import androidx.annotation.RequiresApi
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
-import java.util.Base64
+import android.util.Base64
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import java.net.*
@@ -1448,43 +1448,54 @@ suspend fun getGojoStreams(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 suspend fun getRedirectLinks(url: String): String {
     fun encode(value: String): String {
-        return Base64.getEncoder().encodeToString(value.toByteArray())
+        return Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
     }
 
-    fun pen(value: String): String {
+    fun decode(value: String): String {
+        return String(Base64.decode(value, Base64.DEFAULT))
+    }
+
+    fun rot13(value: String): String {
         return value.map {
             when (it) {
-                in 'A'..'Z' -> ((it - 'A' + 13) % 26 + 'A'.code).toChar()
-                in 'a'..'z' -> ((it - 'a' + 13) % 26 + 'a'.code).toChar()
+                in 'A'..'Z' -> 'A' + (it - 'A' + 13) % 26
+                in 'a'..'z' -> 'a' + (it - 'a' + 13) % 26
                 else -> it
             }
         }.joinToString("")
     }
 
-    val doc = app.get(url).toString()
-    val regex = "s\\('o','([A-Za-z0-9+/=]+)'|ck\\('_wp_http_\\d+','([^']+)'".toRegex()
-    val combinedString = buildString {
-        regex.findAll(doc).forEach { matchResult ->
-            val extractedValue = matchResult.groups[1]?.value ?: matchResult.groups[2]?.value
-            if (!extractedValue.isNullOrEmpty()) append(extractedValue)
-        }
-    }
     return try {
-        val decodedString = base64Decode(pen(base64Decode(base64Decode(combinedString))))
+        val doc = app.get(url).text
+
+        val regex = """s\('o','([A-Za-z0-9+/=]+)'|ck\('_wp_http_\d+','([^']+)'""".toRegex()
+
+        val combinedString = regex.findAll(doc)
+            .mapNotNull { it.groups[1]?.value ?: it.groups[2]?.value }
+            .joinToString("")
+
+        if (combinedString.isEmpty()) return ""
+
+        val decodedString = decode(rot13(decode(decode(combinedString))))
         val jsonObject = JSONObject(decodedString)
-        val encodedurl = base64Decode(jsonObject.optString("o", "")).trim()
+
+        val encodedUrl = decode(jsonObject.optString("o", "")).trim()
         val data = encode(jsonObject.optString("data", "")).trim()
         val wphttp1 = jsonObject.optString("blog_url", "").trim()
-        val directlink = runCatching {
-            app.get("$wphttp1?re=$data".trim()).document.select("body").text().trim()
-        }.getOrDefault("").trim()
 
-        encodedurl.ifEmpty { directlink }
+        val directLink = if (wphttp1.isNotEmpty() && data.isNotEmpty()) {
+            runCatching {
+                app.get("$wphttp1?re=$data").document.select("body").text().trim()
+            }.getOrDefault("")
+        } else {
+            ""
+        }
+
+        encodedUrl.ifEmpty { directLink }
     } catch (e: Exception) {
-        Log.e("Error:", "Error processing links $e")
+        Log.e("LinkBypass", "Error processing links", e)
         ""
     }
 }

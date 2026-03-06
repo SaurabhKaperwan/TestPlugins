@@ -29,7 +29,7 @@ import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 
 import com.lagradost.cloudstream3.network.CloudflareKiller
-import java.util.Base64
+import android.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -3507,45 +3507,10 @@ object CineStreamExtractors : CineStreamProvider() {
         )
 
         val secretHash = cinemaOSGenerateHash(tmdbId, imdbId, season, episode)
-
-        callback.invoke(
-            newExtractorLink(
-                "secretHash",
-                "secretHash",
-                secretHash.toString()
-            )
-        )
-
         val type = if(season == null) {"movie"}  else {"tv"}
         val sourceUrl = if(season == null) {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&t=&ry=&secret=$secretHash"} else {"$cinemaOSApi/api/providerv2?type=$type&tmdbId=$tmdbId&imdbId=$imdbId&seasonId=$season&episodeId=$episode&t=&ry=&secret=$secretHash"}
-
-        callback.invoke(
-            newExtractorLink(
-                "sourceUrl",
-                "sourceUrl",
-                sourceUrl.toString()
-            )
-        )
-
         val sourceResponse = app.get(sourceUrl, headers = headers, timeout = 60).parsedSafe<CinemaOSReponse>()
-
-        callback.invoke(
-            newExtractorLink(
-                "sourceResponse",
-                "sourceResponse",
-                sourceResponse.toString()
-            )
-        )
-
         val decryptedJson = cinemaOSDecryptResponse(sourceResponse?.data)
-
-        callback.invoke(
-            newExtractorLink(
-                "decryptedJson",
-                "decryptedJson",
-                decryptedJson.toString()
-            )
-        )
 
         if (decryptedJson.isNullOrEmpty()) return
 
@@ -3555,6 +3520,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val extractorLinkType = if(it["type"]?.contains("hls",true) ?: false) { ExtractorLinkType.M3U8} else if(it["type"]?.contains("dash",true) ?: false){ ExtractorLinkType.DASH} else if(it["type"]?.contains("mp4",true) ?: false){ ExtractorLinkType.VIDEO} else { INFER_TYPE}
             val bitrateQuality = if(it["bitrate"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["bitrate"]?.contains("hd",true) ?: false){ Qualities.P720.value} else if(it["bitrate"]?.contains("4K",true) ?: false){ Qualities.P2160.value} else { Qualities.P1080.value}
             val quality =  if(it["quality"]?.isNotEmpty() == true && it["quality"]?.toIntOrNull() !=null) getQualityFromName(it["quality"]) else if (it["quality"]?.isNotEmpty() == true)  if(it["quality"]?.contains("fhd",true) ?: false) { Qualities.P1080.value } else if(it["quality"]?.contains("hd",true) ?: false){ Qualities.P720.value} else { Qualities.P1080.value} else bitrateQuality
+
             callback.invoke(
                 newExtractorLink(
                     "CinemaOS [${it["server"]}] ${it["bitrate"]}  ${it["speed"]}".replace("\\s{2,}".toRegex(), " ").trim(),
@@ -3987,47 +3953,51 @@ object CineStreamExtractors : CineStreamProvider() {
                 val json = JSONObject(response);
 
                 val urlArray = json.optJSONArray("url")
-                if (urlArray != null) {
-                    val encryptedUrl = urlArray.getJSONObject(0).getString("link")
-                    val serverName = urlArray.getJSONObject(0).getString("name")
+                if (urlArray != null && urlArray.length() > 0) {
+                    for (i in 0 until urlArray.length()) {
+                        try {
+                            val serverObj = urlArray.getJSONObject(i)
+                            val encryptedUrl = serverObj.getString("link")
+                            val serverName = serverObj.optString("name", "Unknown")
+                            val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
+                            val decoded = String(decodedBytes, Charsets.UTF_8)
+                            val parts = decoded.split(":")
 
-                    // Decode decryption parameters
-                    val decoded = Base64.getDecoder().decode(encryptedUrl).toString(Charsets.UTF_8)
-                    val parts = decoded.split(":")
-                    val ivB64 = parts[0]
-                    val ciphertextB64 = parts[1]
+                            if (parts.size >= 2) {
+                                val ivB64 = parts[0]
+                                val ciphertextB64 = parts[1]
 
-                    // Prepare decryption parameters
-                    val iv = Base64.getDecoder().decode(ivB64)
-                    val ciphertext = Base64.getDecoder().decode(ciphertextB64)
-                    val key = hexStringToByteArray(KEY_HEX)
+                                val iv = Base64.decode(ivB64, Base64.DEFAULT)
+                                val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
+                                val key = hexStringToByteArray(KEY_HEX)
+                                val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                                val secretKeySpec = SecretKeySpec(key, "AES")
+                                val ivParameterSpec = IvParameterSpec(iv)
+                                cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+                                val decryptedData = cipher.doFinal(ciphertext)
+                                val videoUrl = String(decryptedData, Charsets.UTF_8).trim()
 
-
-                    // Decrypt using AES-CBC
-                    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                    val secretKeySpec = SecretKeySpec(key, "AES")
-                    val ivParameterSpec = IvParameterSpec(iv)
-
-                    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
-                    val decryptedData = cipher.doFinal(ciphertext)
-
-                    // Remove PKCS7 padding (handled by PKCS5Padding in Java/Kotlin)
-                    val videoUrl = String(decryptedData, Charsets.UTF_8).trim()
-
-                    callback.invoke(
-                        newExtractorLink(
-                            "Vidzee [${serverName}]",
-                            "Vidzee [${serverName}]",
-                            url = videoUrl,
-                            type =  ExtractorLinkType.M3U8,
-                        ) {
-                            this.quality = 1080
-                            this.referer = "https://player.vidzee.wtf/"
-                            this.headers = mapOf(
-                                "User-Agent" to "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36"
-                            )
+                                callback.invoke(
+                                    newExtractorLink(
+                                        "Vidzee [$serverName]",
+                                        "Vidzee [$serverName]",
+                                        url = videoUrl,
+                                        type = ExtractorLinkType.M3U8,
+                                    ) {
+                                        this.quality = 1080
+                                        this.referer = "https://player.vidzee.wtf/"
+                                        this.headers = mapOf(
+                                            "User-Agent" to USER_AGENT
+                                        )
+                                    }
+                                )
+                            } else {
+                                Log.w("VidzeeExtractor", "Unexpected decrypted format: $decoded")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("VidzeeExtractor", "Error decrypting link at index $i", e)
                         }
-                    )
+                    }
                 }
             } catch (e: Exception) {
                 TODO("Not yet implemented")
