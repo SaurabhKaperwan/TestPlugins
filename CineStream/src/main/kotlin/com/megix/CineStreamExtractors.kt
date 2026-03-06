@@ -3506,8 +3506,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "User-Agent" to USER_AGENT,
         )
 
-        val cinemaOsSecretKeyRequest = CinemaOsSecretKeyRequest(tmdbId = tmdbId.toString(),imdbId= imdbId?.toString() ?: "", seasonId = season?.toString() ?: "", episodeId = episode?.toString() ?: "")
-        val secretHash = cinemaOSGenerateHash(cinemaOsSecretKeyRequest, season != null)
+        val secretHash = cinemaOSGenerateHash(tmdbId, imdbId, season, episode)
 
         callback.invoke(
             newExtractorLink(

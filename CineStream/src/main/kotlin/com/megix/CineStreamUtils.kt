@@ -1507,38 +1507,27 @@ suspend fun getRedirectLinks(url: String): String {
 //     return result
 // }
 
-fun cinemaOSGenerateHash(t: CinemaOsSecretKeyRequest, isSeries: Boolean): String {
+fun cinemaOSGenerateHash(tmdbId: Int?, imdbId: String?, season: Int?, episode: Int?): String {
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
 
-    // Create content identifier string
-    val contentString = createContentString(t)
+    val safeImdbId = imdbId ?: "None"
+    var message = "tmdbId:$tmdbId|imdbId:$safeImdbId"
 
-    // First HMAC with primary key
-    val firstHash = calculateHmacSha256(contentString, primary)
-
-    // Second HMAC with secondary key
+    if (season != null && episode != null) {
+        message += "|seasonId:$season|episodeId:$episode"
+    }
+    val firstHash = calculateHmacSha256(message, primary)
     return calculateHmacSha256(firstHash, secondary)
-}
-
-private fun createContentString(info: CinemaOsSecretKeyRequest): String {
-    val parts = mutableListOf<String>()
-
-    info.tmdbId.takeIf { it.isNotEmpty() }?.let { parts.add("tmdbId:$it") }
-    info.imdbId.takeIf { it.isNotEmpty() }?.let { parts.add("imdbId:$it") }
-    info.seasonId.takeIf { it.isNotEmpty() }?.let { parts.add("seasonId:$it") }
-    info.episodeId.takeIf { it.isNotEmpty() }?.let { parts.add("episodeId:$it") }
-
-    return parts.joinToString("|")
 }
 
 private fun calculateHmacSha256(data: String, key: String): String {
     val algorithm = "HmacSHA256"
-    val secretKeySpec = SecretKeySpec(key.toByteArray(), algorithm)
+    val secretKeySpec = SecretKeySpec(key.toByteArray(Charsets.UTF_8), algorithm)
     val mac = Mac.getInstance(algorithm)
     mac.init(secretKeySpec)
 
-    val bytes = mac.doFinal(data.toByteArray())
+    val bytes = mac.doFinal(data.toByteArray(Charsets.UTF_8))
     return bytes.joinToString("") { "%02x".format(it) }
 }
 
