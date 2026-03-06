@@ -30,9 +30,9 @@ import com.google.gson.reflect.TypeToken
 
 import com.lagradost.cloudstream3.network.CloudflareKiller
 import android.util.Base64
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
+// import javax.crypto.Cipher
+// import javax.crypto.spec.IvParameterSpec
+// import javax.crypto.spec.SecretKeySpec
 import kotlin.toString
 import java.security.SecureRandom
 import java.io.IOException
@@ -44,7 +44,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeFlixIndia(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeMoviesdrive(res.title, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
@@ -101,7 +101,7 @@ object CineStreamExtractors : CineStreamProvider() {
             { invokeVideasy(res.title, res.tmdbId, res.imdbId, res.year, res.season, res.episode, subtitleCallback, callback) },
             { invokeCinemaOS(res.imdbId, res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { invokeVicSrcWtf(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-            { invokeVidzee(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
+            { invokeVidzee(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
             { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
@@ -118,7 +118,7 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        runLimitedAsync( concurrency = 7,
+        runLimitedAsync( concurrency = 10,
             { invokeXDmovies(res.imdbTitle ,res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeFlixIndia(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             { invokeDahmerMovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback) },
@@ -3935,109 +3935,84 @@ object CineStreamExtractors : CineStreamProvider() {
     }
 
     suspend fun invokeVidzee(
-        tmdbId: Int? = null,
+        id: Int?,
         season: Int? = null,
         episode: Int? = null,
-        callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
     ) {
-        val KEY_HEX = "6966796f75736372617065796f75617265676179000000000000000000000000"
-        val headers = mapOf(
-            "Referer" to "",
-            "User-Agent" to USER_AGENT
-        )
+        val keyHex = "6966796f75736372617065796f75617265676179000000000000000000000000"
+        val keyBytes = keyHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        val defaultReferer = "https://core.vidzee.wtf/"
 
-        val serverList = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-        serverList.safeAmap { s ->
+        (1..8).toList().safeAmap { sr ->
             try {
-                val mainUrl = if(season == null) "$vidzeeApi/api/server?id=$tmdbId&sr=$s" else "$vidzeeApi/api/server?id=$tmdbId&sr=$s&ss=$season&ep=$episode"
-                val response = app.get(mainUrl, headers, timeout = 30).text
+                val apiUrl = if (season == null) {
+                    "$vidzeeApi/api/server?id=$id&sr=$sr"
+                } else {
+                    "$vidzeeApi/api/server?id=$id&sr=$sr&ss=$season&ep=$episode"
+                }
 
-                callback.invoke(
-                    newExtractorLink(
-                        "response",
-                        "response",
-                        response,
-                    )
-                )
-
+                val response = app.get(apiUrl).text
                 val json = JSONObject(response)
-                val urlArray = json.optJSONArray("url")
 
-                callback.invoke(
-                    newExtractorLink(
-                        "urlArray",
-                        "urlArray",
-                        urlArray.toString(),
-                    )
-                )
-
-                if (urlArray != null && urlArray.length() > 0) {
-                    for (i in 0 until urlArray.length()) {
-                        try {
-                            val serverObj = urlArray.getJSONObject(i)
-                            val encryptedUrl = serverObj.getString("link")
-
-                            callback.invoke(
-                                newExtractorLink(
-                                    "encryptedUrl",
-                                    "encryptedUrl",
-                                    encryptedUrl.toString(),
-                                )
-                            )
-
-                            val serverName = serverObj.optString("name", "Unknown")
-                            val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
-                            val decoded = String(decodedBytes, Charsets.UTF_8)
-                            val parts = decoded.split(":")
-
-                            if (parts.size >= 2) {
-                                val ivB64 = parts[0]
-                                val ciphertextB64 = parts[1]
-
-                                val iv = Base64.decode(ivB64, Base64.DEFAULT)
-                                val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
-                                val key = hexStringToByteArray(KEY_HEX)
-                                val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                                val secretKeySpec = SecretKeySpec(key, "AES")
-                                val ivParameterSpec = IvParameterSpec(iv)
-                                cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
-                                val decryptedData = cipher.doFinal(ciphertext)
-                                val videoUrl = String(decryptedData, Charsets.UTF_8).trim()
-
-                                callback.invoke(
-                                    newExtractorLink(
-                                        "videoUrl",
-                                        "videoUrl",
-                                        videoUrl.toString(),
-                                    )
-                                )
-
-                                callback.invoke(
-                                    newExtractorLink(
-                                        "Vidzee [$serverName]",
-                                        "Vidzee [$serverName]",
-                                        url = videoUrl,
-                                        type = ExtractorLinkType.M3U8,
-                                    ) {
-                                        this.quality = 1080
-                                        this.referer = "https://player.vidzee.wtf/"
-                                        this.headers = mapOf(
-                                            "User-Agent" to USER_AGENT
-                                        )
-                                    }
-                                )
-                            } else {
-                                Log.w("VidzeeExtractor", "Unexpected decrypted format: $decoded")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("VidzeeExtractor", "Error decrypting link at index $i", e)
-                        }
+                val globalHeaders = mutableMapOf<String, String>()
+                json.optJSONObject("headers")?.let { headersObj ->
+                    headersObj.keys().forEach { key ->
+                        globalHeaders[key] = headersObj.getString(key)
                     }
                 }
+
+                val urls = json.optJSONArray("url") ?: JSONArray()
+                for (i in 0 until urls.length()) {
+                    val obj = urls.getJSONObject(i)
+                    val encryptedLink = obj.optString("link")
+                    val name = obj.optString("name", "Vidzee")
+                    val type = obj.optString("type", "hls")
+                    val lang = obj.optString("lang", "Unknown")
+                    val flag = obj.optString("flag", "")
+
+                    if (encryptedLink.isNotBlank()) {
+                        val finalUrl = try {
+                            decryptVidzeeUrl(encryptedLink, keyBytes)
+                        } catch (e: Exception) {
+                            Log.e("VidzeeDecrypt", "Failed to decrypt link: $e")
+                            encryptedLink
+                        }
+
+                        // URI(finalUrl)
+                        val headersMap = mutableMapOf<String, String>()
+                        headersMap.putAll(globalHeaders)
+                        val referer = headersMap["referer"] ?: defaultReferer
+                        val displayName =
+                            if (flag.isNotBlank()) "VidZee $name ($lang - $flag)" else " VidZee$name ($lang)"
+
+                        callback.invoke(
+                            newExtractorLink(
+                                "VidZee",
+                                displayName,
+                                finalUrl,
+                                if (type.equals("hls", ignoreCase = true))
+                                    ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
+                            ) {
+                                this.referer = referer
+                                this.headers = headersMap
+                                this.quality = Qualities.P1080.value
+                            }
+                        )
+                    }
+                }
+
+                val subs = json.optJSONArray("tracks") ?: JSONArray()
+                for (i in 0 until subs.length()) {
+                    val sub = subs.getJSONObject(i)
+                    val subLang = sub.optString("lang", "Unknown")
+                    val subUrl = sub.optString("url")
+                    if (subUrl.isNotBlank()) subtitleCallback(newSubtitleFile(subLang, subUrl))
+                }
+
             } catch (e: Exception) {
-                TODO("Not yet implemented")
+                Log.e("VidzeeApi", "Failed sr=$sr: $e")
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.base64Decode
+import com.lagradost.cloudstream3.base64DecodeArray
 import android.util.Base64
 import org.jsoup.nodes.Document
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -1634,6 +1635,23 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 
     return sourcesList
 }
+
+fun decryptVidzeeUrl(encrypted: String, key: ByteArray): String {
+    val decoded = base64Decode(encrypted)
+    val parts = decoded.split(":")
+    if (parts.size != 2) throw IllegalArgumentException("Invalid encrypted format")
+
+    val iv = base64DecodeArray(parts[0])
+    val cipherData = base64DecodeArray(parts[1])
+
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    val secretKey = SecretKeySpec(key, "AES")
+    cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+    val decryptedBytes = cipher.doFinal(cipherData)
+    return decryptedBytes.toString(Charsets.UTF_8)
+}
+
 
 /** Encodes input using Base64 with custom character mapping. */
 // fun customEncode(input: String): String {
