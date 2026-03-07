@@ -39,17 +39,59 @@ open class Gofile : ExtractorApi() {
     ) {
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "id",
+                "id",
+                id
+            )
+        )
+
         val token = app.post(
             "$mainApi/accounts",
         ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
+        callback.invoke(
+            newExtractorLink(
+                "token",
+                "token",
+                token.toString()
+            )
+        )
+
         val currentTimeSeconds = System.currentTimeMillis() / 1000
         val interval = (currentTimeSeconds / 14400).toString()
 
+        callback.invoke(
+            newExtractorLink(
+                "interval",
+                "interval",
+                interval.toString()
+            )
+        )
+
         val message = listOf(USER_AGENT, browserLanguage, token, interval, secret).joinToString("::")
+
+        callback.invoke(
+            newExtractorLink(
+                "message",
+                "message",
+                message.toString()
+            )
+        )
+
         val hashedToken = sha256(message)
 
+        callback.invoke(
+            newExtractorLink(
+                "hashedToken",
+                "hashedToken",
+                hashedToken.toString()
+            )
+        )
+
         val headers = mapOf(
+            "Referer" to "$mainUrl/",
             "Authorization" to "Bearer $token",
             "X-BL" to browserLanguage,
             "X-Website-Token" to hashedToken
@@ -59,6 +101,14 @@ open class Gofile : ExtractorApi() {
             "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
             headers = headers
         ).parsedSafe<GofileResponse>()
+
+        callback.invoke(
+            newExtractorLink(
+                "url",
+                "url",
+                "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1"
+            )
+        )
 
         val childrenMap = parsedResponse?.data?.children ?: return
 

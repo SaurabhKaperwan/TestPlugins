@@ -3971,7 +3971,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 for (i in 0 until urls.length()) {
                     val obj = urls.getJSONObject(i)
                     val encryptedLink = obj.optString("link")
-                    val name = obj.optString("name", "Vidzee")
+                    val name = obj.optString("name", "")
                     val type = obj.optString("type", "hls")
                     val lang = obj.optString("lang", "Unknown")
                     val flag = obj.optString("flag", "")
