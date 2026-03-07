@@ -92,6 +92,7 @@ open class Gofile : ExtractorApi() {
 
         val headers = mapOf(
             "Referer" to "$mainUrl/",
+            "User-Agent" to USER_AGENT,
             "Authorization" to "Bearer $token",
             "X-BL" to browserLanguage,
             "X-Website-Token" to hashedToken
