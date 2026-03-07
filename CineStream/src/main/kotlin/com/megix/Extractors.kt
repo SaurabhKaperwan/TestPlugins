@@ -39,56 +39,14 @@ open class Gofile : ExtractorApi() {
     ) {
         val id = Regex("/(?:\\?c=|d/)([\\da-zA-Z-]+)").find(url)?.groupValues?.get(1) ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "id",
-                "id",
-                id
-            )
-        )
-
         val token = app.post(
             "$mainApi/accounts",
         ).parsedSafe<AccountResponse>()?.data?.token ?: return
 
-        callback.invoke(
-            newExtractorLink(
-                "token",
-                "token",
-                token.toString()
-            )
-        )
-
         val currentTimeSeconds = System.currentTimeMillis() / 1000
         val interval = (currentTimeSeconds / 14400).toString()
-
-        callback.invoke(
-            newExtractorLink(
-                "interval",
-                "interval",
-                interval.toString()
-            )
-        )
-
         val message = listOf(USER_AGENT, browserLanguage, token, interval, secret).joinToString("::")
-
-        callback.invoke(
-            newExtractorLink(
-                "message",
-                "message",
-                message.toString()
-            )
-        )
-
         val hashedToken = sha256(message)
-
-        callback.invoke(
-            newExtractorLink(
-                "hashedToken",
-                "hashedToken",
-                hashedToken.toString()
-            )
-        )
 
         val headers = mapOf(
             "Referer" to "$mainUrl/",
@@ -103,26 +61,11 @@ open class Gofile : ExtractorApi() {
             headers = headers
         ).text
 
-        callback.invoke(
-            newExtractorLink(
-                "text",
-                "text",
-                text
-            )
-        )
 
         val parsedResponse = app.get(
             "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
             headers = headers
         ).parsedSafe<GofileResponse>()
-
-        // callback.invoke(
-        //     newExtractorLink(
-        //         "parsedResponse",
-        //         "parsedResponse",
-        //         parsedResponse.toString()
-        //     )
-        // )
 
         val childrenMap = parsedResponse?.data?.children ?: return
 

@@ -2606,12 +2606,15 @@ object CineStreamExtractors : CineStreamProvider() {
             res.select("div.thecontent.clearfix > $hTag:matches((?i)$sTag.*(480p|720p|1080p|2160p))")
                 .filter { element -> !element.text().contains("Download", true) }.takeLast(4)
         entries.safeAmap {
-            val href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
-            // val token = href?.substringAfter("id=")
-            // val encodedurl =
-            //     app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
-            //         .substringBefore("\"};")
-            // val decodedurl = base64Decode(encodedurl.replace("\\/", "/"))
+            var href = it.nextElementSibling()?.select("a")?.attr("href") ?: return@safeAmap
+
+            if(href.contains("id=")) {
+                val token = href.substringAfter("id=")
+                val encodedurl =
+                    app.get("https://web.sidexfee.com/?id=$token").text.substringAfter("link\":\"")
+                        .substringBefore("\"};")
+                href = base64Decode(encodedurl.replace("\\/", "/"))
+            }
 
             if (season == null) {
                 loadSourceNameExtractor("Bollyflix", href , "", subtitleCallback, callback)
