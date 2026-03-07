@@ -45,7 +45,6 @@ import java.util.regex.Pattern
 
 import android.util.Base64
 
-
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
 
@@ -1641,12 +1640,12 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
 }
 
 fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String {
-    val decoded = String(Base64.getDecoder().decode(encryptedUrl), Charsets.UTF_8)
+    val decoded = Base64.decode(encryptedUrl, Base64.DEFAULT)
     val parts = decoded.split(":", limit = 2)
     val ivB64 = parts[0]
     val ciphertextB64 = parts[1]
-    val iv = Base64.getDecoder().decode(ivB64)
-    val ciphertext = Base64.getDecoder().decode(ciphertextB64)
+    val iv = Base64.decode(ivB64, Base64.DEFAULT)
+    val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
     val key = secret.padEnd(32, '\u0000').toByteArray(Charsets.UTF_8)
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
     val secretKeySpec = SecretKeySpec(key, "AES")

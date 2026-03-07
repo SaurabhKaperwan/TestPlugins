@@ -51,7 +51,6 @@ open class Gofile : ExtractorApi() {
 
         val headers = mapOf(
             "Authorization" to "Bearer $token",
-            "X-Website-Token" to wt,
             "X-BL" to browserLanguage,
             "X-Website-Token" to hashedToken
         )
@@ -86,6 +85,12 @@ open class Gofile : ExtractorApi() {
     private fun getQuality(str: String?): Int {
         return Regex("(\\d{3,4})[pP]").find(str ?: "")?.groupValues?.getOrNull(1)?.toIntOrNull()
             ?: Qualities.Unknown.value
+    }
+
+    private fun sha256(input: String): String {
+        val md = MessageDigest.getInstance("SHA-256")
+        val bytes = md.digest(input.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun formatBytes(bytes: Long): String {
