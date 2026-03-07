@@ -98,18 +98,31 @@ open class Gofile : ExtractorApi() {
             "X-Website-Token" to hashedToken
         )
 
+        val text = app.get(
+            "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
+            headers = headers
+        ).text
+
+        callback.invoke(
+            newExtractorLink(
+                "text",
+                "text",
+                text
+            )
+        )
+
         val parsedResponse = app.get(
             "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1",
             headers = headers
         ).parsedSafe<GofileResponse>()
 
-        callback.invoke(
-            newExtractorLink(
-                "parsedResponse",
-                "parsedResponse",
-                parsedResponse.toString()
-            )
-        )
+        // callback.invoke(
+        //     newExtractorLink(
+        //         "parsedResponse",
+        //         "parsedResponse",
+        //         parsedResponse.toString()
+        //     )
+        // )
 
         val childrenMap = parsedResponse?.data?.children ?: return
 
