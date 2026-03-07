@@ -105,9 +105,9 @@ open class Gofile : ExtractorApi() {
 
         callback.invoke(
             newExtractorLink(
-                "url",
-                "url",
-                "$mainApi/contents/$id?contentFilter=&page=1&pageSize=1000&sortField=name&sortDirection=1"
+                "parsedResponse",
+                "parsedResponse",
+                parsedResponse.toString()
             )
         )
 
