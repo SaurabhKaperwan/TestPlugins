@@ -3977,13 +3977,7 @@ object CineStreamExtractors : CineStreamProvider() {
                     val flag = obj.optString("flag", "")
 
                     if (encryptedLink.isNotBlank()) {
-                        val finalUrl = try {
-                            decryptVidzeeUrl(encryptedLink, secret)
-                        } catch (e: Exception) {
-                            Log.e("VidzeeDecrypt", "Failed to decrypt link: $e")
-                            encryptedLink
-                        }
-
+                        val finalUrl = decryptVidzeeUrl(encryptedLink, secret) ?: continue
                         if(!finalUrl.contains("https:")) continue
                         val headersMap = mutableMapOf<String, String>()
                         headersMap.putAll(globalHeaders)

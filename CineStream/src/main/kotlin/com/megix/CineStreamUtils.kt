@@ -1639,21 +1639,26 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
     return sourcesList
 }
 
-fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String {
-    val decoded = Base64.decode(encryptedUrl, Base64.DEFAULT)
-    val parts = decoded.split(":", limit = 2)
-    val ivB64 = parts[0]
-    val ciphertextB64 = parts[1]
-    val iv = Base64.decode(ivB64, Base64.DEFAULT)
-    val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
-    val key = secret.padEnd(32, '\u0000').toByteArray(Charsets.UTF_8)
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    val secretKeySpec = SecretKeySpec(key, "AES")
-    val ivParameterSpec = IvParameterSpec(iv)
-    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
-    val decryptedData = cipher.doFinal(ciphertext)
-    val videoUrl = String(decryptedData, Charsets.UTF_8)
-    return videoUrl
+fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
+    return try {
+        val decodedBytes = Base64.decode(encryptedUrl, Base64.DEFAULT)
+        val decodedString = String(decodedBytes, Charsets.UTF_8)
+        val parts = decodedString.split(":", limit = 2)
+        if (parts.size < 2) return null
+        val ivB64 = parts[0]
+        val ciphertextB64 = parts[1]
+        val iv = Base64.decode(ivB64, Base64.DEFAULT)
+        val ciphertext = Base64.decode(ciphertextB64, Base64.DEFAULT)
+        val key = secret.padEnd(32, '\u0000').toByteArray(Charsets.UTF_8)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val secretKeySpec = SecretKeySpec(key, "AES")
+        val ivParameterSpec = IvParameterSpec(iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+        val decryptedData = cipher.doFinal(ciphertext)
+        String(decryptedData, Charsets.UTF_8)
+    } catch (e: Exception) {
+        null
+    }
 }
 
 /** Encodes input using Base64 with custom character mapping. */
