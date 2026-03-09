@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.plugins.Plugin
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
+
         if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) {
             registerMainAPI(CineStreamProvider())
         }

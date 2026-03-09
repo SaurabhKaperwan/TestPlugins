@@ -4,7 +4,8 @@ import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
-import android.widget.Button
+import android.util.TypedValue
+import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
@@ -14,22 +15,17 @@ import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
 
 object Settings {
     // --- DATABASE KEYS ---
-
-    // Scraping Keys
     const val DOWNLOAD_ENABLE = "DownloadEnable"
     const val TORRENT_ENABLE = "TorrentEnable"
 
-    // Provider Keys
     const val PROVIDER_CINESTREAM = "ProviderCineStream"
     const val PROVIDER_SIMKL = "ProviderSimkl"
     const val PROVIDER_TMDB = "ProviderTmdb"
 
-    // Cookie Keys
     private const val COOKIE_KEY = "nf_cookie"
     private const val TIMESTAMP_KEY = "nf_cookie_timestamp"
 
-    // --- STORAGE FUNCTIONS (For NF Bypass) ---
-
+    // --- STORAGE FUNCTIONS ---
     fun saveCookie(cookie: String) {
         setKey(COOKIE_KEY, cookie)
         setKey(TIMESTAMP_KEY, System.currentTimeMillis())
@@ -47,46 +43,56 @@ object Settings {
     }
 
     // --- UI POPUP DIALOG ---
-
     fun showSettingsDialog(context: Context, onSave: () -> Unit) {
+        var requiresRestart = false
+
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(60, 40, 60, 40)
         }
 
-        // Scraping Settings
         layout.addView(createHeader(context, "Scraping Settings"))
         layout.addView(createToggle(context, "Enable Download Only Links", DOWNLOAD_ENABLE, false))
         layout.addView(createToggle(context, "Enable Torrents", TORRENT_ENABLE, false))
 
-        // Provider Settings
-        layout.addView(createHeader(context, "Active Catalogs (Requires App Restart)"))
-        layout.addView(createToggle(context, "Enable CineStream", PROVIDER_CINESTREAM, true))
-        layout.addView(createToggle(context, "Enable Simkl", PROVIDER_SIMKL, true))
-        layout.addView(createToggle(context, "Enable TMDB", PROVIDER_TMDB, true))
+        layout.addView(createHeader(context, "Active Catalogs"))
 
-        // Clear Cookies Button
-        val clearCookieButton = Button(context).apply {
-            text = "Clear Saved Cookies"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 40, 0, 0)
-            }
+        val onCatalogChanged = { requiresRestart = true }
+
+        layout.addView(createToggle(context, "Enable CineStream", PROVIDER_CINESTREAM, true, onCatalogChanged))
+        layout.addView(createToggle(context, "Enable CineSimkl", PROVIDER_SIMKL, true, onCatalogChanged))
+        layout.addView(createToggle(context, "Enable CineTmdb", PROVIDER_TMDB, true, onCatalogChanged))
+
+        val clearCookieText = TextView(context).apply {
+            text = "Clear NF Saved Cookies"
+            textSize = 14f
+
+            setTextColor(Color.GRAY)
+            gravity = Gravity.CENTER
+            setPadding(0, 60, 0, 10)
+            isClickable = true
+
             setOnClickListener {
                 clearCookie()
                 Toast.makeText(context, "Cookies Cleared!", Toast.LENGTH_SHORT).show()
             }
         }
-        layout.addView(clearCookieButton)
+        layout.addView(clearCookieText)
 
-        // Build and show the dialog
         AlertDialog.Builder(context)
             .setTitle("Plugin Settings")
             .setView(layout)
             .setPositiveButton("Save & Reload") { _, _ ->
-                onSave()
+                if (requiresRestart) {
+                    AlertDialog.Builder(context)
+                        .setTitle("Restart Required \u26A0\uFE0F")
+                        .setMessage("You have changed your Active Catalogs.\n\nPlease completely close and restart Cloudstream for the providers to update.")
+                        .setPositiveButton("Understood") { _, _ -> onSave() }
+                        .setCancelable(false)
+                        .show()
+                } else {
+                    onSave()
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -95,26 +101,37 @@ object Settings {
     // --- HELPER FUNCTIONS ---
 
     private fun createHeader(context: Context, title: String): TextView {
+        val typedValue = TypedValue()
+        context.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)
+        val themeColor = typedValue.data
+
         return TextView(context).apply {
-            text = title
-            textSize = 14f
+            text = title.uppercase()
+            textSize = 18f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor("#8842f3"))
-            setPadding(0, 30, 0, 10)
+            letterSpacing = 0.05f
+            setTextColor(themeColor)
+            setPadding(0, 50, 0, 15)
         }
     }
 
-    private fun createToggle(context: Context, label: String, databaseKey: String, defaultState: Boolean): Switch {
+    private fun createToggle(
+        context: Context,
+        label: String,
+        databaseKey: String,
+        defaultState: Boolean,
+        onChanged: () -> Unit = {}
+    ): Switch {
         return Switch(context).apply {
             text = label
             textSize = 16f
             setPadding(0, 10, 0, 10)
 
-            // Read state from database, fallback to defaultState if it hasn't been set
             isChecked = getKey<Boolean>(databaseKey) ?: defaultState
 
             setOnCheckedChangeListener { _, isNowChecked ->
                 setKey(databaseKey, isNowChecked)
+                onChanged()
             }
         }
     }
