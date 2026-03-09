@@ -1,7 +1,6 @@
 package com.megix
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
@@ -38,7 +37,7 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Gofile())
 
         this.openSettings = { ctx: Context ->
-            Settings.showSettingsDialog(ctx as AppCompatActivity) {
+            Settings.showSettingsDialog(ctx) {
                 MainActivity.reloadHomeEvent.invoke(true)
             }
         }
