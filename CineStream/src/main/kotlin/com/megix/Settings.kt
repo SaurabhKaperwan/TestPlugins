@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
 
 object Settings {
     const val DOWNLOAD_ENABLE = "DownloadEnable"
+    const val TORRENT_ENABLE = "TorrentEnable"
 
     fun showSettingsDialog(context: Context, onSave: () -> Unit) {
         val layout = LinearLayout(context).apply {
@@ -16,17 +17,28 @@ object Settings {
             setPadding(60, 40, 60, 40)
         }
 
-        val toggle = Switch(context).apply {
-            text = "Enable Download only links"
+        val downloadToggle = Switch(context).apply {
+            text = "Enable Download Only Links"
             textSize = 18f
-            isChecked = getKey<Boolean>(DOWNLOAD_ENABLE) ?: false
+            setPadding(0, 0, 0, 40)
 
+            isChecked = getKey<Boolean>(DOWNLOAD_ENABLE) ?: false
             setOnCheckedChangeListener { _, isNowChecked ->
                 setKey(DOWNLOAD_ENABLE, isNowChecked)
             }
         }
+        layout.addView(downloadToggle)
 
-        layout.addView(toggle)
+        val torrentToggle = Switch(context).apply {
+            text = "Enable Torrents"
+            textSize = 18f
+
+            isChecked = getKey<Boolean>(TORRENT_ENABLE) ?: false
+            setOnCheckedChangeListener { _, isNowChecked ->
+                setKey(TORRENT_ENABLE, isNowChecked)
+            }
+        }
+        layout.addView(torrentToggle)
 
         AlertDialog.Builder(context)
             .setTitle("Provider Settings")

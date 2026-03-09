@@ -20,11 +20,9 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
+import com.megix.CineStreamProvider
+
 import java.security.MessageDigest
-
-import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
-
-val allowDownloadLinks = getKey<Boolean>(Settings.DOWNLOAD_ENABLE) ?: false
 
 //Thanks to https://github.com/yogesh-hacker/MediaVanced
 open class Gofile : ExtractorApi() {
@@ -255,6 +253,7 @@ open class GDFlix : ExtractorApi() {
             )
         }
 
+
         document.select("div.text-center a").safeAmap { anchor ->
             val text = anchor.select("a").text()
             val link = anchor.attr("href")
@@ -285,7 +284,7 @@ open class GDFlix : ExtractorApi() {
                     myCallback(finalURL, "[Pixeldrain]")
                 }
 
-                allowDownloadLinks && text.contains("Instant DL") -> {
+                CineStreamProvider.allowDownloadLinks && text.contains("Instant DL") -> {
                     try {
                         val instantLink = app.get(link, allowRedirects = false)
                             .headers["location"]?.substringAfter("url=").orEmpty()
@@ -484,7 +483,7 @@ open class Driveleech : ExtractorApi() {
 
                 text.contains("Cloud Download") -> { myCallback(href, "[Cloud]") }
 
-                allowDownloadLinks && text.contains("Instant Download") -> {
+                CineStreamProvider.allowDownloadLinks && text.contains("Instant Download") -> {
                     try{
                         val instant = instantLink(href) ?: return@safeAmap
                         myCallback(instant, "[Instant(Download)]")
@@ -632,7 +631,7 @@ open class HubCloud : ExtractorApi() {
                 else "$baseUrlLink/api/file/${link.substringAfterLast("/")}?download"
                 myCallback(finalURL, "[Pixeldrain]")
             }
-            else if (allowDownloadLinks && text.contains("Server : 10Gbps")) {
+            else if (CineStreamProvider.allowDownloadLinks && text.contains("Server : 10Gbps")) {
                 var redirectUrl = resolveFinalUrl(link) ?: return@safeAmap
                 if(redirectUrl.contains("link=")) redirectUrl = redirectUrl.substringAfter("link=")
                 myCallback(redirectUrl, "[Download]")
