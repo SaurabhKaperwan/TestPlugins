@@ -8,7 +8,6 @@ import com.lagradost.cloudstream3.plugins.Plugin
 @CloudstreamPlugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
-        CineStreamStorage.init(context.applicationContext)
         registerMainAPI(CineStreamProvider())
         registerMainAPI(CineSimklProvider())
         registerMainAPI(CineTmdbProvider())

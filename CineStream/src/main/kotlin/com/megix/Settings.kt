@@ -33,6 +33,8 @@ object Settings {
         setKey(TIMESTAMP_KEY, null)
     }
 
+    //---- STORAGE FUNCTIONS FOR NETMIRROR ----
+
     // --- UI POPUP ---
     fun showSettingsDialog(context: Context, onSave: () -> Unit) {
         val layout = LinearLayout(context).apply {
