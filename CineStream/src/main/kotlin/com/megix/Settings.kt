@@ -117,7 +117,6 @@ object Settings {
         P_TORRENTIO    to "🧲 Torrentio",
         P_TORRENTSDB   to "🧲 TorrentsDB",
         P_ANIMETOSHO   to "🧲 AnimeTosho",
-
         // --- Stremio / General ---
         P_WEBSTREAMR   to "WebStreamr",
         P_STREAMVIX    to "Streamvix",
@@ -143,15 +142,15 @@ object Settings {
         P_MAPPLE       to "Mapple",
         P_VIDSTACK     to "Vidstack",
         P_VIDZEE       to "Vidzee",
-
         // --- Subtitles ---
         P_WYZIESUBS    to "WYZIESubs",
         P_STREMIOSUBS  to "StremioSubs",
-
+        // --- OTT ---
         P_NETFLIX      to "Netflix",
         P_PRIMEVIDEO   to "Prime Video",
-        P_DISNEY       to "Disney+",
-        P_BOLLYWOOD    to "Bollywood",
+        P_DISNEY       to "Hotstar",
+        // --- Indian ---
+        P_BOLLYWOOD    to "Gramcinema",
         P_FLIXINDIA    to "FlixIndia",
         P_VEGAMOVIES   to "VegaMovies",
         P_ROGMOVIES    to "RogMovies",
@@ -177,17 +176,22 @@ object Settings {
         P_HDMOVIE2     to "HDMovie2",
         P_MOSTRAGUARDA to "Mostraguarda",
         P_TOONSTREAM   to "Toonstream",
+        // --- Anime ---
         P_ALLANIME     to "AllAnime",
         P_SUDATCHI     to "Sudatchi",
         P_TOKYOINSIDER to "TokyoInsider",
         P_ANIZONE      to "Anizone",
         P_ANIMES       to "Animes",
-        P_GOJO         to "Gojo",
+        P_GOJO         to "Animetsu",
         P_KISSKH       to "KissKH",
         P_DRAMAFULL    to "Dramafull",
     )
 
     private val DEFAULT_ORDER = PROVIDER_NAMES.keys.toList()
+
+    // =========================================================
+    //  PROVIDER HELPERS
+    // =========================================================
 
     /** True if provider is enabled. Torrent providers default OFF, all others default ON. */
     fun enabled(key: String): Boolean = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
@@ -244,7 +248,7 @@ object Settings {
 
         // Scraping Settings
         layout.addView(createSectionCard(context, "⚙️  Scraping Settings") {
-            addView(createToggleRow(context, "Download Links Only", "Restrict results to direct downloads", DOWNLOAD_ENABLE, false))
+            addView(createToggleRow(context, "Download Only Links", "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
         })
 
         // Restart banner
@@ -263,16 +267,16 @@ object Settings {
                         .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
                 }
             }
-            addView(createToggleRow(context, "CineStream", "Primary streaming catalog",  PROVIDER_CINESTREAM, true, onCatalogChanged))
+            addView(createToggleRow(context, "CineStream", "Cinemeta catalog",  PROVIDER_CINESTREAM, true, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineSimkl",  "Simkl-powered catalog",      PROVIDER_SIMKL,      true, onCatalogChanged))
+            addView(createToggleRow(context, "CineSimkl",  "Simkl catalog",      PROVIDER_SIMKL,      true, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineTmdb",   "TMDB metadata catalog",       PROVIDER_TMDB,       true, onCatalogChanged))
+            addView(createToggleRow(context, "CineTmdb",   "TMDB catalog",       PROVIDER_TMDB,       true, onCatalogChanged))
         })
 
         layout.addView(restartBanner)
 
-        // Providers card (toggle + reorder)
+        // Providers card (toggle + reorder + select all/none)
         layout.addView(createProvidersCard(context))
 
         // Danger Zone
@@ -336,17 +340,20 @@ object Settings {
             }
         }
 
-        // Card header with title + Reset button
+        // ── Header row: title + Reset ──────────────────────────
         card.addView(LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 12.dp(context))
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 8.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
+            // Accent bar
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
+
+            // Title
             addView(TextView(context).apply {
                 text = "🎬  PROVIDERS"
                 textSize = 12f
@@ -354,32 +361,58 @@ object Settings {
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
-            // Torrent hint badge
+
+            // Reset order pill
+            addView(pillBtn(context, "Reset", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
+                order.clear(); order.addAll(DEFAULT_ORDER)
+                saveOrder(order); rebuild()
+                Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
+            })
+        })
+
+        // ── Action row: Select All · Select None · note ────────
+        card.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 0, 16.dp(context), 12.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+
+            // Select All
+            addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
+                order.forEach { setKey(it, true) }
+                rebuild()
+                Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
+            })
+
+            // Spacer between pills
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(8.dp(context), 1)
+            })
+
+            // Select None
+            addView(pillBtn(context, "✕ None", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+                order.forEach { setKey(it, false) }
+                rebuild()
+                Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
+            })
+
+            // Spacer
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+            })
+
+            // Torrent hint + reorder note combined
             addView(TextView(context).apply {
-                text = "🧲 = off by default"
+                text = "🧲 off by default  ·  ↑↓ changes scraping order"
                 textSize = 10f
-                setTextColor(Color.parseColor("#5A5E7A"))
-                setPadding(0, 0, 12.dp(context), 0)
+                setTextColor(Color.parseColor("#44475A"))
             })
-            // Reset order button
-            addView(TextView(context).apply {
-                text = "Reset"
-                textSize = 11f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(ACCENT_START)
-                setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
-                background = GradientDrawable().apply {
-                    cornerRadius = 99f
-                    setColor(Color.parseColor("#1A1730"))
-                    setStroke(1, Color.parseColor("#2E2850"))
-                }
-                isClickable = true; isFocusable = true
-                setOnClickListener {
-                    order.clear(); order.addAll(DEFAULT_ORDER)
-                    saveOrder(order); rebuild()
-                    Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
-                }
-            })
+        })
+
+        // Thin separator before rows
+        card.addView(View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
+                .also { it.setMargins(16.dp(context), 0, 16.dp(context), 4.dp(context)) }
+            setBackgroundColor(DIVIDER_COLOR)
         })
 
         rebuild()
@@ -390,6 +423,34 @@ object Settings {
             .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
 
         return card
+    }
+
+    /** Reusable styled pill button */
+    private fun pillBtn(
+        context: Context,
+        label: String,
+        textColor: Int,
+        bgColor: Int,
+        borderColor: Int,
+        onClick: () -> Unit
+    ) = TextView(context).apply {
+        text = label
+        textSize = 11f
+        setTypeface(null, android.graphics.Typeface.BOLD)
+        setTextColor(textColor)
+        setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
+        background = GradientDrawable().apply {
+            cornerRadius = 99f
+            setColor(bgColor)
+            setStroke(1, borderColor)
+        }
+        isClickable = true; isFocusable = true
+        setOnClickListener {
+            animate().scaleX(0.9f).scaleY(0.9f).setDuration(70).withEndAction {
+                animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            }.start()
+            onClick()
+        }
     }
 
     private fun createProviderRow(
@@ -445,7 +506,7 @@ object Settings {
             addView(arrowBtn("↑", canMoveUp, onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
-            // Enable/disable switch — torrent providers default OFF
+            // Enable/disable switch
             addView(Switch(context).apply {
                 isChecked = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
                 thumbTintList = android.content.res.ColorStateList(
@@ -462,7 +523,7 @@ object Settings {
     }
 
     // =========================================================
-    //  EXISTING COMPONENTS (unchanged)
+    //  EXISTING COMPONENTS
     // =========================================================
 
     private fun createHeroBanner(context: Context): View {
@@ -635,11 +696,11 @@ object Settings {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 desc.addView(TextView(context).apply {
-                    text = "Clear NF Cookies"; textSize = 15f
+                    text = "Clear Netmirror Cookies"; textSize = 15f
                     setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(TEXT_PRIMARY)
                 })
                 desc.addView(TextView(context).apply {
-                    text = "Remove saved Netflix session cookies"
+                    text = "Remove saved Netmirror session cookies"
                     textSize = 12f; setTextColor(TEXT_SECONDARY); setPadding(0, 3.dp(context), 0, 0)
                 })
                 addView(desc)

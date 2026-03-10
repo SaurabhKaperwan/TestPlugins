@@ -112,7 +112,7 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
         )
 
-        runLimitedAsync(concurrency = 10, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
+        runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
     }
 
     suspend fun invokeAllAnimeSources(
@@ -164,7 +164,7 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_DRAMAFULL     to { invokeDramafull(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
         )
 
-        runLimitedAsync(concurrency = 10, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
+        runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
     }
 
     suspend fun invokeFlixIndia(
