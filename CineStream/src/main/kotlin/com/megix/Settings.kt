@@ -1,6 +1,7 @@
 package com.megix
 
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.*
@@ -36,12 +37,9 @@ object Settings {
     private const val TIMESTAMP_KEY = "nf_cookie_timestamp"
 
     // --- DATABASE KEYS: Providers ---
-    // 🔴 Torrents — default OFF
     const val P_TORRENTIO    = "p_torrentio"
     const val P_TORRENTSDB   = "p_torrentsdb"
     const val P_ANIMETOSHO   = "p_animetosho"
-
-    // 🟢 Regular providers — default ON
     const val P_VIDFLIX      = "p_vidflix"
     const val P_MOVIEBOX     = "p_moviebox"
     const val P_WYZIESUBS    = "p_wyziesubs"
@@ -98,7 +96,6 @@ object Settings {
     const val P_SKYMOVIES    = "p_skymovies"
     const val P_HDMOVIE2     = "p_hdmovie2"
     const val P_MOSTRAGUARDA = "p_mostraguarda"
-    // Anime-specific
     const val P_ALLANIME     = "p_allanime"
     const val P_SUDATCHI     = "p_sudatchi"
     const val P_TOKYOINSIDER = "p_tokyoinsider"
@@ -108,16 +105,12 @@ object Settings {
     const val P_ANIMEWORLD   = "p_animeworld"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
-
-    // Torrent providers are OFF by default
     private val TORRENT_KEYS = setOf(P_TORRENTIO, P_TORRENTSDB, P_ANIMETOSHO)
 
     val PROVIDER_NAMES = linkedMapOf(
-        // --- Torrents ---
         P_TORRENTIO    to "🧲 Torrentio",
         P_TORRENTSDB   to "🧲 TorrentsDB",
         P_ANIMETOSHO   to "🧲 AnimeTosho",
-        // --- Stremio / General ---
         P_WEBSTREAMR   to "WebStreamr",
         P_STREAMVIX    to "Streamvix",
         P_NOTORRENT    to "NoTorrent",
@@ -142,14 +135,11 @@ object Settings {
         P_MAPPLE       to "Mapple",
         P_VIDSTACK     to "Vidstack",
         P_VIDZEE       to "Vidzee",
-        // --- Subtitles ---
         P_WYZIESUBS    to "WYZIESubs",
         P_STREMIOSUBS  to "StremioSubs",
-        // --- OTT ---
         P_NETFLIX      to "Netflix",
         P_PRIMEVIDEO   to "Prime Video",
         P_DISNEY       to "Hotstar",
-        // --- Indian ---
         P_BOLLYWOOD    to "Gramcinema",
         P_FLIXINDIA    to "FlixIndia",
         P_VEGAMOVIES   to "VegaMovies",
@@ -176,7 +166,6 @@ object Settings {
         P_HDMOVIE2     to "HDMovie2",
         P_MOSTRAGUARDA to "Mostraguarda",
         P_TOONSTREAM   to "Toonstream",
-        // --- Anime ---
         P_ALLANIME     to "AllAnime",
         P_SUDATCHI     to "Sudatchi",
         P_TOKYOINSIDER to "TokyoInsider",
@@ -189,11 +178,6 @@ object Settings {
 
     private val DEFAULT_ORDER = PROVIDER_NAMES.keys.toList()
 
-    // =========================================================
-    //  PROVIDER HELPERS
-    // =========================================================
-
-    /** True if provider is enabled. Torrent providers default OFF, all others default ON. */
     fun enabled(key: String): Boolean = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
 
     fun getOrder(): List<String> {
@@ -203,8 +187,7 @@ object Settings {
         return saved + (DEFAULT_ORDER - saved.toSet())
     }
 
-    fun saveOrder(order: List<String>) =
-        setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
+    fun saveOrder(order: List<String>) = setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
 
     // =========================================================
     //  COOKIE HELPERS
@@ -216,9 +199,7 @@ object Settings {
     }
 
     fun getCookie(): Pair<String?, Long> {
-        val cookie    = getKey<String>(COOKIE_KEY)
-        val timestamp = getKey<Long>(TIMESTAMP_KEY) ?: 0L
-        return Pair(cookie, timestamp)
+        return Pair(getKey<String>(COOKIE_KEY), getKey<Long>(TIMESTAMP_KEY) ?: 0L)
     }
 
     fun clearCookie() {
@@ -246,7 +227,7 @@ object Settings {
 
         layout.addView(createHeroBanner(context))
 
-        // Scraping Settings
+        // Scraping Settings (static, no collapse needed)
         layout.addView(createSectionCard(context, "⚙️  Scraping Settings") {
             addView(createToggleRow(context, "Download Only Links", "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
         })
@@ -254,29 +235,33 @@ object Settings {
         // Restart banner
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
 
-        // Active Catalogs
-        layout.addView(createSectionCard(context, "📡  Active Catalogs") {
-            val onCatalogChanged = {
-                requiresRestart = true
-                if (restartBanner.visibility == View.GONE) {
-                    restartBanner.visibility = View.VISIBLE
-                    restartBanner.alpha = 0f
-                    restartBanner.translationY = (-12f).dp(context)
-                    restartBanner.animate()
-                        .alpha(1f).translationY(0f)
-                        .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
-                }
+        // Active Catalogs — collapsible
+        val onCatalogChanged = {
+            requiresRestart = true
+            if (restartBanner.visibility == View.GONE) {
+                restartBanner.visibility = View.VISIBLE
+                restartBanner.alpha = 0f
+                restartBanner.translationY = (-12f).dp(context)
+                restartBanner.animate()
+                    .alpha(1f).translationY(0f)
+                    .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
             }
+        }
+        layout.addView(createCollapsibleCard(
+            context  = context,
+            title    = "📡  Active Catalogs",
+            startExpanded = false
+        ) {
             addView(createToggleRow(context, "CineStream", "Cinemeta catalog",  PROVIDER_CINESTREAM, true, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineSimkl",  "Simkl catalog",      PROVIDER_SIMKL,      true, onCatalogChanged))
+            addView(createToggleRow(context, "CineSimkl",  "Simkl catalog",     PROVIDER_SIMKL,      true, onCatalogChanged))
             addView(createDivider(context))
-            addView(createToggleRow(context, "CineTmdb",   "TMDB catalog",       PROVIDER_TMDB,       true, onCatalogChanged))
+            addView(createToggleRow(context, "CineTmdb",   "TMDB catalog",      PROVIDER_TMDB,       true, onCatalogChanged))
         })
 
         layout.addView(restartBanner)
 
-        // Providers card (toggle + reorder + select all/none)
+        // Providers — collapsible
         layout.addView(createProvidersCard(context))
 
         // Danger Zone
@@ -294,13 +279,91 @@ object Settings {
 
         dialog.window?.setBackgroundDrawable(roundRect(BG_DARK, 20f.dp(context)))
         dialog.show()
-
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
     }
 
     // =========================================================
-    //  PROVIDERS CARD
+    //  COLLAPSIBLE CARD  (used by Catalogs)
+    // =========================================================
+
+    private fun createCollapsibleCard(
+        context: Context,
+        title: String,
+        startExpanded: Boolean = false,
+        block: LinearLayout.() -> Unit
+    ): View {
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val m = 16.dp(context)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.setMargins(m, 0, m, m) }
+            background = roundRect(BG_CARD, 16f.dp(context))
+            elevation = 4f
+        }
+
+        var expanded = startExpanded
+
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 0, 0, 8.dp(context))
+            visibility = if (expanded) View.VISIBLE else View.GONE
+        }
+        content.block()
+
+        val chevron = TextView(context).apply {
+            text = if (expanded) "▲" else "▼"
+            textSize = 11f
+            setTextColor(TEXT_SECONDARY)
+        }
+
+        val header = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
+
+            addView(View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
+                background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
+            })
+            addView(TextView(context).apply {
+                text = title; textSize = 12f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(chevron)
+
+            setOnClickListener {
+                expanded = !expanded
+                chevron.text = if (expanded) "▲" else "▼"
+                if (expanded) {
+                    content.visibility = View.VISIBLE
+                    content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(200).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(150).withEndAction {
+                        content.visibility = View.GONE
+                        content.alpha = 1f
+                    }.start()
+                }
+            }
+        }
+
+        card.addView(header)
+        card.addView(content)
+
+        card.alpha = 0f; card.translationY = 20f
+        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
+        return card
+    }
+
+    // =========================================================
+    //  PROVIDERS CARD  (collapsible + select all/none + reset)
     // =========================================================
 
     private fun createProvidersCard(context: Context): View {
@@ -308,25 +371,50 @@ object Settings {
             orientation = LinearLayout.VERTICAL
             val m = 16.dp(context)
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).also { it.setMargins(m, 0, m, m) }
             background = roundRect(BG_CARD, 16f.dp(context))
             elevation = 4f
         }
 
+        var expanded = false
+
+        // Content wrapper — hidden by default
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, 8.dp(context))
+            visibility = View.GONE
         }
 
+        // Toolbar inside content (Select All / None / Reset / note)
+        val toolbar = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
+        }
+
+        // Row 1: action pills
+        val pillRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 6.dp(context) }
+        }
+
+        // ── provider rows container ──
+        val rows = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        // order list — defined BEFORE rebuild so reset can reference it
         val order = getOrder().toMutableList()
 
+        // rebuild DEFINED FIRST so all buttons can reference it
         fun rebuild() {
-            content.removeAllViews()
+            rows.removeAllViews()
             order.forEachIndexed { i, key ->
-                if (i > 0) content.addView(createDivider(context))
-                content.addView(createProviderRow(
+                if (i > 0) rows.addView(createDivider(context))
+                rows.addView(createProviderRow(
                     context,
                     label       = PROVIDER_NAMES[key] ?: key,
                     key         = key,
@@ -340,118 +428,121 @@ object Settings {
             }
         }
 
-        // ── Header row: title + Reset ──────────────────────────
-        card.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 8.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
+        // Now build pills (rebuild is in scope)
+        pillRow.addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
+            order.forEach { setKey(it, true) }
+            rebuild()
+            Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
+        })
+        pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+        pillRow.addView(pillBtn(context, "✕ None", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
+            order.forEach { setKey(it, false) }
+            rebuild()
+            Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
+        })
+        pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
+        pillRow.addView(pillBtn(context, "↺ Reset", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
+            order.clear()
+            order.addAll(DEFAULT_ORDER)
+            saveOrder(order)
+            rebuild()
+            Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
+        })
 
-            // Accent bar
+        // Row 2: compact note
+        val noteRow = TextView(context).apply {
+            text = "🧲 = off by default  ·  ↑↓ = scraping order"
+            textSize = 10f
+            setTextColor(Color.parseColor("#44475A"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = 4.dp(context) }
+        }
+
+        toolbar.addView(pillRow)
+        toolbar.addView(noteRow)
+
+        // thin separator
+        val sep = View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
+                .also { it.setMargins(16.dp(context), 0, 16.dp(context), 4.dp(context)) }
+            setBackgroundColor(DIVIDER_COLOR)
+        }
+
+        rebuild() // initial population
+
+        content.addView(toolbar)
+        content.addView(sep)
+        content.addView(rows)
+
+        // ── Chevron indicator ──
+        val chevron = TextView(context).apply {
+            text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
+        }
+
+        // ── Collapsed summary: enabled count ──
+        val summary = TextView(context).apply {
+            textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
+            setPadding(0, 0, 8.dp(context), 0)
+        }
+
+        fun updateSummary() {
+            val enabledCount = order.count { enabled(it) }
+            summary.text = "$enabledCount / ${order.size} enabled"
+        }
+        updateSummary()
+
+        // ── Header row (clickable) ──
+        val header = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
+            gravity = Gravity.CENTER_VERTICAL
+            isClickable = true; isFocusable = true
+            background = stateDrawable(context)
+
             addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(3.dp(context), 18.dp(context)).also { it.marginEnd = 12.dp(context) }
                 background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                     intArrayOf(ACCENT_START, ACCENT_END)).apply { cornerRadius = 99f }
             })
-
-            // Title
             addView(TextView(context).apply {
-                text = "🎬  PROVIDERS"
-                textSize = 12f
+                text = "🎬  PROVIDERS"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
+            addView(summary)
+            addView(chevron)
 
-            // Reset order pill
-            addView(pillBtn(context, "Reset", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
-                order.clear(); order.addAll(DEFAULT_ORDER)
-                saveOrder(order); rebuild()
-                Toast.makeText(context, "Order reset", Toast.LENGTH_SHORT).show()
-            })
-        })
+            setOnClickListener {
+                expanded = !expanded
+                chevron.text = if (expanded) "▲" else "▼"
+                updateSummary()
+                if (expanded) {
+                    content.visibility = View.VISIBLE
+                    content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(220).start()
+                } else {
+                    content.animate().alpha(0f).setDuration(160).withEndAction {
+                        content.visibility = View.GONE
+                        content.alpha = 1f
+                        updateSummary()
+                    }.start()
+                }
+            }
+        }
 
-        // ── Action row: Select All · Select None · note ────────
-        card.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 0, 16.dp(context), 12.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-
-            // Select All
-            addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
-                order.forEach { setKey(it, true) }
-                rebuild()
-                Toast.makeText(context, "All providers enabled", Toast.LENGTH_SHORT).show()
-            })
-
-            // Spacer between pills
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(8.dp(context), 1)
-            })
-
-            // Select None
-            addView(pillBtn(context, "✕ None", DANGER_COLOR, Color.parseColor("#1A0A0D"), Color.parseColor("#3A1520")) {
-                order.forEach { setKey(it, false) }
-                rebuild()
-                Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
-            })
-
-            // Spacer
-            addView(View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
-            })
-
-            // Torrent hint + reorder note combined
-            addView(TextView(context).apply {
-                text = "🧲 off by default  ·  ↑↓ changes scraping order"
-                textSize = 10f
-                setTextColor(Color.parseColor("#44475A"))
-            })
-        })
-
-        // Thin separator before rows
-        card.addView(View(context).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
-                .also { it.setMargins(16.dp(context), 0, 16.dp(context), 4.dp(context)) }
-            setBackgroundColor(DIVIDER_COLOR)
-        })
-
-        rebuild()
+        card.addView(header)
         card.addView(content)
 
         card.alpha = 0f; card.translationY = 20f
-        card.animate().alpha(1f).translationY(0f)
-            .setDuration(300).setInterpolator(DecelerateInterpolator()).start()
-
+        card.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(DecelerateInterpolator()).start()
         return card
     }
 
-    /** Reusable styled pill button */
-    private fun pillBtn(
-        context: Context,
-        label: String,
-        textColor: Int,
-        bgColor: Int,
-        borderColor: Int,
-        onClick: () -> Unit
-    ) = TextView(context).apply {
-        text = label
-        textSize = 11f
-        setTypeface(null, android.graphics.Typeface.BOLD)
-        setTextColor(textColor)
-        setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
-        background = GradientDrawable().apply {
-            cornerRadius = 99f
-            setColor(bgColor)
-            setStroke(1, borderColor)
-        }
-        isClickable = true; isFocusable = true
-        setOnClickListener {
-            animate().scaleX(0.9f).scaleY(0.9f).setDuration(70).withEndAction {
-                animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-            }.start()
-            onClick()
-        }
-    }
+    // =========================================================
+    //  PROVIDER ROW
+    // =========================================================
 
     private fun createProviderRow(
         context: Context,
@@ -469,27 +560,21 @@ object Settings {
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
-            // Index badge
             addView(TextView(context).apply {
-                text = "$index"
-                textSize = 11f
+                text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(if (isTorrent) Color.parseColor("#5A3E1E") else TEXT_SECONDARY)
-                gravity = Gravity.CENTER
-                minWidth = 22.dp(context)
+                gravity = Gravity.CENTER; minWidth = 22.dp(context)
                 setPadding(0, 0, 10.dp(context), 0)
             })
 
-            // Provider name
             addView(TextView(context).apply {
-                text = label
-                textSize = 14f
+                text = label; textSize = 14f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(if (isTorrent) Color.parseColor("#C87C3A") else TEXT_PRIMARY)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
 
-            // Arrow buttons
             fun arrowBtn(symbol: String, active: Boolean, action: () -> Unit) = TextView(context).apply {
                 text = symbol; textSize = 17f; gravity = Gravity.CENTER
                 setTextColor(if (active) ACCENT_START else Color.parseColor("#252840"))
@@ -506,7 +591,6 @@ object Settings {
             addView(arrowBtn("↑", canMoveUp, onMoveUp))
             addView(arrowBtn("↓", canMoveDown, onMoveDown))
 
-            // Enable/disable switch
             addView(Switch(context).apply {
                 isChecked = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
                 thumbTintList = android.content.res.ColorStateList(
@@ -519,6 +603,34 @@ object Settings {
                 )
                 setOnCheckedChangeListener { _, v -> setKey(key, v) }
             })
+        }
+    }
+
+    // =========================================================
+    //  REUSABLE PILL BUTTON
+    // =========================================================
+
+    private fun pillBtn(
+        context: Context,
+        label: String,
+        textColor: Int,
+        bgColor: Int,
+        borderColor: Int,
+        onClick: () -> Unit
+    ) = TextView(context).apply {
+        text = label; textSize = 11f
+        setTypeface(null, android.graphics.Typeface.BOLD)
+        setTextColor(textColor)
+        setPadding(12.dp(context), 6.dp(context), 12.dp(context), 6.dp(context))
+        background = GradientDrawable().apply {
+            cornerRadius = 99f; setColor(bgColor); setStroke(1, borderColor)
+        }
+        isClickable = true; isFocusable = true
+        setOnClickListener {
+            animate().scaleX(0.88f).scaleY(0.88f).setDuration(70).withEndAction {
+                animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            }.start()
+            onClick()
         }
     }
 
@@ -553,10 +665,10 @@ object Settings {
     private fun createSectionCard(context: Context, title: String, block: LinearLayout.() -> Unit): View {
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            val margin = 16.dp(context)
+            val m = 16.dp(context)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(margin, 0, margin, margin) }
+            ).also { it.setMargins(m, 0, m, m) }
             background = roundRect(BG_CARD, 16f.dp(context)); elevation = 4f
         }
         card.addView(LinearLayout(context).apply {
@@ -632,10 +744,10 @@ object Settings {
         val WARN_DIM    = Color.parseColor("#9E7A30")
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            val margin = 16.dp(context)
+            val m = 16.dp(context)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(margin, 0, margin, margin) }
+            ).also { it.setMargins(m, 0, m, m) }
             background = GradientDrawable().apply {
                 cornerRadius = 14f.dp(context); setColor(WARN_BG); setStroke(1, WARN_BORDER)
             }
@@ -674,10 +786,10 @@ object Settings {
     private fun createDangerCard(context: Context): View {
         return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            val margin = 16.dp(context)
+            val m = 16.dp(context)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.setMargins(margin, 0, margin, margin) }
+            ).also { it.setMargins(m, 0, m, m) }
             background = GradientDrawable().apply {
                 cornerRadius = 16f.dp(context)
                 setColor(Color.parseColor("#140A0D")); setStroke(1, Color.parseColor("#3D1520"))
