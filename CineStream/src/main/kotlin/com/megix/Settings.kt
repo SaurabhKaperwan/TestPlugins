@@ -227,15 +227,12 @@ object Settings {
 
         layout.addView(createHeroBanner(context))
 
-        // Scraping Settings (static, no collapse needed)
         layout.addView(createSectionCard(context, "⚙️  Scraping Settings") {
             addView(createToggleRow(context, "Download Only Links", "Only great for downloading (Not for Streaming)", DOWNLOAD_ENABLE, false))
         })
 
-        // Restart banner
         val restartBanner = createRestartBanner(context).also { it.visibility = View.GONE }
 
-        // Active Catalogs — collapsible
         val onCatalogChanged = {
             requiresRestart = true
             if (restartBanner.visibility == View.GONE) {
@@ -261,10 +258,8 @@ object Settings {
 
         layout.addView(restartBanner)
 
-        // Providers — collapsible
         layout.addView(createProvidersCard(context))
 
-        // Danger Zone
         layout.addView(createDangerCard(context))
 
         scroll.addView(layout)
@@ -363,7 +358,7 @@ object Settings {
     }
 
     // =========================================================
-    //  PROVIDERS CARD  (collapsible + select all/none + reset)
+    //  PROVIDERS CARD
     // =========================================================
 
     private fun createProvidersCard(context: Context): View {
@@ -379,20 +374,17 @@ object Settings {
 
         var expanded = false
 
-        // Content wrapper — hidden by default
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, 8.dp(context))
             visibility = View.GONE
         }
 
-        // Toolbar inside content (Select All / None / Reset / note)
         val toolbar = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
         }
 
-        // Row 1: action pills
         val pillRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -401,15 +393,12 @@ object Settings {
             ).also { it.bottomMargin = 6.dp(context) }
         }
 
-        // ── provider rows container ──
         val rows = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
 
-        // order list — defined BEFORE rebuild so reset can reference it
         val order = getOrder().toMutableList()
 
-        // rebuild DEFINED FIRST so all buttons can reference it
         fun rebuild() {
             rows.removeAllViews()
             order.forEachIndexed { i, key ->
@@ -419,16 +408,21 @@ object Settings {
                     label       = PROVIDER_NAMES[key] ?: key,
                     key         = key,
                     index       = i + 1,
+                    totalCount  = order.size,
                     isTorrent   = key in TORRENT_KEYS,
                     canMoveUp   = i > 0,
                     canMoveDown = i < order.lastIndex,
                     onMoveUp    = { order.add(i - 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveDown  = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() }
+                    onMoveDown  = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() },
+                    onMoveTo    = { target ->
+                        val item = order.removeAt(i)
+                        order.add(target.coerceIn(0, order.size), item)
+                        saveOrder(order); rebuild()
+                    }
                 ))
             }
         }
 
-        // Now build pills (rebuild is in scope)
         pillRow.addView(pillBtn(context, "✓ All", Color.parseColor("#4ADE80"), Color.parseColor("#0A1A0F"), Color.parseColor("#1A3A1F")) {
             order.forEach { setKey(it, true) }
             rebuild()
@@ -441,7 +435,7 @@ object Settings {
             Toast.makeText(context, "All providers disabled", Toast.LENGTH_SHORT).show()
         })
         pillRow.addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(8.dp(context), 1) })
-        pillRow.addView(pillBtn(context, "↺ Reset", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
+        pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START, Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
             order.clear()
             order.addAll(DEFAULT_ORDER)
             saveOrder(order)
@@ -462,25 +456,22 @@ object Settings {
         toolbar.addView(pillRow)
         toolbar.addView(noteRow)
 
-        // thin separator
         val sep = View(context).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1)
                 .also { it.setMargins(16.dp(context), 0, 16.dp(context), 4.dp(context)) }
             setBackgroundColor(DIVIDER_COLOR)
         }
 
-        rebuild() // initial population
+        rebuild()
 
         content.addView(toolbar)
         content.addView(sep)
         content.addView(rows)
 
-        // ── Chevron indicator ──
         val chevron = TextView(context).apply {
             text = "▼"; textSize = 11f; setTextColor(TEXT_SECONDARY)
         }
 
-        // ── Collapsed summary: enabled count ──
         val summary = TextView(context).apply {
             textSize = 11f; setTextColor(Color.parseColor("#5A5E7A"))
             setPadding(0, 0, 8.dp(context), 0)
@@ -492,7 +483,6 @@ object Settings {
         }
         updateSummary()
 
-        // ── Header row (clickable) ──
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
@@ -549,24 +539,88 @@ object Settings {
         label: String,
         key: String,
         index: Int,
+        totalCount: Int,
         isTorrent: Boolean,
         canMoveUp: Boolean,
         canMoveDown: Boolean,
         onMoveUp: () -> Unit,
-        onMoveDown: () -> Unit
+        onMoveDown: () -> Unit,
+        onMoveTo: (Int) -> Unit
     ): View {
         return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16.dp(context), 10.dp(context), 12.dp(context), 10.dp(context))
             gravity = Gravity.CENTER_VERTICAL
 
+            // Index badge — tap to jump to position
             addView(TextView(context).apply {
                 text = "$index"; textSize = 11f
                 setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(if (isTorrent) Color.parseColor("#5A3E1E") else TEXT_SECONDARY)
-                gravity = Gravity.CENTER; minWidth = 22.dp(context)
-                setPadding(0, 0, 10.dp(context), 0)
+                setTextColor(if (isTorrent) Color.parseColor("#5A3E1E") else ACCENT_START)
+                gravity = Gravity.CENTER
+                setPadding(4.dp(context), 4.dp(context), 4.dp(context), 4.dp(context))
+                background = GradientDrawable().apply {
+                    cornerRadius = 6f.dp(context)
+                    setColor(Color.parseColor("#1A1730"))
+                    setStroke(1, if (isTorrent) Color.parseColor("#3A2810") else Color.parseColor("#2E2850"))
+                }
+                minWidth = 28.dp(context)
+                isClickable = true; isFocusable = true
+                setOnClickListener {
+                    // Build number picker dialog
+                    val input = EditText(context).apply {
+                        inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                        hint = "1 – $totalCount"
+                        setText("$index")
+                        setTextColor(TEXT_PRIMARY)
+                        setHintTextColor(TEXT_SECONDARY)
+                        selectAll()
+                        setPadding(16.dp(context), 12.dp(context), 16.dp(context), 12.dp(context))
+                        background = GradientDrawable().apply {
+                            cornerRadius = 10f.dp(context)
+                            setColor(Color.parseColor("#1A1E28"))
+                            setStroke(1, Color.parseColor("#2E2850"))
+                        }
+                    }
+
+                    val wrapper = LinearLayout(context).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(24.dp(context), 16.dp(context), 24.dp(context), 8.dp(context))
+                        addView(TextView(context).apply {
+                            text = "Move \"$label\" to position"
+                            textSize = 13f
+                            setTextColor(TEXT_SECONDARY)
+                            setPadding(0, 0, 0, 10.dp(context))
+                        })
+                        addView(input)
+                    }
+
+                    val d = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
+                        .setView(wrapper)
+                        .setPositiveButton("Move") { _, _ ->
+                            val target = input.text.toString().toIntOrNull()
+                            if (target != null && target in 1..totalCount) {
+                                onMoveTo(target - 1) // convert to 0-based
+                            } else {
+                                Toast.makeText(context, "Enter a number between 1 and $totalCount", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .create()
+
+                    d.window?.setBackgroundDrawable(roundRect(BG_DARK, 16f.dp(context)))
+                    d.show()
+                    d.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
+                    d.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
+
+                    // Auto-show keyboard
+                    input.requestFocus()
+                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
             })
+
+            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(10.dp(context), 1) })
 
             addView(TextView(context).apply {
                 text = label; textSize = 14f
@@ -606,10 +660,6 @@ object Settings {
         }
     }
 
-    // =========================================================
-    //  REUSABLE PILL BUTTON
-    // =========================================================
-
     private fun pillBtn(
         context: Context,
         label: String,
@@ -633,10 +683,6 @@ object Settings {
             onClick()
         }
     }
-
-    // =========================================================
-    //  EXISTING COMPONENTS
-    // =========================================================
 
     private fun createHeroBanner(context: Context): View {
         return LinearLayout(context).apply {
@@ -854,7 +900,6 @@ object Settings {
             .setCancelable(false).show()
     }
 
-    // --- DRAWING HELPERS ---
     private fun roundRect(color: Int, radius: Float) = GradientDrawable().apply {
         cornerRadius = radius; setColor(color)
     }
@@ -865,7 +910,6 @@ object Settings {
         addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
     }
 
-    // --- EXTENSION HELPERS ---
     private fun Int.dp(context: Context): Int =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), context.resources.displayMetrics).toInt()
 
