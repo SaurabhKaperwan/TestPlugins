@@ -193,7 +193,7 @@ object Settings {
     fun saveOrder(order: List<String>) = setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
 
     // =========================================================
-    //  NETMIRROR COOKIE HELPERS
+    // NETMIRROR COOKIE HELPERS
     // =========================================================
 
     fun saveCookie(cookie: String) {
@@ -288,6 +288,10 @@ object Settings {
 
         dialog.window?.setBackgroundDrawable(roundRect(BG_DARK, 20f.dp(context)))
         dialog.show()
+        dialog.window?.setLayout(
+            (context.resources.displayMetrics.widthPixels * 0.95).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
     }
