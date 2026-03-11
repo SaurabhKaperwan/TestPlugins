@@ -275,6 +275,21 @@ object Settings {
 
         // ── Credits ──
         layout.addView(createCreditsCard(context))
+
+        scroll.addView(layout)
+
+        val dialog = AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog)
+            .setView(scroll)
+            .setPositiveButton("Save & Reload") { _, _ ->
+                if (requiresRestart) showRestartWarning(context, onSave) else onSave()
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(roundRect(BG_DARK, 20f.dp(context)))
+        dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply { setTextColor(ACCENT_START); isAllCaps = false }
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply { setTextColor(TEXT_SECONDARY); isAllCaps = false }
     }
 
     // =========================================================
@@ -1042,7 +1057,7 @@ object Settings {
     }
 
     // =========================================================
-    //  SAVE DIALOG
+    //  SAVE DIALOG  (called from showSettingsDialog)
     // =========================================================
 
     private fun showSaveDialog(context: Context, requiresRestart: Boolean, onSave: () -> Unit) {
