@@ -42,6 +42,9 @@ open class CineStreamProvider : MainAPI() {
         val activeProviderOrder: List<String>
             get() = Settings.getOrder().filter { Settings.enabled(it) }
 
+        val showboxToken: String?
+            get() = Settings.getShowboxToken()
+
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
         const val WYZIESubsAPI = "https://sub.wyzie.ru"
@@ -96,6 +99,7 @@ open class CineStreamProvider : MainAPI() {
         const val akwamAPI = "https://ak.sv"
         const val flixIndiaAPI = "https://m.flixindia.xyz"
         const val levidiaAPI = "https://www.levidia.ch"
+        const val femBoxAPI = "https://fembox.aether.mom"
         const val streamvixAPI = "https://streamvix.hayd.uk"
         const val projectfreetvAPI = "https://projectfreetv.sx"
         const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
