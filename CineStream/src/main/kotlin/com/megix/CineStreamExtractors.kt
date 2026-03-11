@@ -180,7 +180,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=$showboxToken"
         }
 
-        val res = app.get(url).text.parsedSafe<ShowboxResponse>() ?: return
+        val response = app.get(url).text.parsedSafe<ShowboxResponse>() ?: return
 
         response.sources.forEach { source ->
 
