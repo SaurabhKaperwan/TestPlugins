@@ -178,7 +178,7 @@ open class CineStreamProvider : MainAPI() {
         url: String? = null,
      ): String? {
         if (url == null) return null
-        if(url.contains("metahub.space")) return image_proxy + url
+        if(url.contains("metahub.space") || url.contains("kitsu.")) return image_proxy + url
         return url
     }
 
@@ -225,8 +225,14 @@ open class CineStreamProvider : MainAPI() {
                 val json = app.get(url).text
                 tryParseJson<SearchResult>(json)?.metas?.map {
                     val title = it.aliases?.firstOrNull() ?: it.name ?: ""
+                    val poster = if(it.id.startsWith("tt")) {
+                        "https://images.metahub.space/poster/medium/${it.id}/img"
+                    } else {
+                        it.poster
+                    }
+
                     newMovieSearchResponse(title, PassData(it.id, it.type).toJson()).apply {
-                        posterUrl = getPosterUrl(it.poster)
+                        this.posterUrl = getPosterUrl(poster)
                         this.score = Score.from10(it.imdbRating)
                     }
                 } ?: emptyList()
@@ -371,7 +377,7 @@ open class CineStreamProvider : MainAPI() {
                     this.name = ep.name ?: ep.title
                     this.season = ep.season
                     this.episode = ep.episode
-                    this.posterUrl = ep.thumbnail
+                    this.posterUrl = getPosterUrl(ep.thumbnail)
                     this.description = ep.overview
                     this.score = Score.from10(ep.rating?.toDoubleOrNull())
                     addDate(ep.firstAired ?: ep.released)

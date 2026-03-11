@@ -180,16 +180,17 @@ object CineStreamExtractors : CineStreamProvider() {
             "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=$showboxToken"
         }
 
-        val response = app.get(url).text.parsedSafe<ShowboxResponse>() ?: return
+        val response = app.get(url).parsedSafe<ShowboxResponse>() ?: return
 
         response.sources.forEach { source ->
+            val isM3u8 = source.url.contains(".m3u8")
 
             callback.invoke(
                 newExtractorLink(
                     "Showbox",
                     "ShowBox ${source.quality}" + (source.size?.let { " [$it]" } ?: ""),
                     source.url,
-                    ExtractorLinkType.VIDEO
+                    if(isM3u8) ExtractorLinkType.M3U8 else  ExtractorLinkType.VIDEO
                 ) {
                     this.quality = when (source.quality.uppercase()) {
                         "4K", "ORG" -> Qualities.P2160.value
