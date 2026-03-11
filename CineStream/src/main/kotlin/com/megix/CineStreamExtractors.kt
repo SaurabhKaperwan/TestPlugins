@@ -188,7 +188,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "Showbox",
-                    "ShowBox ${source.quality}" + (source.size?.let { " [$it]" } ?: ""),
+                    "ShowBox" + (source.size?.let { " [$it]" } ?: ""),
                     source.url,
                     if(isM3u8) ExtractorLinkType.M3U8 else  ExtractorLinkType.VIDEO
                 ) {
