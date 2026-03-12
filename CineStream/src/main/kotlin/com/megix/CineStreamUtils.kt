@@ -313,6 +313,36 @@ fun String.getHost(): String {
     return fixTitle(URI(this).host.substringBeforeLast(".").substringAfterLast("."))
 }
 
+// ─────────────────────────────────────────────────────────────
+//  ProviderMapBuilder — collects providers + their invoke fns
+// ─────────────────────────────────────────────────────────────
+
+class ProviderMapBuilder {
+    val providers = mutableListOf<Provider>()
+    val invokers  = mutableMapOf<String, suspend () -> Unit>()
+
+    fun provider(
+        key: String,
+        name: String,
+        isTorrent: Boolean = false,
+        defaultOn: Boolean = true,
+        invoke: suspend () -> Unit
+    ) {
+        providers += Provider(key, name, isTorrent, defaultOn)
+        invokers[key] = invoke
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Registers metadata with Settings so the UI is always in sync
+// ─────────────────────────────────────────────────────────────
+fun buildProviders(block: ProviderMapBuilder.() -> Unit): ProviderMapBuilder {
+    val builder = ProviderMapBuilder()
+    builder.block()
+    Settings.registerProviders(builder.providers)
+    return builder
+}
+
 suspend fun checkPosterAvailable(posterUrl: String? = null): String? {
     if(posterUrl == null) return null
     return try {

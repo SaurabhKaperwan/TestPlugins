@@ -31,6 +31,14 @@ data class AllLoadLinksData(
     val imdbYear : Int? = null,
 )
 
+// for adding new providers
+data class Provider(
+    val key: String,
+    val name: String,
+    val isTorrent: Boolean = false,
+    val defaultOn: Boolean = true,
+)
+
 //Showbox
 data class ShowboxSource(
     @param:JsonProperty("url")     val url: String,

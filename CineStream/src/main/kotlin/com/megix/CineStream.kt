@@ -10,17 +10,12 @@ import com.lagradost.cloudstream3.plugins.Plugin
 open class CineStream: Plugin() {
     override fun load(context: Context) {
 
-        if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) {
-            registerMainAPI(CineStreamProvider())
-        }
+        // initProviders() snapshots the enabled+ordered list for the session.
+        CineStreamProvider.initProviders()
 
-        if (getKey<Boolean>(Settings.PROVIDER_SIMKL) ?: true) {
-            registerMainAPI(CineSimklProvider())
-        }
-
-        if (getKey<Boolean>(Settings.PROVIDER_TMDB) ?: true) {
-            registerMainAPI(CineTmdbProvider())
-        }
+        if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) registerMainAPI(CineStreamProvider())
+        if (getKey<Boolean>(Settings.PROVIDER_SIMKL)      ?: true) registerMainAPI(CineSimklProvider())
+        if (getKey<Boolean>(Settings.PROVIDER_TMDB)       ?: true) registerMainAPI(CineTmdbProvider())
 
         registerExtractorAPI(Kwik())
         registerExtractorAPI(Pahe())
