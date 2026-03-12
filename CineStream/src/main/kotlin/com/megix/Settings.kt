@@ -525,7 +525,7 @@ object Settings {
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
                     context,
-                    label       = p?.name ?: key,
+                    label       = p.name,
                     key         = key,
                     index       = i + 1,
                     totalCount  = order.size,
