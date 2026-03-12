@@ -44,6 +44,17 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        stremioAddons.forEach { addon ->
+            callback.invoke(
+                newExtractorLink(
+                    "${addon.name} ${addon.type}",
+                    "${addon.name} ${addon.type}",
+                    "${addon.url}"
+                )
+            )
+        }
+
         val providerMap: Map<String, suspend () -> Unit> = mapOf(
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  res.imdbId, res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
