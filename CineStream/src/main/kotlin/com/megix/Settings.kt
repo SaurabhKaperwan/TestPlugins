@@ -1252,7 +1252,7 @@ object Settings {
 
             if (addons.isEmpty()) {
                 addonRows.addView(TextView(context).apply {
-                    text = "No addons yet — tap "+ Add Addon" to add one"
+                    text = "No addons yet — tap Add Addon to add one"
                     textSize = 12f; setTextColor(TEXT_SECONDARY)
                     gravity = Gravity.CENTER
                     setPadding(0, 16.dp(context), 0, 16.dp(context))
