@@ -520,24 +520,41 @@ object Settings {
 
         fun rebuild() {
             rows.removeAllViews()
+            // Get the current list of keys to display
+            val order = getOrder()
+
             order.forEachIndexed { i, key ->
+                // Find the full provider object from your registry
                 val p = allProviders.find { it.key == key }
+
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
                     context,
-                    label       = p.name,
+                    label       = p?.name ?: key,
                     key         = key,
                     index       = i + 1,
                     totalCount  = order.size,
                     isTorrent   = p?.isTorrent ?: false,
                     canMoveUp   = i > 0,
                     canMoveDown = i < order.lastIndex,
-                    onMoveUp    = { order.add(i - 1, order.removeAt(i)); saveOrder(order); rebuild() },
-                    onMoveDown  = { order.add(i + 1, order.removeAt(i)); saveOrder(order); rebuild() },
+                    onMoveUp    = {
+                        val currentOrder = order.toMutableList()
+                        currentOrder.add(i - 1, currentOrder.removeAt(i))
+                        saveOrder(currentOrder)
+                        rebuild()
+                    },
+                    onMoveDown  = {
+                        val currentOrder = order.toMutableList()
+                        currentOrder.add(i + 1, currentOrder.removeAt(i))
+                        saveOrder(currentOrder)
+                        rebuild()
+                    },
                     onMoveTo    = { target ->
-                        val item = order.removeAt(i)
-                        order.add(target.coerceIn(0, order.size), item)
-                        saveOrder(order); rebuild()
+                        val currentOrder = order.toMutableList()
+                        val item = currentOrder.removeAt(i)
+                        currentOrder.add(target.coerceIn(0, currentOrder.size), item)
+                        saveOrder(currentOrder)
+                        rebuild()
                     }
                 ))
             }
