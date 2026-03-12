@@ -39,19 +39,11 @@ open class CineStreamProvider : MainAPI() {
         val allowDownloadLinks: Boolean
             get() = getKey(Settings.DOWNLOAD_ENABLE) ?: false
 
+        val activeProviderOrder: List<String>
+            get() = Settings.getOrder().filter { Settings.enabled(it) }
+
         val showboxToken: String?
             get() = Settings.getShowboxToken()
-
-        val hasShowboxToken: Boolean
-            get() = showboxToken != null
-
-        // Re-snapshotted when user hits "Save" in settings
-        var activeProviderOrder: List<String> = emptyList()
-            private set
-
-        fun initProviders() {
-            activeProviderOrder = Settings.getOrder().filter { Settings.enabled(it) }
-        }
 
         const val malsyncAPI = "https://api.malsync.moe"
         const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
