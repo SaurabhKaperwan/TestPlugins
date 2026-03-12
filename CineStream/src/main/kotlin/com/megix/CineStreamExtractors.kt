@@ -52,7 +52,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val map = buildProviders {
             provider("p_torrentio",     "🧲 Torrentio",   isTorrent = true, defaultOn = false) { invokeStremioTorrents("Torrentio",  torrentioAPI,  res.imdbId, res.season, res.episode, callback) }
             provider("p_torrentsdb",    "🧲 TorrentsDB",  isTorrent = true, defaultOn = false) { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) }
-            provider("p_showbox",       "ShowBox")        { if (hasShowboxToken) invokeShowbox(showboxToken!!, res.tmdbId, res.season, res.episode, subtitleCallback, callback) }
+            provider("p_showbox",       "ShowBox")        { if (hasShowboxToken) invokeShowbox(res.tmdbId, res.season, res.episode, subtitleCallback, callback) }
             provider("p_vidflix",       "Vidflix")        { invokeVidflix(res.tmdbId, res.season, res.episode, callback) }
             provider("p_moviebox",      "Moviebox")       { invokeMoviebox(res.title, res.season, res.episode, subtitleCallback, callback) }
             provider("p_wyziesubs",     "WYZIESubs")      { invokeWYZIESubs(res.imdbId, res.season, res.episode, subtitleCallback) }
@@ -166,7 +166,7 @@ object CineStreamExtractors : CineStreamProvider() {
             provider("p_vidlink",       "Vidlink")        { invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) }
             provider("p_primesrc",      "PrimeSrc")       { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) }
             provider("p_uhdmovies",     "UHDMovies")      { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) }
-            provider("p_showbox",       "ShowBox")        { if (hasShowboxToken) invokeShowbox(showboxToken!!, res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) }
+            provider("p_showbox",       "ShowBox")        { if (hasShowboxToken) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) }
         }
 
         runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { map.invokers[it] }.toTypedArray())
