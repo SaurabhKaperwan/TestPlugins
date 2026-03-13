@@ -91,6 +91,12 @@ object Settings {
     const val P_ANIMEWORLD    = "p_animeworld"
     const val P_SHOWBOX       = "p_showbox"
 
+    const val P_HIANIME       = "p_hianime"
+    const val P_ANIMEPAHE     = "p_animepahe"
+    const val P_ANIMEZ        = "p_animez"
+    const val P_ANIMEKAI      = "p_animekai"
+
+
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
     val TORRENT_KEYS = setOf(P_TORRENTIO, P_TORRENTSDB, P_ANIMETOSHO)
@@ -163,6 +169,10 @@ object Settings {
         P_GOJO          to "Animetsu",
         P_KISSKH        to "KissKH",
         P_DRAMAFULL     to "Dramafull",
+        P_HIANIME       to "Hianime",
+        P_ANIMEPAHE     to "AnimePahe",
+        P_ANIMEZ        to "AnimeZ",
+        P_ANIMEKAI      to "Animekai",
     )
 
     val DEFAULT_ORDER: List<String> get() = PROVIDER_NAMES.keys.toList()

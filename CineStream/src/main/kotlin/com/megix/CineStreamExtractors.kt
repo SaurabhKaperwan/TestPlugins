@@ -2786,63 +2786,24 @@ object CineStreamExtractors : CineStreamProvider() {
         val animepaheUrl = malsync?.animepahe?.values?.firstNotNullOfOrNull { it["url"] }
         val aniXL = malsync?.AniXL?.values?.firstNotNullOfOrNull { it["url"] }
 
-        runLimitedAsync( concurrency = 3,
-            {
-                invokeHianime(hianimeurl, episode, subtitleCallback, callback)
-            },
-            {
-                if (animepaheUrl != null)
-                    invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback)
-            },
-            {
-                invokeAnimez(title ?: zorotitle, episode, callback)
-            },
-            {
-                invokeAnimekai(zorotitle ?: title, episode, subtitleCallback, callback)
-            },
-            {
-                if(origin == "imdb" && title != null) invokeTokyoInsider(
-                    zorotitle ?: title,
-                    episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(origin == "imdb" && title != null) invokeAllanime(
-                    zorotitle ?: title,
-                    year,
-                    episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(origin == "imdb" && title!= null) invokeAnizone(
-                    zorotitle ?: title,
-                    episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(origin == "imdb") invokeGojo(
-                    title,
-                    aniId,
-                    episode,
-                    subtitleCallback,
-                    callback
-                )
-            },
-            {
-                if(origin == "imdb") invokeSudatchi(
-                    aniId,
-                    episode,
-                    subtitleCallback,
-                    callback
-                )
-            }
+        val providerMap: Map<String, suspend () -> Unit> = mapOf(
+            Settings.P_HIANIME    to { invokeHianime(hianimeurl, episode, subtitleCallback, callback) },
+            Settings.P_ANIMEPAHE  to { invokeAnimepahe(animepaheUrl, episode, subtitleCallback, callback) },
+            Settings.P_ANIMEZ     to { invokeAnimez(title ?: zorotitle, episode, callback) },
+            Settings.P_ANIMEKAI   to { invokeAnimekai(zorotitle ?: title, episode, subtitleCallback, callback) },
+            Settings.P_TOKYOINSIDER to { if(origin == "imdb") invokeTokyoInsider(title, episode, subtitleCallback, callback) },
+            Settings.P_ALLANIME to { if(origin == "imdb") invokeAllanime(title, year, episode, subtitleCallback, callback) },
+            Settings.P_ANIZONE to { if(origin == "imdb") invokeAnizone(title, episode, subtitleCallback, callback) },
+            Settings.P_GOJO to { if(origin == "imdb") invokeGojo(title, aniId, episode, subtitleCallback, callback) },
+            Settings.P_SUDATCHI to { if(origin == "imdb") invokeSudatchi(aniId, episode, subtitleCallback, callback) },
+
         )
+
+        runLimitedAsync(
+            concurrency = 7,
+            *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray()
+        )
+
     }
 
     private suspend fun invokeAnimepahe(
