@@ -119,10 +119,12 @@ object CineStreamExtractors : CineStreamProvider() {
             val key = Settings.stremioAddonKey(addon.name)
             key to suspend {
                 when (addon.type) {
+                    Settings.AddonType.SUBTITLE ->
+                        invokeStremioSubtitlesGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback)
                     Settings.AddonType.TORRENT ->
-                        invokeStremioTorrents(addon.name, addon.url, res.imdbId, res.season, res.episode, callback)
+                        invokeStremioTorrentsGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, callback)
                     Settings.AddonType.HTTPS, Settings.AddonType.DEBRID ->
-                        invokeStremioStreams(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback, callback)
+                        invokeStreamioStreamsGlobal(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback, callback)
                 }
             }
         }
@@ -4346,4 +4348,118 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
+    suspend fun invokeStreamioStreamsGlobal(
+        sourceName: String,
+        api: String,
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if(season == null) {
+            "$api/stream/movie/$imdbId.json"
+        } else {
+            "$api/stream/series/$imdbId:$season:$episode.json"
+        }
+
+        Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+            val title = s.title ?: s.name ?: ""
+
+            val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
+                ExtractorLinkType.M3U8
+            } else {
+                INFER_TYPE
+            }
+
+            val proxyReq = s.behaviorHints?.proxyHeaders?.request
+            val stdHeaders = s.behaviorHints?.headers
+
+            val extractedReferer = proxyReq?.Referer ?: stdHeaders?.get("Referer") ?: stdHeaders?.get("referer") ?: ""
+            val extractedOrigin = proxyReq?.Origin ?: stdHeaders?.get("Origin") ?: stdHeaders?.get("origin") ?: ""
+            val extractedUserAgent = proxyReq?.userAgent ?: stdHeaders?.get("User-Agent") ?: stdHeaders?.get("user-agent") ?: USER_AGENT
+
+            val quality = getIndexQuality(title)
+
+            callback.invoke(
+                newExtractorLink(
+                    sourceName,
+                    "$sourceName \n$title",
+                    s.url,
+                ) {
+                    this.type = type
+                    this.quality = quality
+                    this.headers = mapOf(
+                        "User-Agent" to extractedUserAgent,
+                        "Referer" to extractedReferer,
+                        "Origin" to extractedOrigin
+                    ).filterValues { it.isNotBlank() }
+                }
+            )
+        }
+    }
+
+    suspend fun invokeStremioSubtitlesGlobal(
+        sourceName: String,
+        api: String,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+    ) {
+        val url = if(season != null) {
+            "$api/subtitles/series/$imdbId:$season:$episode.json"
+        } else {
+            "$api/subtitles/movie/$imdbId.json"
+        }
+
+        val json = app.get(url).text
+        val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
+
+        subtitleResponse.subtitles.forEach {
+            val lang = it.lang ?: it.lang_code
+            val fileUrl = it.url
+            if(lang != null && fileUrl != null) {
+                subtitleCallback.invoke(
+                    newSubtitleFile(
+                        getLanguage(lang) ?: lang,
+                        fileUrl,
+                    )
+                )
+            }
+        }
+    }
+
+    suspend fun invokeStremioTorrentsGlobal(
+        sourceName: String,
+        api: String,
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit,
+    ) {
+        val url = if(season == null) {
+            "$api/stream/movie/$imdbId.json"
+        } else {
+            "$api/stream/series/$imdbId:$season:$episode.json"
+        }
+
+        val res = app.get(url, timeout = 200L).parsedSafe<TorrentioResponse>()
+
+        res?.streams?.forEach { stream ->
+
+            val title = stream.title ?: stream.name ?: ""
+            val magnet = buildMagnetString(stream)
+
+            callback.invoke(
+                newExtractorLink(
+                    "$sourceName🧲",
+                    "$sourceName 🧲 \n$title",
+                    magnet,
+                    ExtractorLinkType.MAGNET,
+                ) {
+                    this.quality = getIndexQuality(title)
+                }
+            )
+        }
+    }
 }

@@ -209,9 +209,10 @@ object Settings {
             val addon = getStremioAddons().firstOrNull { stremioAddonKey(it.name) == key }
             if (addon != null) {
                 val icon = when (addon.type) {
-                    AddonType.TORRENT -> "🧲"
-                    AddonType.DEBRID  -> "☁️"
-                    AddonType.HTTPS   -> "🔌"
+                    AddonType.TORRENT  -> "🧲"
+                    AddonType.DEBRID   -> "☁️"
+                    AddonType.SUBTITLE -> "📝"
+                    AddonType.HTTPS    -> "🔌"
                 }
                 return "$icon ${addon.name}"
             }
@@ -254,7 +255,7 @@ object Settings {
     //  STREMIO ADDON HELPERS
     // =========================================================
 
-    enum class AddonType { HTTPS, TORRENT, DEBRID }
+    enum class AddonType { HTTPS, TORRENT, DEBRID, SUBTITLE }
 
     data class StremioAddon(
         val name: String,
@@ -1181,18 +1182,22 @@ object Settings {
 
         val addonRows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
 
+        val TYPE_SUBTITLE = Color.parseColor("#C084FC")
+
         // Returns colour for a given type
         fun typeColor(t: AddonType) = when (t) {
-            AddonType.HTTPS    -> TYPE_HTTPS
-            AddonType.TORRENT  -> TYPE_TORRENT
-            AddonType.DEBRID   -> TYPE_DEBRID
+            AddonType.HTTPS     -> TYPE_HTTPS
+            AddonType.TORRENT   -> TYPE_TORRENT
+            AddonType.DEBRID    -> TYPE_DEBRID
+            AddonType.SUBTITLE  -> TYPE_SUBTITLE
         }
 
-        // Cycles through types on click: HTTPS → TORRENT → DEBRID → HTTPS
+        // Cycles: HTTPS → TORRENT → DEBRID → SUBTITLE → HTTPS
         fun AddonType.next() = when (this) {
-            AddonType.HTTPS    -> AddonType.TORRENT
-            AddonType.TORRENT  -> AddonType.DEBRID
-            AddonType.DEBRID   -> AddonType.HTTPS
+            AddonType.HTTPS     -> AddonType.TORRENT
+            AddonType.TORRENT   -> AddonType.DEBRID
+            AddonType.DEBRID    -> AddonType.SUBTITLE
+            AddonType.SUBTITLE  -> AddonType.HTTPS
         }
 
         fun rebuildRows() {
@@ -1299,9 +1304,15 @@ object Settings {
                     text = "URL"; textSize = 11f; setTextColor(TEXT_SECONDARY)
                     setPadding(0, 0, 0, 4.dp(context))
                 })
+                // Strip trailing /manifest.json before storing — user pastes the full
+                // manifest URL as shown on Stremio addon pages; we only need the base.
+                fun String.stripManifest() = trimEnd('/')
+                    .removeSuffix("/manifest.json").trimEnd('/')
+
                 val urlField = EditText(context).apply {
+                    // Display stored base URL; user may paste full manifest URL
                     setText(addon.url)
-                    hint = "https://..."; textSize = 12f
+                    hint = "https://xyz.com/manifest.json"; textSize = 12f
                     setTextColor(TEXT_PRIMARY); setHintTextColor(TEXT_SECONDARY)
                     setSingleLine(true)
                     inputType = android.text.InputType.TYPE_CLASS_TEXT or
@@ -1314,7 +1325,8 @@ object Settings {
                     addTextChangedListener(object : android.text.TextWatcher {
                         override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
                         override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {
-                            addons[i] = addons[i].copy(url = s?.toString() ?: "")
+                            // Store base URL — /manifest.json stripped automatically
+                            addons[i] = addons[i].copy(url = (s?.toString() ?: "").stripManifest())
                         }
                         override fun afterTextChanged(s: android.text.Editable?) {}
                     })
@@ -1345,9 +1357,10 @@ object Settings {
                         val clip = clipboard.primaryClip
                             ?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
                         if (!clip.isNullOrBlank()) {
-                            urlField.setText(clip)
+                            val stripped = clip.stripManifest()
+                            urlField.setText(stripped)
                             urlField.setSelection(urlField.text?.length ?: 0)
-                            addons[i] = addons[i].copy(url = clip)
+                            addons[i] = addons[i].copy(url = stripped)
                             Toast.makeText(context, "URL pasted", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(context, "Clipboard empty", Toast.LENGTH_SHORT).show()
