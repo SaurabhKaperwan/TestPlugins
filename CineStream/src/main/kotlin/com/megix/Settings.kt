@@ -95,7 +95,7 @@ object Settings {
     const val P_ANIMEPAHE     = "p_animepahe"
     const val P_ANIMEZ        = "p_animez"
     const val P_ANIMEKAI      = "p_animekai"
-    const val P_CHECKS        = "p_checks"
+    const val P_CHECKS2       = "p_checks2"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
@@ -173,7 +173,7 @@ object Settings {
         P_ANIMEPAHE     to "AnimePahe",
         P_ANIMEZ        to "AnimeZ",
         P_ANIMEKAI      to "Animekai",
-        P_CHECKS        to "Checks",
+        P_CHECKS2       to "Checks2",
     )
 
     val DEFAULT_ORDER: List<String> get() = PROVIDER_NAMES.keys.toList()
