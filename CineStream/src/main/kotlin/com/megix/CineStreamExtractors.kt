@@ -186,7 +186,28 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
         )
 
-        runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
+        val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
+        .associate { addon ->
+            val key = Settings.stremioAddonKey(addon.name)
+            key to suspend {
+                when (addon.type) {
+                    Settings.AddonType.SUBTITLE ->
+                        invokeStremioSubtitlesGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback)
+                    Settings.AddonType.TORRENT ->
+                        invokeStremioTorrentsGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, callback)
+                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID ->
+                        invokeStreamioStreamsGlobal(addon.name, addon.url, res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
+                }
+            }
+        }
+
+        val combined = providerMap + stremioMap
+
+        runLimitedAsync(
+            concurrency = 7,
+            *activeProviderOrder.mapNotNull { combined[it] }.toTypedArray()
+        )
+
     }
 
     suspend fun invokeShowbox(
@@ -4386,8 +4407,8 @@ object CineStreamExtractors : CineStreamProvider() {
                     sourceName,
                     "$sourceName \n$title",
                     s.url,
+                    type
                 ) {
-                    this.type = type
                     this.quality = quality
                     this.headers = mapOf(
                         "User-Agent" to extractedUserAgent,
@@ -4414,7 +4435,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
 
         val json = app.get(url).text
-        val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
+        val subtitleResponse = Gson().fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
             val lang = it.lang ?: it.lang_code
