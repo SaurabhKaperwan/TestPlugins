@@ -4405,7 +4405,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     sourceName,
-                    "$sourceName \n$title",
+                    "[$sourceName] $title",
                     s.url,
                     type
                 ) {
@@ -4475,7 +4475,7 @@ object CineStreamExtractors : CineStreamProvider() {
             callback.invoke(
                 newExtractorLink(
                     "$sourceName🧲",
-                    "$sourceName 🧲 \n$title",
+                    "[$sourceName] 🧲 $title",
                     magnet,
                     ExtractorLinkType.MAGNET,
                 ) {
