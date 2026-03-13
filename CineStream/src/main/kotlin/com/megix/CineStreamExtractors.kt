@@ -4402,6 +4402,7 @@ object CineStreamExtractors : CineStreamProvider() {
     suspend fun invokeStremioSubtitlesGlobal(
         sourceName: String,
         api: String,
+        imdbId: String? = null,
         season: Int? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,

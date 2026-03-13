@@ -277,8 +277,18 @@ object Settings {
     }
 
     fun saveStremioAddons(addons: List<StremioAddon>) {
-        if (addons.isEmpty()) { setKey(STREMIO_ADDONS_KEY, null as String?); return }
-        setKey(STREMIO_ADDONS_KEY, addons.joinToString("\n") { "${it.name}|${it.url}|${it.type}" })
+        if (addons.isEmpty()) { setKey(STREMIO_ADDONS_KEY, null as String?) }
+        else setKey(STREMIO_ADDONS_KEY, addons.joinToString("\n") { "${it.name}|${it.url}|${it.type}" })
+
+        // Prune orphaned stremio_* keys from the provider order so deleted addons
+        // don't leave ghost entries in the providers list.
+        val validKeys = addons.map { stremioAddonKey(it.name) }.toSet()
+        val currentOrder = getKey<String>(PROVIDER_ORDER_KEY)
+            ?.split(",")?.filter { it.isNotBlank() } ?: return
+        val pruned = currentOrder.filter { key ->
+            !key.startsWith("stremio_") || key in validKeys
+        }
+        if (pruned.size != currentOrder.size) saveOrder(pruned)
     }
 
 
@@ -770,8 +780,12 @@ object Settings {
         // aren't in the in-memory order list yet (new addons are committed by
         // commitAddons right before commitOrder fires).
         onRegisterCommit {
-            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
-            val merged = order + (stremioKeys - order.toSet())
+            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }.toSet()
+            val merged = order
+                // Remove stremio keys whose addon was deleted during this session
+                .filter { key -> !key.startsWith("stremio_") || key in stremioKeys }
+                // Append any new stremio keys not yet in the order
+                .let { filtered -> filtered + (stremioKeys - filtered.toSet()) }
             saveOrder(merged)
         }
 
