@@ -90,11 +90,12 @@ object Settings {
     const val P_GOJO          = "p_gojo"
     const val P_ANIMEWORLD    = "p_animeworld"
     const val P_SHOWBOX       = "p_showbox"
+
     const val P_HIANIME       = "p_hianime"
     const val P_ANIMEPAHE     = "p_animepahe"
     const val P_ANIMEZ        = "p_animez"
     const val P_ANIMEKAI      = "p_animekai"
-     const val P_CHECK         = "p_check"
+    const val P_CHECK         = "p_check"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
@@ -172,8 +173,7 @@ object Settings {
         P_ANIMEPAHE     to "AnimePahe",
         P_ANIMEZ        to "AnimeZ",
         P_ANIMEKAI      to "Animekai",
-
-        P_CHECK     to "Check",
+        P_CHECK         to "Check",
     )
 
     val DEFAULT_ORDER: List<String> get() = PROVIDER_NAMES.keys.toList()
@@ -190,24 +190,51 @@ object Settings {
             ?: emptySet()
 
     /**
-     * If the seen set is empty — first install OR reinstall/update wiped storage —
-     * we seed it with every provider that exists right now. This means all current
-     * providers are never treated as "new". Only keys that appear in DEFAULT_ORDER
-     * after this snapshot was saved are genuinely new in a future update.
+     * Call once at plugin load in CineStream.kt.
+     * On first install the seen set is empty — seed it with all current
+     * providers WITHOUT baking explicit values so natural defaults apply
+     * (torrent = off, everything else = on).
+     * On updates storage is intact so this is effectively a no-op.
      */
     fun initSeenProviders() {
+        val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+        val allKnown    = (DEFAULT_ORDER + stremioKeys).toSet()
+
         if (getSeenProviders().isEmpty()) {
-            markProvidersSeen(DEFAULT_ORDER)
+            // First install — seed without baking, natural defaults apply
+            setKey(SEEN_PROVIDERS_KEY, allKnown.joinToString(","))
+            return
         }
+
+        // Prune keys that no longer exist from the seen set
+        val prunedSeen = getSeenProviders().filter { it in allKnown }
+        setKey(SEEN_PROVIDERS_KEY, prunedSeen.joinToString(","))
+
+        // Remove explicit stored values for deleted providers so storage stays clean
+        val removedKeys = getSeenProviders() - allKnown
+        removedKeys.forEach { setKey(it, null as Boolean?) }
     }
 
     /**
-     * Call this on every Save so newly appeared keys become "seen".
-     * After this, they are no longer considered new and keep whatever
-     * state they were set to.
+     * Call on every Save so newly appeared keys become "seen".
+     * For any key that is genuinely new (wasn't seen before, no explicit saved
+     * value), immediately persists the current newProviderDefaultOn() as its
+     * explicit state. This means the preference is evaluated exactly once —
+     * at the moment of first encounter — and survives all future loads and reinstalls.
      */
     fun markProvidersSeen(keys: Collection<String>) {
-        val merged = getSeenProviders() + keys
+        val currentlySeen = getSeenProviders()
+        val defaultState  = newProviderDefaultOn()
+        keys.forEach { key ->
+            if (key !in currentlySeen                // genuinely new
+                && !key.startsWith("stremio_")       // stremio has its own rule
+                && key !in TORRENT_KEYS              // torrents are always off
+                && getKey<Boolean>(key) == null      // no explicit value yet
+            ) {
+                setKey(key, defaultState)            // bake in the preference permanently
+            }
+        }
+        val merged = currentlySeen + keys
         setKey(SEEN_PROVIDERS_KEY, merged.joinToString(","))
     }
 
@@ -231,7 +258,9 @@ object Settings {
         val saved       = getKey<String>(PROVIDER_ORDER_KEY)
             ?.split(",")?.filter { it.isNotBlank() }
             ?: return allKnown
-        return saved + (allKnown - saved.toSet())
+        // Strip keys that no longer exist — removed built-in providers or deleted stremio addons
+        val validSaved = saved.filter { it in allKnown }
+        return validSaved + (allKnown - validSaved.toSet())
     }
 
     fun saveOrder(order: List<String>) =
@@ -317,3 +346,4 @@ object Settings {
     fun showSettingsDialog(context: Context, onSave: () -> Unit) =
         SettingsDialog.show(context, onSave)
 }
+
