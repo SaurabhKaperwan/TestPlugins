@@ -17,7 +17,6 @@ object Settings {
     const val PROVIDER_TMDB       = "ProviderTmdb"
     const val SHOWBOX_TOKEN_KEY        = "showbox_ui_token"
     const val STREMIO_ADDONS_KEY       = "stremio_addons"
-    const val STREMIO_DEFAULT_ON       = "stremio_addon_default_on"
     const val NEW_PROVIDER_DEFAULT_ON  = "new_provider_default_on"
     private const val COOKIE_KEY        = "nf_cookie"
     private const val TIMESTAMP_KEY     = "nf_cookie_timestamp"
@@ -189,15 +188,12 @@ object Settings {
         setKey(SEEN_PROVIDERS_KEY, merged.joinToString(","))
     }
 
-    /** Whether a stremio addon should be ON by default when first added. */
-    fun stremioDefaultOn(): Boolean = getKey<Boolean>(STREMIO_DEFAULT_ON) ?: true
-
     fun enabled(key: String): Boolean {
         // 1. Explicit user choice always wins
         val explicit = getKey<Boolean>(key)
         if (explicit != null) return explicit
-        // 2. Stremio addons follow their own default preference
-        if (key.startsWith("stremio_")) return stremioDefaultOn()
+        // 2. Stremio addons are always on by default
+        if (key.startsWith("stremio_")) return true
         // 3. Torrent keys are always off by default
         if (key in TORRENT_KEYS) return false
         // 4. Unseen built-in providers respect the new-provider preference

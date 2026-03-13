@@ -678,7 +678,7 @@ internal object SettingsDialog {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             noteCol.addView(TextView(context).apply {
-                text = "IMDB IDs Required"; textSize = 12f
+                text = "Only IMDB Supported Addons"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(Color.parseColor("#60A5FA"))
             })
             noteCol.addView(TextView(context).apply {

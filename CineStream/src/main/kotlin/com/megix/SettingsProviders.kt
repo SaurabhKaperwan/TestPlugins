@@ -53,10 +53,6 @@ internal object SettingsProviders {
             Settings.markProvidersSeen(merged)
         }
 
-        // Resolve flags from pending or persisted state
-        fun stremioDefaultOnNow(): Boolean =
-            pendingChanges[Settings.STREMIO_DEFAULT_ON] as? Boolean ?: Settings.stremioDefaultOn()
-
         fun newProviderDefaultOnNow(): Boolean =
             pendingChanges[Settings.NEW_PROVIDER_DEFAULT_ON] as? Boolean ?: Settings.newProviderDefaultOn()
 
@@ -65,7 +61,7 @@ internal object SettingsProviders {
         fun providerEnabled(key: String): Boolean {
             val explicit = pendingChanges[key] as? Boolean ?: getKey<Boolean>(key)
             if (explicit != null) return explicit
-            if (key.startsWith("stremio_")) return stremioDefaultOnNow()
+            if (key.startsWith("stremio_")) return true
             if (key in Settings.TORRENT_KEYS) return false
             if (key !in seenProviders) return newProviderDefaultOnNow()
             return true
@@ -122,63 +118,6 @@ internal object SettingsProviders {
             order.clear(); order.addAll(Settings.DEFAULT_ORDER + stremioKeys); rebuild()
             Toast.makeText(context, "Order reset — tap Save to apply", Toast.LENGTH_SHORT).show()
         })
-
-        // Stremio default-on toggle — lives in its own row below the pill buttons
-        val stremioToggleRow = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity     = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.topMargin = 8.dp(context); it.bottomMargin = 2.dp(context) }
-            setPadding(4.dp(context), 6.dp(context), 4.dp(context), 6.dp(context))
-            background = GradientDrawable().apply {
-                cornerRadius = 10f.dp(context)
-                setColor(Color.parseColor("#0F1020"))
-                setStroke(1, Color.parseColor("#2A2D45"))
-            }
-
-            val col = LinearLayout(context).apply {
-                orientation  = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            col.addView(TextView(context).apply {
-                text = "🔌 New Stremio Addons — Default On"
-                textSize = 12f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(theme.TEXT_PRIMARY)
-            })
-            col.addView(TextView(context).apply {
-                text = "Newly added Stremio addons are enabled by default (including torrent type)"
-                textSize = 10f; setTextColor(theme.TEXT_SECONDARY)
-                setPadding(0, 2.dp(context), 0, 0)
-            })
-            addView(col)
-
-            val sw = Switch(context).apply {
-                isChecked = stremioDefaultOnNow()
-                isClickable = false; isFocusable = false; isFocusableInTouchMode = false
-                thumbTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(android.graphics.Color.WHITE, Color.parseColor("#9099B8"))
-                )
-                trackTintList = android.content.res.ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                    intArrayOf(Color.parseColor("#22D3EE"), theme.SWITCH_OFF)
-                )
-            }
-            addView(LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                isClickable = true; isFocusable = true; isFocusableInTouchMode = false
-                background = theme.stateDrawable(context)
-                addView(sw)
-                setOnClickListener {
-                    sw.isChecked = !sw.isChecked
-                    pendingChanges[Settings.STREMIO_DEFAULT_ON] = sw.isChecked
-                    // Rebuild rows so unset stremio addons flip their displayed state immediately
-                    rebuild()
-                }
-            })
-        }
 
         // New built-in provider default toggle
         val newProviderToggleRow = LinearLayout(context).apply {
@@ -240,7 +179,6 @@ internal object SettingsProviders {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
             addView(pillRow)
-            addView(stremioToggleRow)
             addView(newProviderToggleRow)
             addView(TextView(context).apply {
                 text      = "🧲 = off by default  ·  🔌 = Stremio addon  ·  ↑↓ or # = order"
