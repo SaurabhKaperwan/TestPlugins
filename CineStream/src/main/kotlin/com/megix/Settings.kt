@@ -186,13 +186,48 @@ object Settings {
     fun enabled(key: String): Boolean = getKey<Boolean>(key) ?: (key !in TORRENT_KEYS)
 
     fun getOrder(): List<String> {
+        // Stremio addon keys derived from current saved addons
+        val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+        val allKnown = DEFAULT_ORDER + stremioKeys
         val saved = getKey<String>(PROVIDER_ORDER_KEY)
             ?.split(",")?.filter { it.isNotBlank() }
-            ?: return DEFAULT_ORDER
-        return saved + (DEFAULT_ORDER - saved.toSet())
+            ?: return allKnown
+        // Append any new keys not yet in the saved order (new stremio addons or new built-ins)
+        return saved + (allKnown - saved.toSet())
     }
 
     fun saveOrder(order: List<String>) = setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
+
+    // Key for a stremio addon: "stremio_<name normalised>"
+    fun stremioAddonKey(name: String): String =
+        "stremio_${name.trim().lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')}"
+
+    // Display name for any provider key — stremio addons get a plug icon prefix
+    fun providerDisplayName(key: String): String {
+        PROVIDER_NAMES[key]?.let { return it }
+        if (key.startsWith("stremio_")) {
+            val addon = getStremioAddons().firstOrNull { stremioAddonKey(it.name) == key }
+            if (addon != null) {
+                val icon = when (addon.type) {
+                    AddonType.TORRENT -> "🧲"
+                    AddonType.DEBRID  -> "☁️"
+                    AddonType.HTTPS   -> "🔌"
+                }
+                return "$icon ${addon.name}"
+            }
+            // Fallback: humanise the key
+            return "🔌 " + key.removePrefix("stremio_").replace("_", " ")
+                .replaceFirstChar { it.uppercaseChar() }
+        }
+        return key
+    }
+
+    // True when the key belongs to a stremio addon of TORRENT type
+    fun isStremioTorrent(key: String): Boolean {
+        if (!key.startsWith("stremio_")) return false
+        return getStremioAddons().firstOrNull { stremioAddonKey(it.name) == key }
+            ?.type == AddonType.TORRENT
+    }
 
     // =========================================================
     // NETMIRROR COOKIE HELPERS
@@ -350,8 +385,8 @@ object Settings {
                     }
                 }
                 // Commit provider order (only now — NOT on every ↑/↓ tap)
+                commitAddons()   // addons written first so commitOrder can read them
                 commitOrder()
-                commitAddons()
                 if (requiresRestart) showRestartWarning(context, onSave) else onSave()
             }
             .setNegativeButton("Cancel", null) // pendingChanges discarded, order unchanged
@@ -729,11 +764,19 @@ object Settings {
         val rows  = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val order = getOrder().toMutableList()
 
-        // Register commit lambda — outer Save calls this to persist order
-        onRegisterCommit { saveOrder(order) }
+        // Register commit lambda — outer Save calls this to persist order.
+        // Also merges any stremio addon keys added during this session that
+        // aren't in the in-memory order list yet (new addons are committed by
+        // commitAddons right before commitOrder fires).
+        onRegisterCommit {
+            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+            val merged = order + (stremioKeys - order.toSet())
+            saveOrder(merged)
+        }
 
         fun providerEnabled(key: String): Boolean =
-            pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key) ?: (key !in TORRENT_KEYS))
+            pendingChanges[key] as? Boolean ?: (getKey<Boolean>(key)
+                ?: (key !in TORRENT_KEYS && !isStremioTorrent(key)))
 
         fun rebuild() {
             rows.removeAllViews()
@@ -741,11 +784,11 @@ object Settings {
                 if (i > 0) rows.addView(createDivider(context))
                 rows.addView(createProviderRow(
                     context        = context,
-                    label          = PROVIDER_NAMES[key] ?: key,
+                    label          = providerDisplayName(key),
                     key            = key,
                     index          = i + 1,
                     totalCount     = order.size,
-                    isTorrent      = key in TORRENT_KEYS,
+                    isTorrent      = key in TORRENT_KEYS || isStremioTorrent(key),
                     canMoveUp      = i > 0,
                     canMoveDown    = i < order.lastIndex,
                     pendingChanges = pendingChanges,
@@ -787,7 +830,8 @@ object Settings {
         // ↺ Reset Order — reset in-memory list only, no saveOrder()
         pillRow.addView(pillBtn(context, "↺ Reset Order", ACCENT_START,
             Color.parseColor("#1A1730"), Color.parseColor("#2E2850")) {
-            order.clear(); order.addAll(DEFAULT_ORDER); rebuild()
+            val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
+            order.clear(); order.addAll(DEFAULT_ORDER + stremioKeys); rebuild()
             Toast.makeText(context, "Order reset — tap Save to apply", Toast.LENGTH_SHORT).show()
         })
 
@@ -796,7 +840,7 @@ object Settings {
             setPadding(16.dp(context), 8.dp(context), 16.dp(context), 4.dp(context))
             addView(pillRow)
             addView(TextView(context).apply {
-                text = "🧲 = off by default  ·  ↑↓ or tap # = scraping order"
+                text = "🧲 = off by default  ·  🔌 = Stremio addon  ·  ↑↓ or # = order"
                 textSize = 10f; setTextColor(Color.parseColor("#44475A"))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT

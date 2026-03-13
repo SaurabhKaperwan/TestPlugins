@@ -45,16 +45,6 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        stremioAddons.forEach { addon ->
-            callback.invoke(
-                newExtractorLink(
-                    "${addon.name} ${addon.type}",
-                    "${addon.name} ${addon.type}",
-                    "${addon.url}"
-                )
-            )
-        }
-
         val providerMap: Map<String, suspend () -> Unit> = mapOf(
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  res.imdbId, res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, callback) },
@@ -124,7 +114,26 @@ object CineStreamExtractors : CineStreamProvider() {
             // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
         )
 
-        runLimitedAsync(concurrency = 7, *activeProviderOrder.mapNotNull { providerMap[it] }.toTypedArray())
+        val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
+        .associate { addon ->
+            val key = Settings.stremioAddonKey(addon.name)
+            key to suspend {
+                when (addon.type) {
+                    Settings.AddonType.TORRENT ->
+                        invokeStremioTorrents(addon.name, addon.url, res.imdbId, res.season, res.episode, callback)
+                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID ->
+                        invokeStremioStreams(addon.name, addon.url, res.imdbId, res.season, res.episode, subtitleCallback, callback)
+                }
+            }
+        }
+
+        val combined = providerMap + stremioMap
+
+        runLimitedAsync(
+            concurrency = 7,
+            *activeProviderOrder.mapNotNull { combined[it] }.toTypedArray()
+        )
+
     }
 
     suspend fun invokeAllAnimeSources(
