@@ -91,11 +91,10 @@ object Settings {
     const val P_ANIMEWORLD    = "p_animeworld"
     const val P_SHOWBOX       = "p_showbox"
 
-    const val P_HIANIME       = "p_hianime"
-    const val P_ANIMEPAHE     = "p_animepahe"
-    const val P_ANIMEZ        = "p_animez"
-    const val P_ANIMEKAI      = "p_animekai"
-
+    // const val P_HIANIME       = "p_hianime"
+    // const val P_ANIMEPAHE     = "p_animepahe"
+    // const val P_ANIMEZ        = "p_animez"
+    // const val P_ANIMEKAI      = "p_animekai"
 
     private const val PROVIDER_ORDER_KEY = "provider_order"
 
@@ -169,10 +168,11 @@ object Settings {
         P_GOJO          to "Animetsu",
         P_KISSKH        to "KissKH",
         P_DRAMAFULL     to "Dramafull",
-        P_HIANIME       to "Hianime",
-        P_ANIMEPAHE     to "AnimePahe",
-        P_ANIMEZ        to "AnimeZ",
-        P_ANIMEKAI      to "Animekai",
+
+        // P_HIANIME       to "Hianime",
+        // P_ANIMEPAHE     to "AnimePahe",
+        // P_ANIMEZ        to "AnimeZ",
+        // P_ANIMEKAI      to "Animekai",
     )
 
     val DEFAULT_ORDER: List<String> get() = PROVIDER_NAMES.keys.toList()
@@ -187,6 +187,18 @@ object Settings {
         getKey<String>(SEEN_PROVIDERS_KEY)
             ?.split(",")?.filter { it.isNotBlank() }?.toSet()
             ?: emptySet()
+
+    /**
+     * If the seen set is empty — first install OR reinstall/update wiped storage —
+     * we seed it with every provider that exists right now. This means all current
+     * providers are never treated as "new". Only keys that appear in DEFAULT_ORDER
+     * after this snapshot was saved are genuinely new in a future update.
+     */
+    fun initSeenProviders() {
+        if (getSeenProviders().isEmpty()) {
+            markProvidersSeen(DEFAULT_ORDER)
+        }
+    }
 
     /**
      * Call this on every Save so newly appeared keys become "seen".
