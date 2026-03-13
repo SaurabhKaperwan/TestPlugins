@@ -199,20 +199,34 @@ object Settings {
     fun initSeenProviders() {
         val stremioKeys = getStremioAddons().map { stremioAddonKey(it.name) }
         val allKnown    = (DEFAULT_ORDER + stremioKeys).toSet()
+        val currentSeen = getSeenProviders()
 
-        if (getSeenProviders().isEmpty()) {
+        if (currentSeen.isEmpty()) {
             // First install — seed without baking, natural defaults apply
             setKey(SEEN_PROVIDERS_KEY, allKnown.joinToString(","))
             return
         }
 
-        // Prune keys that no longer exist from the seen set
-        val prunedSeen = getSeenProviders().filter { it in allKnown }
-        setKey(SEEN_PROVIDERS_KEY, prunedSeen.joinToString(","))
+        val defaultState = newProviderDefaultOn()
 
-        // Remove explicit stored values for deleted providers so storage stays clean
-        val removedKeys = getSeenProviders() - allKnown
+        // Bake explicit value for any new provider the moment the plugin loads.
+        // This guarantees the user's preference is respected even if they never
+        // open Settings after an update.
+        allKnown.forEach { key ->
+            if (key !in currentSeen
+                && !key.startsWith("stremio_")
+                && key !in TORRENT_KEYS
+                && getKey<Boolean>(key) == null
+            ) {
+                setKey(key, defaultState)
+            }
+        }
+
+        // Prune removed provider keys from seen set and wipe their stored values
+        val removedKeys = currentSeen - allKnown
         removedKeys.forEach { setKey(it, null as Boolean?) }
+        val prunedSeen  = (currentSeen - removedKeys) + allKnown
+        setKey(SEEN_PROVIDERS_KEY, prunedSeen.joinToString(","))
     }
 
     /**
@@ -346,4 +360,5 @@ object Settings {
     fun showSettingsDialog(context: Context, onSave: () -> Unit) =
         SettingsDialog.show(context, onSave)
 }
+
 

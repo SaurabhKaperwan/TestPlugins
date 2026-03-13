@@ -4345,7 +4345,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+        Gson().fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -4395,7 +4395,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$api/subtitles/movie/$imdbId.json"
         }
 
-        val json = app.get(url).text
+        val json = app.get(url, timeout = 1000L).text
         val subtitleResponse = Gson().fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
@@ -4426,7 +4426,7 @@ object CineStreamExtractors : CineStreamProvider() {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        val res = app.get(url, timeout = 200L).parsedSafe<TorrentioResponse>()
+        val res = app.get(url, timeout = 1000L).parsedSafe<TorrentioResponse>()
 
         res?.streams?.forEach { stream ->
 
