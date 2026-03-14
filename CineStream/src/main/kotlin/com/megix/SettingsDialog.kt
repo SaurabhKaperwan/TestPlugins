@@ -58,20 +58,9 @@ internal object SettingsDialog {
         // ShowBox token card
         layout.addView(buildShowboxTokenCard(context, pending))
 
-        // Restart banner (hidden until catalog toggle fires)
-        val restartBanner = buildRestartBanner(context).also { it.visibility = View.GONE }
-
         // Active catalogs card
         val onCatalogChanged: () -> Unit = {
             requireRestart = true
-            if (restartBanner.visibility == View.GONE) {
-                restartBanner.visibility = View.VISIBLE
-                restartBanner.alpha      = 0f
-                restartBanner.translationY = (-12f).dp(context)
-                restartBanner.animate()
-                    .alpha(1f).translationY(0f)
-                    .setDuration(350).setInterpolator(DecelerateInterpolator()).start()
-            }
         }
         layout.addView(buildCollapsibleCard(context, "📡  Active Catalogs",
             accentA = Color.parseColor("#10B981"), accentB = Color.parseColor("#059669")) {
@@ -84,8 +73,6 @@ internal object SettingsDialog {
             addView(buildToggleRow(context, "CineTmdb", "TMDB catalog",
                 Settings.PROVIDER_TMDB, true, pending, onCatalogChanged))
         })
-
-        layout.addView(restartBanner)
 
         // Providers card (delegated)
         layout.addView(SettingsProviders.buildCard(context, pending) { commit -> commitOrder = commit })
@@ -682,7 +669,7 @@ internal object SettingsDialog {
                 setTypeface(null, android.graphics.Typeface.BOLD); setTextColor(Color.parseColor("#60A5FA"))
             })
             noteCol.addView(TextView(context).apply {
-                text = "Only addons that support IMDB IDs are compatible & no catalog addons are supported"
+                text = "Only addons that have support of IMDB & No catalog addons are supported"
                 textSize = 11f; setTextColor(Color.parseColor("#93C5FD")); setPadding(0, 3.dp(context), 0, 0)
             })
             noteCol.addView(TextView(context).apply {

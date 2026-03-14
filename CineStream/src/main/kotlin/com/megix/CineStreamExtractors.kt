@@ -156,15 +156,16 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_ANIMETOSHO    to { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            Settings.P_ALLANIME      to { invokeAllanime(res.title, res.year, res.episode, subtitleCallback, callback) },
+            Settings.P_ALLANIME      to { invokeAllanime(res.originalTitle, res.year, res.episode, subtitleCallback, callback) },
             Settings.P_SUDATCHI      to { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             Settings.P_WYZIESUBS     to { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             Settings.P_STREMIOSUBS   to { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.title, res.episode, subtitleCallback, callback) },
-            Settings.P_ANIZONE       to { invokeAnizone(res.title, res.episode, subtitleCallback, callback) },
+            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.originalTitle, res.episode, subtitleCallback, callback) },
+            Settings.P_ANIZONE       to { invokeAnizone(res.originalTitle, res.episode, subtitleCallback, callback) },
+            Settings.P_ANIMEZ        to { invokeAnimez(res.title, res.episode, callback) },
             Settings.P_ANIMES        to { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             Settings.P_CINEMACITY    to { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
-            Settings.P_GOJO          to { invokeGojo(res.imdbTitle, res.anilistId, res.episode, subtitleCallback, callback) },
+            Settings.P_GOJO          to { invokeGojo(res.title, res.anilistId, res.episode, subtitleCallback, callback) },
             Settings.P_TOONSTREAM    to { invokeToonstream(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_BOLLYWOOD     to { invokeBollywood(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, callback) },
             Settings.P_NETFLIX       to { invokeNetflix(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -3358,7 +3359,9 @@ object CineStreamExtractors : CineStreamProvider() {
                                 "platformstr" to "android_c",
                                 "Referer" to "https://allmanga.to"
                             )
+
                         val sourceUrl = source.sourceUrl
+
                         if (sourceUrl.startsWith("http")) {
                             val sourcename = sourceUrl.getHost()
                             loadCustomExtractor(
@@ -3369,6 +3372,21 @@ object CineStreamExtractors : CineStreamProvider() {
                                 callback,
                             )
                         }
+                        else if (URI(sourceUrl).isAbsolute || sourceUrl.startsWith("//")) {
+                            val fixedLink = if (sourceUrl.startsWith("//")) "https:$sourceUrl" else sourceUrl
+                            val host = fixedLink.getHost()
+
+                            loadCustomExtractor(
+                                "Allanime [$host]  [${lang.uppercase()}]",
+                                fixedLink,
+                                "",
+                                subtitleCallback,
+                                callback
+                            )
+
+                            return@safeApiCall
+                        }
+
                         else {
                             val decodedlink = if (sourceUrl.startsWith("--"))
                             {
