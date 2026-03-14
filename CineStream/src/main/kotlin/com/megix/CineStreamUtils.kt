@@ -25,7 +25,7 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
-import kotlin.math.sqrt
+import kotlin.math.max
 import kotlin.random.Random
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -45,6 +45,8 @@ import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
 
 import android.util.Base64
+
+import okhttp3.*
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
@@ -926,94 +928,124 @@ suspend fun bypassHrefli(url: String): String? {
 }
 
 //XDM
-suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
+suspend fun bypassXDM(url: String): String? {
 
     fun generateFingerprint(): String {
         val hex = "0123456789abcdef"
         return (1..32).map { hex[Random.nextInt(hex.length)] }.joinToString("")
     }
 
-    fun generateMouseData(): Map<String, Any> {
-        val duration = Random.nextInt(4000, 12000)
-        val moveCount = Random.nextInt(20, 80)
-        val eventCount = moveCount + Random.nextInt(0, 5)
-        val clickCount = 0
-        val totalDistance = Random.nextInt(400, 1500)
-
+    fun mouseData(ms: Long, phase: Int): Map<String, Any> {
+        val steps = max(6, (max(1000L, ms) / 1000).toInt())
         return mapOf(
-            "eventCount" to eventCount,
-            "moveCount" to moveCount,
-            "clickCount" to clickCount,
-            "totalDistance" to totalDistance,
-            "hasMovement" to (moveCount > 0),
-            "duration" to duration
+            "eventCount"    to 12 + (steps * 2) + phase,
+            "moveCount"     to 8 + steps + phase,
+            "clickCount"    to minOf(3, phase + 1),
+            "totalDistance" to 180 + (steps * 90),
+            "hasMovement"   to true,
+            "duration"      to max(1000L, ms)
         )
     }
 
-    if(url.contains("hubcloud")) return url
+    suspend fun trackSocket(socketUrl: String, baseUrl: String, cookies: String, token: String) {
+        suspendCancellableCoroutine { cont ->
+            val ws = app.baseClient.newWebSocket(
+                Request.Builder().url(socketUrl)
+                    .addHeader("Cookie", cookies)
+                    .addHeader("Origin", baseUrl).build(),
+                object : WebSocketListener() {
+                    var started = 0L
+                    var done = false
 
-    val link = app.get(
-        url,
-        allowRedirects = false,
-        timeout = 600L
-    ).headers["location"] ?: return null
+                    override fun onMessage(ws: WebSocket, text: String) {
+                        when {
+                            text.startsWith("0") -> ws.send("40")
+                            text == "2" -> ws.send("3")
+                            text.startsWith("40") && started == 0L -> {
+                                started = System.currentTimeMillis()
+                                ws.send("""42["bind","$token"]""")
+                                ws.send("""42["visibility","visible"]""")
+                                Thread {
+                                    while (!done) {
+                                        Thread.sleep(1000)
+                                        val elapsed = max(1000L, System.currentTimeMillis() - started)
+                                        ws.send("""42["heartbeat"]""")
+                                        ws.send("""42["visibility","visible"]""")
+                                        ws.send("""42["mouseActivity",${JSONObject(mouseData(elapsed, 2))}]""")
+                                    }
+                                }.start()
+                                Thread.sleep(15_000L)
+                                if (!done) { done = true; ws.close(1000, null); cont.resume(Unit) }
+                            }
+                        }
+                    }
 
-    if(link.contains("hubcloud")) return link
+                    override fun onFailure(ws: WebSocket, t: Throwable, r: Response?) {
+                        if (!done) { done = true; cont.resumeWithException(t) }
+                    }
+                }
+            )
+            cont.invokeOnCancellation { ws.close(1000, null) }
+        }
+    }
+
+    if (url.contains("hubcloud")) return url
+
+    val link = app.get(url, allowRedirects = false, timeout = 600L)
+        .headers["location"] ?: return null
+    if (link.contains("hubcloud")) return link
 
     val baseUrl = getBaseUrl(link)
-    val id = link.substringAfterLast("/")
+    val id = link.substringAfterLast("/").ifEmpty { return null }
+    val fingerprint = generateFingerprint()
+    val socketUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/socket.io/?EIO=4&transport=websocket"
 
-    if (id.isEmpty()) return null
-
-    val response = app.post(
+    // ── Session ──────────────────────────────────────────────────────────────
+    val sessionRes = app.post(
         "$baseUrl/api/session",
-        headers = mapOf("Content-Type" to "application/json"),
-        json = mapOf(
-            "code" to id,
-            "fingerprint" to generateFingerprint(),
-            "mouseData" to generateMouseData()
-        )
+        headers = mapOf("Content-Type" to "application/json", "Referer" to link, "Origin" to baseUrl),
+        json = mapOf("code" to id, "fingerprint" to fingerprint, "mouseData" to mouseData(2500L, 1))
     )
+    val cookies = "sid=${sessionRes.cookies["sid"]}"
+    val session = runCatching { JSONObject(sessionRes.text) }.getOrNull() ?: return null
+    val sessionId = session.optString("sessionId").ifEmpty { return null }
+    val token1    = session.optString("token").ifEmpty { return null }
 
-    val responseText = response.text
+    // ── WebSocket 1 ──────────────────────────────────────────────────────────
+    trackSocket(socketUrl, baseUrl, cookies, token1)
 
-    val json = try {
-        JSONObject(responseText)
-    } catch (e: Exception) {
-        return null
-    }
+    // ── Step 2 ───────────────────────────────────────────────────────────────
+    val step2Url = "$baseUrl/r/$id?step=2&sid=$sessionId"
+    app.get(step2Url, headers = mapOf("Cookie" to cookies, "Referer" to link))
 
-    val sid = response.cookies["sid"]
-
-    callback.invoke(
-        newExtractorLink(
-            "sid",
-            "sid",
-            "$sid",
-        )
+    // ── Rebind ───────────────────────────────────────────────────────────────
+    val rebindRes = app.post(
+        "$baseUrl/api/session/rebind",
+        json = mapOf("fingerprint" to fingerprint),
+        headers = mapOf("Cookie" to cookies, "Referer" to step2Url, "Origin" to baseUrl)
     )
+    val token2 = runCatching { JSONObject(rebindRes.text).optString("token") }.getOrNull()
+        .orEmpty().ifEmpty { return null }
 
-    val sessionId = json.optString("sessionId")
-    val token = json.optString("token")
+    // ── WebSocket 2 ──────────────────────────────────────────────────────────
+    trackSocket(socketUrl, baseUrl, cookies, token2)
 
-    if (sessionId.isEmpty() || token.isEmpty()) return null
+    // ── Complete ─────────────────────────────────────────────────────────────
+    val completeRes = app.post(
+        "$baseUrl/api/session/complete",
+        json = mapOf("fingerprint" to fingerprint, "mouseData" to mouseData(32500L, 3), "honeypot" to ""),
+        headers = mapOf("Cookie" to cookies, "Referer" to step2Url, "Origin" to baseUrl)
+    )
+    val finalToken = runCatching { JSONObject(completeRes.text).optString("token") }.getOrNull()
+        .orEmpty().ifEmpty { return null }
 
-    val source = app.get(
-        "$baseUrl/go/$sessionId?t=$token",
+    // ── Final URL ─────────────────────────────────────────────────────────────
+    return app.get(
+        "$baseUrl/go/$sessionId?t=$finalToken",
         timeout = 600L,
-        headers = mapOf("Cookie" to "sid=$sid"),
-        allowRedirects = false
-    ).headers["location"] ?: return null
-
-    callback.invoke(
-        newExtractorLink(
-            "source",
-            "source",
-            "$source",
-        )
-    )
-
-    return source
+        allowRedirects = false,
+        headers = mapOf("Cookie" to cookies, "Referer" to step2Url)
+    ).headers["location"]
 }
 
 suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
