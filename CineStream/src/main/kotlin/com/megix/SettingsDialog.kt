@@ -685,6 +685,10 @@ internal object SettingsDialog {
                 text = "Only addons that support IMDB IDs are compatible & no catalog addons are supported"
                 textSize = 11f; setTextColor(Color.parseColor("#93C5FD")); setPadding(0, 3.dp(context), 0, 0)
             })
+            noteCol.addView(TextView(context).apply {
+                text = "💡 Tap the type badge on each addon to cycle between HTTPS → TORRENT → DEBRID → SUBTITLE"
+                textSize = 11f; setTextColor(Color.parseColor("#7DD3FC")); setPadding(0, 6.dp(context), 0, 0)
+            })
             addView(noteCol)
         }
 

@@ -3231,6 +3231,7 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = "$anizoneAPI/anime?search=$title"
+
         val link = app.get(url).document.select("div.truncate > a").firstOrNull {
             it.text().contains(title.toString(), ignoreCase = true)
         }?.attr("href") ?: return
