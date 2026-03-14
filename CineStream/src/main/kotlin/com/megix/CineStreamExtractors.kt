@@ -4515,35 +4515,37 @@ object CineStreamExtractors : CineStreamProvider() {
             obj.optString("name") to obj.optString("hash")
         }
 
-        callback.invoke(
-            newExtractorLink(
-                "VidsrcCC",
-                "VidsrcCC",
-                servers.toString()
-            )
-        )
-
         try {
             servers["VidPlay"]?.let { hash ->
-                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
-                val streams = data.optJSONArray("data") ?: return@let
-                for (i in 0 until streams.length()) {
-                    val streamUrl = streams.getJSONObject(i).optString("file").ifEmpty { return@let }
-                    callback.invoke(
-                        newExtractorLink(
-                            "VidsrcCC[VidPlay]",
-                            "VidsrcCC[VidPlay]",
-                            streamUrl,
-                            ExtractorLinkType.M3U8
-                        ) {
-                            this.headers = headers
-                            this.quality = 1080
-                        }
-                    )
-                }
+                val jsonResponse = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val dataObject = jsonResponse.optJSONObject("data") ?: return@let
+                val streamUrl = dataObject.optString("source")
+                if(streamUrl.isNullOrBlank()) return@let
+
+                callback.invoke(
+                    newExtractorLink(
+                        "VidsrcCC [VidPlay]",
+                        "VidsrcCC [VidPlay]",
+                        streamUrl,
+                        ExtractorLinkType.M3U8
+                    ) {
+                        this.headers = headers
+                        this.quality = 1080
+                    }
+                )
             }
         } catch (e: Exception) {
-            Log.w("VidsrcCC", "Failed to extract server: VidPlay", e)
+            Log.w("Vidsrc", "Failed to extract server: VidPlay", e)
+        }
+
+        try {
+            servers["UpCloud"]?.let { hash ->
+                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val dataObject = data.optJSONObject("data") ?: return@let
+                val iframeUrl = dataObject.optString("source")
+                VidsrcEmbed(iframeUrl, vidsrcCCAPI, callback)
+        } catch (e: Exception) {
+            Log.w("Vidsrc", "Failed to extract server: UpCloud", e)
         }
     }
 
