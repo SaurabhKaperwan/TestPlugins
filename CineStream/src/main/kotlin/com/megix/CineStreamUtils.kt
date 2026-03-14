@@ -25,6 +25,7 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.Mac
 import com.lagradost.cloudstream3.runAllAsync
 import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -927,6 +928,28 @@ suspend fun bypassHrefli(url: String): String? {
 //XDM
 suspend fun bypassXDM(url: String): String? {
 
+    fun generateFingerprint(): String {
+        val hex = "0123456789abcdef"
+        return (1..32).map { hex[Random.nextInt(hex.length)] }.joinToString("")
+    }
+
+    fun generateMouseData(): Map<String, Any> {
+        val duration = Random.nextInt(4000, 12000)
+        val moveCount = Random.nextInt(20, 80)
+        val eventCount = moveCount + Random.nextInt(0, 5)
+        val clickCount = 0
+        val totalDistance = Random.nextInt(400, 1500)
+
+        return mapOf(
+            "eventCount" to eventCount,
+            "moveCount" to moveCount,
+            "clickCount" to clickCount,
+            "totalDistance" to totalDistance,
+            "hasMovement" to (moveCount > 0),
+            "duration" to duration
+        )
+    }
+
     if(url.contains("hubcloud")) return url
 
     val link = app.get(
@@ -944,7 +967,12 @@ suspend fun bypassXDM(url: String): String? {
 
     val responseText = app.post(
         "$baseUrl/api/session",
-        json = mapOf("code" to id)
+        headers = mapOf("Content-Type" to "application/json"),
+        json = mapOf(
+            "code" to id,
+            "fingerprint" to generateFingerprint(),
+            "mouseData" to generateMouseData()
+        )
     ).text
 
     val json = try {

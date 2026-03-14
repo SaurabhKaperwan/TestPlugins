@@ -848,15 +848,19 @@ object CineStreamExtractors : CineStreamProvider() {
                 origin = headers.optString("Origin", "")
             }
 
-            M3u8Helper.generateM3u8(
-                "Vidflix",
-                file,
-                "$referer/",
-                headers = mapOf(
-                    "Referer" to "$referer/",
-                    "Origin" to origin
-                )
-            ).forEach(callback)
+            callback.invoke(
+                newExtractorLink(
+                    "Vidflix",
+                    "Vidflix",
+                    file,
+                    ExtractorLinkType.M3U8
+                ) {
+                    this.headers = mapOf(
+                        "Referer" to referer,
+                        "Origin" to origin
+                    )
+                }
+            )
         }
     }
 
