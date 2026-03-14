@@ -1463,7 +1463,7 @@ object CineStreamExtractors : CineStreamProvider() {
             document.select("div.download-item a").safeAmap { source ->
                 var link = source.attr("href")
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@safeAmap
+                    link = bypassXDM(link, callback) ?: return@safeAmap
                 }
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
