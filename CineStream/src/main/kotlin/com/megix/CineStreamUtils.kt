@@ -14,6 +14,7 @@ import com.lagradost.nicehttp.RequestBodyTypes
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import kotlin.coroutines.resumeWithException
 
 import org.json.JSONObject
 import org.json.JSONArray
@@ -985,7 +986,7 @@ suspend fun bypassXDM(url: String): String? {
                     }
                 }
             )
-            cont.invokeOnCancellation { ws.close(1000, null) }
+            cont.invokeOnCancellation { _ -> ws.close(1000, null) }
         }
     }
 
