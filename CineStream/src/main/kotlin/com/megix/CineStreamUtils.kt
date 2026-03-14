@@ -949,48 +949,51 @@ suspend fun bypassXDM(url: String): String? {
     }
 
     suspend fun trackSocket(socketUrl: String, baseUrl: String, cookies: String, token: String) {
-        suspendCancellableCoroutine { cont ->
-            val ws = app.baseClient.newWebSocket(
-                Request.Builder().url(socketUrl)
-                    .addHeader("Cookie", cookies)
-                    .addHeader("Origin", baseUrl).build(),
-                object : WebSocketListener() {
-                    var started = 0L
-                    var done = false
+        val wsRef = arrayOfNulls<WebSocket>(1)
+        try {
+            suspendCancellableCoroutine { cont ->
+                val ws = app.baseClient.newWebSocket(
+                    Request.Builder().url(socketUrl)
+                        .addHeader("Cookie", cookies)
+                        .addHeader("Origin", baseUrl).build(),
+                    object : WebSocketListener() {
+                        var started = 0L
+                        var done = false
 
-                    override fun onMessage(ws: WebSocket, text: String) {
-                        when {
-                            text.startsWith("0") -> ws.send("40")
-                            text == "2" -> ws.send("3")
-                            text.startsWith("40") && started == 0L -> {
-                                started = System.currentTimeMillis()
-                                ws.send("""42["bind","$token"]""")
-                                ws.send("""42["visibility","visible"]""")
-
-                                Thread {
-                                    while (!done) {
-                                        Thread.sleep(1000)
-                                        val elapsed = max(1000L, System.currentTimeMillis() - started)
-                                        ws.send("""42["heartbeat"]""")
-                                        ws.send("""42["visibility","visible"]""")
-                                        ws.send("""42["mouseActivity",${JSONObject(mouseData(elapsed, 2))}]""")
-                                    }
-                                }.start()
-
-                                Thread {
-                                    Thread.sleep(15_000L)
-                                    if (!done) { done = true; ws.close(1000, null); cont.resume(Unit) }
-                                }.start()
+                        override fun onMessage(ws: WebSocket, text: String) {
+                            wsRef[0] = ws
+                            when {
+                                text.startsWith("0") -> ws.send("40")
+                                text == "2" -> ws.send("3")
+                                text.startsWith("40") && started == 0L -> {
+                                    started = System.currentTimeMillis()
+                                    ws.send("""42["bind","$token"]""")
+                                    ws.send("""42["visibility","visible"]""")
+                                    Thread {
+                                        while (!done) {
+                                            Thread.sleep(1000)
+                                            val elapsed = max(1000L, System.currentTimeMillis() - started)
+                                            ws.send("""42["heartbeat"]""")
+                                            ws.send("""42["visibility","visible"]""")
+                                            ws.send("""42["mouseActivity",${JSONObject(mouseData(elapsed, 2))}]""")
+                                        }
+                                    }.start()
+                                    Thread {
+                                        Thread.sleep(15_000L)
+                                        if (!done) { done = true; ws.close(1000, null); cont.resume(Unit) }
+                                    }.start()
+                                }
                             }
                         }
-                    }
 
-                    override fun onFailure(ws: WebSocket, t: Throwable, r: Response?) {
-                        if (!done) { done = true; cont.resumeWithException(t) }
+                        override fun onFailure(ws: WebSocket, t: Throwable, r: Response?) {
+                            if (!done) { done = true; cont.resumeWithException(t) }
+                        }
                     }
-                }
-            )
-            cont.invokeOnCancellation { cause -> ws.close(1000, null) }
+                )
+            }
+        } finally {
+            wsRef[0]?.close(1000, null)
         }
     }
 
