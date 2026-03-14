@@ -143,6 +143,15 @@ object CineStreamExtractors : CineStreamProvider() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
+
+        callback.invoke(
+            newExtractorLink(
+                "Anime",
+                "Anime",
+                res.toString(),
+            )
+        )
+
         val providerMap: Map<String, suspend () -> Unit> = mapOf(
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
@@ -838,19 +847,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 origin = headers.optString("Origin", "")
             }
 
-            callback.invoke(
-                newExtractorLink(
-                    "Vidflix",
-                    "Vidflix",
-                    file,
-                    ExtractorLinkType.M3U8
-                ) {
-                    this.headers = mapOf(
-                        "Referer" to referer,
-                        "Origin" to origin
-                    )
-                }
-            )
+            M3u8Helper.generateM3u8(
+                "Vidflix",
+                file,
+                "$referer/",
+                headers = mapOf(
+                    "Referer" to "$referer/",
+                    "Origin" to origin
+                )
+            ).forEach(callback)
         }
     }
 
@@ -1632,7 +1637,7 @@ object CineStreamExtractors : CineStreamProvider() {
         if (aniId == null) return
 
         val episodeNumber = episode ?: 1
-        val gojoAPI = gojoBaseAPI.replace("https://", "https://b.")
+        val gojoAPI = "$gojoBaseAPI/v2"
         val headers = mapOf(
             "Referer" to "$gojoBaseAPI/",
             "Origin" to gojoBaseAPI

@@ -138,13 +138,13 @@ internal object SettingsProviders {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             col.addView(TextView(context).apply {
-                text = "🆕 New Built-in Providers — Default On"
+                text = "🆕 New Built-in Providers"
                 textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(theme.TEXT_PRIMARY)
             })
             col.addView(TextView(context).apply {
-                text = "When a provider is added in a plugin update, enable it automatically"
+                text = "When a new provider is added enable it automatically"
                 textSize = 10f; setTextColor(theme.TEXT_SECONDARY)
                 setPadding(0, 2.dp(context), 0, 0)
             })
