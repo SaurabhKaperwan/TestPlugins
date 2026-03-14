@@ -105,6 +105,7 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_HDMOVIE2      to { if (!res.isAnime) invokeHdmovie2(res.title, res.airedYear, res.episode, subtitleCallback, callback) },
             Settings.P_MOSTRAGUARDA  to { if (res.season == null) invokeMostraguarda(res.imdbId, subtitleCallback, callback) },
             Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subtitleCallback, callback) },
+            Settings.P_VIDSRCCC      to { invokeVidsrcCC(res.imdbId, res.season, res.episode, callback) },
             // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
             // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
             // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
@@ -186,6 +187,7 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_PRIMESRC      to { invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
             Settings.P_UHDMOVIES     to { invokeUhdmovies(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, callback, subtitleCallback) },
             Settings.P_SHOWBOX       to { if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
+            Settings.P_VIDSRCCC      to { invokeVidsrcCC(res.imdbId, res.imdbSeason, res.imdbEpisode, callback) },
         )
 
         val stremioMap: Map<String, suspend () -> Unit> = Settings.getStremioAddons()
@@ -4469,4 +4471,80 @@ object CineStreamExtractors : CineStreamProvider() {
             )
         }
     }
+
+    suspend fun invokeVidsrcCC(
+        imdbId: String? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "User-Agent" to USER_AGENT,
+            "Referer"    to "$vidsrcCCAPI/"
+        )
+
+        val type = if (season == null) "movie" else "tv"
+
+        val embedUrl = if (season != null && episode != null)
+            "$vidsrcCCAPI/v2/embed/$type/$imdbId/$season/$episode"
+        else
+            "$vidsrcCCAPI/v2/embed/$type/$imdbId"
+
+        val html = app.get(embedUrl, headers = headers).text
+
+        val v       = Regex("""var v = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
+        val userId  = Regex("""var userId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
+        val movieId = Regex("""var movieId = "(.*?)";""").find(html)?.groupValues?.get(1) ?: return
+
+        val encrypted = JSONObject(
+            app.get("$multiDecryptAPI/enc-vidsrc?user_id=$userId&movie_id=$movieId").text
+        ).optString("result").ifEmpty { return }
+
+        val serversUrl = buildString {
+            append("$vidsrcCCAPI/api/$movieId/servers")
+            append("?id=$movieId&type=$type&v=$v&vrf=$encrypted&imdbId=$imdbId")
+            if (season  != null) append("&season=$season")
+            if (episode != null) append("&episode=$episode")
+        }
+
+        val serversData  = JSONObject(app.get(serversUrl, headers = headers).text)
+        val serversArray = serversData.optJSONArray("data") ?: return
+
+        val servers = (0 until serversArray.length()).associate {
+            val obj = serversArray.getJSONObject(it)
+            obj.optString("name") to obj.optString("hash")
+        }
+
+        callback.invoke(
+            newExtractorLink(
+                "VidsrcCC",
+                "VidsrcCC",
+                servers.toString()
+            )
+        )
+
+        try {
+            servers["VidPlay"]?.let { hash ->
+                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val streams = data.optJSONArray("data") ?: return@let
+                for (i in 0 until streams.length()) {
+                    val streamUrl = streams.getJSONObject(i).optString("file").ifEmpty { return@let }
+                    callback.invoke(
+                        newExtractorLink(
+                            "VidsrcCC[VidPlay]",
+                            "VidsrcCC[VidPlay]",
+                            streamUrl,
+                            ExtractorLinkType.M3U8
+                        ) {
+                            this.headers = headers
+                            this.quality = 1080
+                        }
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("VidsrcCC", "Failed to extract server: VidPlay", e)
+        }
+    }
+
 }
