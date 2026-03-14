@@ -986,28 +986,43 @@ suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
 
     if (sessionId.isEmpty() || token.isEmpty()) return null
 
-    var source: String? = null
-    var attempts = 0
-    val maxAttempts = 10
+    // var source: String? = null
+    // var attempts = 0
+    // val maxAttempts = 10
 
-    while (source == null && attempts < maxAttempts) {
-        source = app.get(
-            "$baseUrl/go/$sessionId?t=$token",
-            timeout = 600L,
-            allowRedirects = false
-        ).headers["location"]
+    // while (source == null && attempts < maxAttempts) {
+    //     source = app.get(
+    //         "$baseUrl/go/$sessionId?t=$token",
+    //         timeout = 600L,
+    //         allowRedirects = false
+    //     ).headers["location"]
 
-        if (source == null) {
-            attempts++
-            delay(3000L)
-        }
-    }
+    //     if (source == null) {
+    //         attempts++
+    //         delay(3000L)
+    //     }
+    // }
 
-    // val source = app.get(
-    //     "$baseUrl/go/$sessionId?t=$token",
-    //     timeout = 600L,
-    //     allowRedirects = false
-    // ).headers["location"] ?: return null
+    val response = app.get(
+        "$baseUrl/go/$sessionId?t=$token",
+        timeout = 600L,
+        allowRedirects = false
+    ).text
+
+    callback.invoke(
+        newExtractorLink(
+            "response",
+            "response",
+            "$response",
+        )
+    )
+
+
+    val source = app.get(
+        "$baseUrl/go/$sessionId?t=$token",
+        timeout = 600L,
+        allowRedirects = false
+    ).headers["location"] ?: return null
 
     callback.invoke(
         newExtractorLink(

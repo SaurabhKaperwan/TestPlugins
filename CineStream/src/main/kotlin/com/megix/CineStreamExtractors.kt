@@ -144,14 +144,6 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
 
-        callback.invoke(
-            newExtractorLink(
-                "Anime",
-                "Anime",
-                res.toString(),
-            )
-        )
-
         val providerMap: Map<String, suspend () -> Unit> = mapOf(
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
