@@ -4544,6 +4544,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val dataObject = data.optJSONObject("data") ?: return@let
                 val iframeUrl = dataObject.optString("source")
                 VidsrcEmbed(iframeUrl, vidsrcCCAPI, callback)
+            }
         } catch (e: Exception) {
             Log.w("Vidsrc", "Failed to extract server: UpCloud", e)
         }
