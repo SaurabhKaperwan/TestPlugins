@@ -1666,11 +1666,11 @@ suspend fun VidsrcEmbed(
 ) {
     val htmlIframe = app.get(url, referer = referer).text
     val sourceRegex = Regex("""var\s+source\s*=\s*"([^"]+)\"""")
-    val sourceEncoded = sourceRegex.find(htmlIframe)?.groupValues?.get(1) ?: return null
+    val sourceEncoded = sourceRegex.find(htmlIframe)?.groupValues?.get(1) ?: return
     val sourceUnescaped = JSONTokener("\"$sourceEncoded\"").nextValue().toString()
     val parsedUrl = URI(sourceUnescaped)
     val domain = parsedUrl.host
-    val embedType = parsedUrl.path.split("/").getOrNull(1) ?: return null
+    val embedType = parsedUrl.path.split("/").getOrNull(1) ?: return
 
     val sourceHeaders = mapOf(
         "User-Agent" to USER_AGENT,
@@ -1681,7 +1681,7 @@ suspend fun VidsrcEmbed(
     val htmlSource = app.get(sourceUnescaped, headers = sourceHeaders).text
 
     val videoIdRegex = Regex("""<title>File\s+#([A-Za-z0-9]+)\s*-""")
-    val videoId = videoIdRegex.find(htmlSource)?.groupValues?.get(1) ?: return null
+    val videoId = videoIdRegex.find(htmlSource)?.groupValues?.get(1) ?: return
 
     val tripleNonceRegex = Regex("""\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b""", RegexOption.DOT_MATCHES_ALL)
     val singleNonceRegex = Regex("""\b[a-zA-Z0-9]{48}\b""")
@@ -1691,7 +1691,7 @@ suspend fun VidsrcEmbed(
 
     val nonce = if (tripleMatch != null) {
         tripleMatch.groupValues[1] + tripleMatch.groupValues[2] + tripleMatch.groupValues[3]
-    } else singleMatch?.value ?: return null
+    } else singleMatch?.value ?: return
 
     val api = "https://$domain/$embedType/v3/e-1/getSources?id=$videoId&_k=$nonce"
     val streamsData = app.get(api, headers = sourceHeaders).text
