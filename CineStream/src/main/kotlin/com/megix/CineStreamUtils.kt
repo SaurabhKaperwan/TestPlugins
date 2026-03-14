@@ -966,6 +966,7 @@ suspend fun bypassXDM(url: String): String? {
                                 started = System.currentTimeMillis()
                                 ws.send("""42["bind","$token"]""")
                                 ws.send("""42["visibility","visible"]""")
+
                                 Thread {
                                     while (!done) {
                                         Thread.sleep(1000)
@@ -975,8 +976,11 @@ suspend fun bypassXDM(url: String): String? {
                                         ws.send("""42["mouseActivity",${JSONObject(mouseData(elapsed, 2))}]""")
                                     }
                                 }.start()
-                                Thread.sleep(15_000L)
-                                if (!done) { done = true; ws.close(1000, null); cont.resume(Unit) }
+
+                                Thread {
+                                    Thread.sleep(15_000L)
+                                    if (!done) { done = true; ws.close(1000, null); cont.resume(Unit) }
+                                }.start()
                             }
                         }
                     }
@@ -986,7 +990,7 @@ suspend fun bypassXDM(url: String): String? {
                     }
                 }
             )
-            cont.invokeOnCancellation { _ -> ws.close(1000, null) }
+            cont.invokeOnCancellation { cause -> ws.close(1000, null) }
         }
     }
 
@@ -1001,7 +1005,7 @@ suspend fun bypassXDM(url: String): String? {
     val fingerprint = generateFingerprint()
     val socketUrl = baseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/socket.io/?EIO=4&transport=websocket"
 
-    // ── Session ──────────────────────────────────────────────────────────────
+    // Session
     val sessionRes = app.post(
         "$baseUrl/api/session",
         headers = mapOf("Content-Type" to "application/json", "Referer" to link, "Origin" to baseUrl),
@@ -1012,14 +1016,14 @@ suspend fun bypassXDM(url: String): String? {
     val sessionId = session.optString("sessionId").ifEmpty { return null }
     val token1    = session.optString("token").ifEmpty { return null }
 
-    // ── WebSocket 1 ──────────────────────────────────────────────────────────
+    // WebSocket 1
     trackSocket(socketUrl, baseUrl, cookies, token1)
 
-    // ── Step 2 ───────────────────────────────────────────────────────────────
+    // Step 2
     val step2Url = "$baseUrl/r/$id?step=2&sid=$sessionId"
     app.get(step2Url, headers = mapOf("Cookie" to cookies, "Referer" to link))
 
-    // ── Rebind ───────────────────────────────────────────────────────────────
+    // Rebind
     val rebindRes = app.post(
         "$baseUrl/api/session/rebind",
         json = mapOf("fingerprint" to fingerprint),
@@ -1028,10 +1032,10 @@ suspend fun bypassXDM(url: String): String? {
     val token2 = runCatching { JSONObject(rebindRes.text).optString("token") }.getOrNull()
         .orEmpty().ifEmpty { return null }
 
-    // ── WebSocket 2 ──────────────────────────────────────────────────────────
+    // WebSocket 2
     trackSocket(socketUrl, baseUrl, cookies, token2)
 
-    // ── Complete ─────────────────────────────────────────────────────────────
+    // Complete
     val completeRes = app.post(
         "$baseUrl/api/session/complete",
         json = mapOf("fingerprint" to fingerprint, "mouseData" to mouseData(32500L, 3), "honeypot" to ""),
@@ -1040,7 +1044,7 @@ suspend fun bypassXDM(url: String): String? {
     val finalToken = runCatching { JSONObject(completeRes.text).optString("token") }.getOrNull()
         .orEmpty().ifEmpty { return null }
 
-    // ── Final URL ─────────────────────────────────────────────────────────────
+    // Final URL
     return app.get(
         "$baseUrl/go/$sessionId?t=$finalToken",
         timeout = 600L,
