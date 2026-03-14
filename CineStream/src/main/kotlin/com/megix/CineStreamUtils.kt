@@ -926,7 +926,7 @@ suspend fun bypassHrefli(url: String): String? {
 }
 
 //XDM
-suspend fun bypassXDM(url: String): String? {
+suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
 
     fun generateFingerprint(): String {
         val hex = "0123456789abcdef"
@@ -963,6 +963,14 @@ suspend fun bypassXDM(url: String): String? {
     val baseUrl = getBaseUrl(link)
     val id = link.substringAfterLast("/")
 
+    callback.invoke(
+        newExtractorLink(
+            "id",
+            "id",
+            "$baseUrl $id",
+        )
+    )
+
     if (id.isEmpty()) return null
 
     val responseText = app.post(
@@ -974,6 +982,15 @@ suspend fun bypassXDM(url: String): String? {
             "mouseData" to generateMouseData()
         )
     ).text
+
+    callback.invoke(
+        newExtractorLink(
+            "responseText",
+            "responseText",
+            responseText,
+        )
+    )
+
 
     val json = try {
         JSONObject(responseText)
@@ -990,6 +1007,14 @@ suspend fun bypassXDM(url: String): String? {
         timeout = 600L,
         allowRedirects = false
     ).headers["location"] ?: return null
+
+    callback.invoke(
+        newExtractorLink(
+            "source",
+            "source",
+            source,
+        )
+    )
 
     return source
 }
@@ -1021,14 +1046,13 @@ suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val media = response?.data?.media ?: return null
 
     val finalBanner = media.bannerImage?.takeUnless { it.isBlank() || it == "null" }
-
     val finalTitle = media.title?.english?.takeUnless { it.isBlank() || it == "null" }
-        ?: media.title?.romaji
-
+    val finaromajiTitle = media.title?.romaji?.takeUnless { it.isBlank() || it == "null" }
     val finalDescription = media.description?.takeUnless { it.isBlank() || it == "null" }
 
     return AnimeInfo(
         title = finalTitle,
+        romajiTitle = finaromajiTitle,
         banner = finalBanner,
         description = finalDescription
     )

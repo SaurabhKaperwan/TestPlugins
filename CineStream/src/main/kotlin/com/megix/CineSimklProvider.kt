@@ -264,6 +264,7 @@ class CineSimklProvider: MainAPI() {
         val imdbId = ids?.imdb
         val anilist_meta = anilistId?.let { getAniListInfo(it) }
         val enTitle = anilist_meta?.title ?: json.en_title ?: json.title
+        val originalTitle = anilist_meta?.romajiTitle ?: json.title
 
         val plot = if (tvType == "anime") {
             val altTitles = listOfNotNull(anilist_meta?.title, json.en_title, json.title)
@@ -320,7 +321,7 @@ class CineSimklProvider: MainAPI() {
         if (tvType == "movie" || (tvType == "anime" && json.anime_type?.equals("movie") == true)) {
             val data = LoadLinksData(
                 enTitle,
-                json.title,
+                originalTitle,
                 tvType,
                 simklId.toIntOrNull(),
                 imdbId,
@@ -362,7 +363,7 @@ class CineSimklProvider: MainAPI() {
                 newEpisode(
                     LoadLinksData(
                         enTitle,
-                        json.title,
+                        originalTitle,
                         tvType,
                         simklId.toIntOrNull(),
                         imdbId,

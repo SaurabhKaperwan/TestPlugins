@@ -156,12 +156,12 @@ object CineStreamExtractors : CineStreamProvider() {
             Settings.P_TORRENTIO     to { invokeStremioTorrents("Torrentio",  torrentioAPI,  "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_TORRENTSDB    to { invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, callback) },
             Settings.P_ANIMETOSHO    to { invokeAnimetosho(res.kitsuId, res.malId, res.episode, callback) },
-            Settings.P_ALLANIME      to { invokeAllanime(res.originalTitle, res.year, res.episode, subtitleCallback, callback) },
+            Settings.P_ALLANIME      to { invokeAllanime(res.originalTitle ?: res.title, res.year, res.episode, subtitleCallback, callback) },
             Settings.P_SUDATCHI      to { invokeSudatchi(res.anilistId, res.episode, subtitleCallback, callback) },
             Settings.P_WYZIESUBS     to { invokeWYZIESubs(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
             Settings.P_STREMIOSUBS   to { invokeStremioSubtitles(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback) },
-            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.originalTitle, res.episode, subtitleCallback, callback) },
-            Settings.P_ANIZONE       to { invokeAnizone(res.originalTitle, res.episode, subtitleCallback, callback) },
+            Settings.P_TOKYOINSIDER  to { invokeTokyoInsider(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
+            Settings.P_ANIZONE       to { invokeAnizone(res.originalTitle ?: res.title, res.episode, subtitleCallback, callback) },
             Settings.P_ANIMEZ        to { invokeAnimez(res.title, res.episode, callback) },
             Settings.P_ANIMES        to { invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subtitleCallback, callback) },
             Settings.P_CINEMACITY    to { invokeCinemacity(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback) },
@@ -1483,7 +1483,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 var link = episodeCard.selectFirst("a")?.attr("href") ?: return@safeAmap
 
                 if(!link.contains("hubcloud")) {
-                    link = bypassXDM(link) ?: return@safeAmap
+                    link = bypassXDM(link, callback) ?: return@safeAmap
                 }
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
