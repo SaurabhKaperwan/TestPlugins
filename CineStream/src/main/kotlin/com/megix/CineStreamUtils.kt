@@ -963,14 +963,6 @@ suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
     val baseUrl = getBaseUrl(link)
     val id = link.substringAfterLast("/")
 
-    callback.invoke(
-        newExtractorLink(
-            "id",
-            "id",
-            "$baseUrl $id",
-        )
-    )
-
     if (id.isEmpty()) return null
 
     val responseText = app.post(
@@ -982,14 +974,6 @@ suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
             "mouseData" to generateMouseData()
         )
     ).text
-
-    callback.invoke(
-        newExtractorLink(
-            "responseText",
-            "responseText",
-            responseText,
-        )
-    )
 
 
     val json = try {
