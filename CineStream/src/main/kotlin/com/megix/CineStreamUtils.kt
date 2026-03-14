@@ -965,7 +965,7 @@ suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
 
     if (id.isEmpty()) return null
 
-    val responseText = app.post(
+    val response = app.post(
         "$baseUrl/api/session",
         headers = mapOf("Content-Type" to "application/json"),
         json = mapOf(
@@ -973,54 +973,35 @@ suspend fun bypassXDM(url: String, callback: (ExtractorLink) -> Unit): String? {
             "fingerprint" to generateFingerprint(),
             "mouseData" to generateMouseData()
         )
-    ).text
+    )
 
+    val responseText = response.text
 
     val json = try {
         JSONObject(responseText)
     } catch (e: Exception) {
         return null
     }
+
+    val sid = response.cookies["sid"]
+
+    callback.invoke(
+        newExtractorLink(
+            "sid",
+            "sid",
+            "$sid",
+        )
+    )
+
     val sessionId = json.optString("sessionId")
     val token = json.optString("token")
 
     if (sessionId.isEmpty() || token.isEmpty()) return null
 
-    // var source: String? = null
-    // var attempts = 0
-    // val maxAttempts = 10
-
-    // while (source == null && attempts < maxAttempts) {
-    //     source = app.get(
-    //         "$baseUrl/go/$sessionId?t=$token",
-    //         timeout = 600L,
-    //         allowRedirects = false
-    //     ).headers["location"]
-
-    //     if (source == null) {
-    //         attempts++
-    //         delay(3000L)
-    //     }
-    // }
-
-    val response = app.get(
-        "$baseUrl/go/$sessionId?t=$token",
-        timeout = 600L,
-        allowRedirects = false
-    ).text
-
-    callback.invoke(
-        newExtractorLink(
-            "response",
-            "response",
-            "$response",
-        )
-    )
-
-
     val source = app.get(
         "$baseUrl/go/$sessionId?t=$token",
         timeout = 600L,
+        headers = mapOf("Cookie" to "sid=$sid"),
         allowRedirects = false
     ).headers["location"] ?: return null
 
