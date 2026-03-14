@@ -37,6 +37,9 @@ import kotlin.toString
 import java.security.SecureRandom
 import java.io.IOException
 
+import okhttp3.HttpUrl.Companion.toHttpUrl
+
+
 object CineStreamExtractors : CineStreamProvider() {
 
     suspend fun invokeAllSources(
