@@ -2680,7 +2680,7 @@ object CineStreamExtractors : CineStreamProvider() {
         }
     }
 
-    private suspend fun invokeAnimepahe(
+    suspend fun invokeAnimepahe(
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
@@ -3129,7 +3129,7 @@ object CineStreamExtractors : CineStreamProvider() {
         )
     }
 
-    private suspend fun invokeHianime(
+    suspend fun invokeHianime(
         url: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,

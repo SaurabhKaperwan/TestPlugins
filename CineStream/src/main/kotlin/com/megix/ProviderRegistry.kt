@@ -1,8 +1,8 @@
 package com.megix
 
-import com.lagradost.cloudstream3.AllLoadLinksData
-import com.lagradost.cloudstream3.ExtractorLink
-import com.lagradost.cloudstream3.SubtitleFile
+import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.utils.*
+import com.megix.CineStreamProvider.Companion.*
 
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
