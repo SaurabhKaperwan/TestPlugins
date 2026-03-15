@@ -2224,6 +2224,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         // 2. Get Metadata (Post)
         val postUrl = "$searchAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
+
         val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/")
             .parsedSafe<NetflixResponse>().let { media ->
                 // Year check logic
@@ -2238,7 +2239,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
                     // Loop for episodes
                     while (episodeId == null && page < 10) {
-                        val epUrl = "$netflixAPI$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
+                        val epUrl = "$searchAPI$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
                         val data = app.get(epUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/").parsedSafe<NetflixResponse>()
                         episodeId = data?.episodes?.find { it.ep == "$epPrefix$episode" }?.id
                         if ((data?.nextPageShow ?: 0) != 1) break
