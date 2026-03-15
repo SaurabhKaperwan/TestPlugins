@@ -47,7 +47,9 @@ open class Videostr : ExtractorApi() {
             "User-Agent" to USER_AGENT
         )
 
-        val document = app.get(baseUrl, headers = headers).document
+        val response = app.get(url, headers = headers)
+        val document = response.document
+        val htmlResponse = response.text
 
         val videoTag = document.selectFirst("[id$=\"-player\"]") ?: return
         val fileId = videoTag.attr("data-id")

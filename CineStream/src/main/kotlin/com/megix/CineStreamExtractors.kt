@@ -4436,7 +4436,7 @@ object CineStreamExtractors : CineStreamProvider() {
 
         val text = app.get(url).text
         val regex = Regex("""var\s+embedUrlValue\s*=\s*"([^"]+)";""")
-        val embedUrl = regex.find(scriptContent)?.groupValues?.get(1) ?: return
+        val embedUrl = regex.find(text)?.groupValues?.get(1) ?: return
         loadCustomExtractor("Autoembed", embedUrl, "", subtitleCallback, callback)
     }
 
@@ -4481,7 +4481,7 @@ object CineStreamExtractors : CineStreamProvider() {
             val servers = app.get("$watch32API/ajax/episode/list/$infoId").document.select("li.nav-item a")
 
             servers.safeAmap { ep ->
-                val iframeUrl = app.get("$watch32APIajax/episode/sources/${ep.attr("data-id")}")
+                val iframeUrl = app.get("$watch32API/ajax/episode/sources/${ep.attr("data-id")}")
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
