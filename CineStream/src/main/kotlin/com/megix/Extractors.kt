@@ -20,9 +20,74 @@ import com.lagradost.cloudstream3.utils.getAndUnpack
 import java.net.URI
 import com.lagradost.api.Log
 
-import com.megix.CineStreamProvider
+import com.megix.CineStreamProvider.Companion.allowDownloadLinks
 
 import java.security.MessageDigest
+
+class Streameeeeee : Videostr() {
+    override var name = "Streameeeeee"
+    override var mainUrl = "https://streameeeeee.site"
+}
+
+open class Videostr : ExtractorApi() {
+    override val name = "Videostr"
+    override val mainUrl = "https://videostr.net"
+    override val requiresReferer = false
+
+    override suspend fun getUrl(
+        url: String,
+        referer: String?,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val headers = mapOf(
+            "Accept" to "*/*",
+            "X-Requested-With" to "XMLHttpRequest",
+            "Referer" to "$mainUrl/",
+            "User-Agent" to USER_AGENT
+        )
+
+        val document = app.get(baseUrl, headers = headers).document
+
+        val videoTag = document.selectFirst("[id$=\"-player\"]") ?: return
+        val fileId = videoTag.attr("data-id")
+        if (fileId.isEmpty()) return
+
+        val tripleRegex = Regex("""\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b""", RegexOption.DOT_MATCHES_ALL)
+        val singleRegex = Regex("""\b[a-zA-Z0-9]{48}\b""")
+
+        val tripleMatch = tripleRegex.find(htmlResponse)
+        val singleMatch = singleRegex.find(htmlResponse)
+
+        val nonce = if (tripleMatch != null) {
+            tripleMatch.groupValues[1] + tripleMatch.groupValues[2] + tripleMatch.groupValues[3]
+        } else {
+            singleMatch?.value ?: return
+        }
+
+        val apiUrl = "$mainUrl/embed-1/v3/e-1/getSources?id=$fileId&_k=$nonce"
+        val jsonResponse = app.get(apiUrl, headers = headers).text
+
+        val rootObj = JSONObject(jsonResponse)
+        val sourcesArray = rootObj.optJSONArray("sources") ?: return
+
+        if (sourcesArray.length() == 0) return
+
+        val source =  sourcesArray.optJSONObject(0)?.optString("file") ?: return
+
+        callback.invoke(
+            newExtractorLink(
+                name,
+                name,
+                source,
+                ExtractorLinkType.M3U8
+            ) {
+                this.quality = 1080
+                this.referer = "$referer/"
+            }
+        )
+    }
+}
 
 //Thanks to https://github.com/yogesh-hacker/MediaVanced
 open class Gofile : ExtractorApi() {

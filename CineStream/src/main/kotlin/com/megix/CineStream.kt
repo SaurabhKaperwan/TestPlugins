@@ -49,6 +49,8 @@ open class CineStream: Plugin() {
         registerExtractorAPI(Howblogs())
         registerExtractorAPI(Wootly())
         registerExtractorAPI(Gofile())
+        registerExtractorAPI(Videostr())
+        registerExtractorAPI(Streameeeeee())
 
         this.openSettings = { ctx: Context ->
             Settings.showSettingsDialog(ctx) {
