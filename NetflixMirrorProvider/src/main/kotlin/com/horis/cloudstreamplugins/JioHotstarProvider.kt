@@ -26,7 +26,8 @@ class JioHotstarProvider : MainAPI() {
         TvType.AsianDrama
     )
     override var lang = "en"
-    override var mainUrl = "https://net52.cc"
+    override var mainUrl = "https://net22.cc"
+    private var newUrl = "https://net52.cc"
     override var name = "JioHotstar"
     override val hasMainPage = true
     private val headers = mapOf(
@@ -39,7 +40,7 @@ class JioHotstarProvider : MainAPI() {
 
     private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
-            cookie_value = bypass(mainUrl)
+            cookie_value = bypass(newUrl)
         }
         return mapOf (
             "t_hash_t" to cookie_value,
@@ -201,7 +202,7 @@ class JioHotstarProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
         val playlist = app.get(
-            "$mainUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/mobile/hs/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/",
             cookies = getCookie()
@@ -213,10 +214,10 @@ class JioHotstarProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        "$mainUrl/${it.file}",
+                        "$newUrl/${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$newUrl/"
                         this.quality = getQualityFromName(it.file.substringAfter("q=", "").substringBefore("&in"))
                     }
                 )
@@ -229,7 +230,7 @@ class JioHotstarProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$mainUrl/"
+                            "Referer" to "$newUrl/"
                         )
                     }
                 )

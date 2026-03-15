@@ -17,7 +17,6 @@ import kotlinx.coroutines.sync.Semaphore
 
 import org.json.JSONObject
 import org.json.JSONArray
-import org.json.JSONTokener
 import org.jsoup.Jsoup
 import java.security.MessageDigest
 import javax.crypto.Cipher
@@ -45,6 +44,8 @@ import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import java.util.regex.Pattern
 
 import android.util.Base64
+
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
@@ -414,19 +415,18 @@ suspend fun NFBypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun getNfVideoToken(mainUrl: String, oldUrl: String, id: String, cookies: Map<String, String>): String {
+suspend fun getNfVideoToken(mainUrl: String, newUrl: String, id: String, cookies: Map<String, String>): String {
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
 
     val json = app.post(
-        "$oldUrl/play.php",
+        "$mainUrl/play.php",
         headers = headers,
         cookies = cookies,
         data = mapOf("id" to id)
     ).text
-
     val h = JSONObject(json).getString("h")
 
     val headers2 = mapOf(
@@ -447,7 +447,7 @@ suspend fun getNfVideoToken(mainUrl: String, oldUrl: String, id: String, cookies
         "Upgrade-Insecure-Requests" to "1",
         "User-Agent" to "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
     )
-    val document = app.get("$mainUrl/play.php?id=$id&$h", headers = headers2).document
+    val document = app.get("$newUrl/play.php?id=$id&$h", headers = headers2).document
     val token = document.select("body").attr("data-h")
     return token
 }
@@ -1657,6 +1657,51 @@ fun decryptVidzeeUrl(encryptedUrl: String, secret: String): String? {
         String(decryptedData, Charsets.UTF_8)
     } catch (e: Exception) {
         null
+    }
+}
+
+suspend fun getUpcloud(
+    iframeUrl: String,
+    referer: String,
+    callback: (ExtractorLink) -> Unit
+) {
+    val html = app.get(iframeUrl, referer = referer).text
+    val sourceEncoded = Regex("""var\s+source\s*=\s*"([^"]+)\"""")
+        .find(html)?.groupValues?.get(1) ?: return
+    val sourceUrl = JSONObject("""{"v":"$sourceEncoded"}""").optString("v")
+    val domain    = sourceUrl.toHttpUrl().host
+    val embedType = sourceUrl.toHttpUrl().pathSegments.getOrNull(0) ?: return null
+    val iframeHeaders = mapOf(
+        "User-Agent"       to USER_AGENT,
+        "Referer"          to "https://$domain/",
+        "X-Requested-With" to "XMLHttpRequest"
+    )
+    val htmlSource = app.get(sourceUrl, headers = iframeHeaders).text
+    val videoId = Regex("""<title>File\s+#([A-Za-z0-9]+)\s*-""")
+        .find(htmlSource)?.groupValues?.get(1) ?: return null
+    val nonce = Regex("""\b[a-zA-Z0-9]{48}\b""").find(htmlSource)?.value
+        ?: run {
+            val m = Regex("""\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b.*?\b([a-zA-Z0-9]{16})\b""")
+                .find(htmlSource) ?: return
+            m.groupValues.drop(1).joinToString("")
+        }
+    val api = "https://$domain/$embedType/v3/e-1/getSources?id=$videoId&_k=$nonce"
+    val streamsData = runCatching { JSONObject(app.get(api, headers = iframeHeaders).text) }.getOrNull()
+    val sources  = streamsData.optJSONArray("sources") ?: return
+
+    for (i in 0 until sources.length()) {
+        val streamUrl = sources.getJSONObject(i).optString("file").ifEmpty { return }
+        callback.invoke(
+            newExtractorLink(
+                "VidsrcCC[UpCloud]",
+                "VidsrcCC[UpCloud]",
+                streamUrl,
+                ExtractorLinkType.M3U8
+            ) {
+                this.headers = iframeHeaders
+                this.quality = 1080
+            }
+        )
     }
 }
 

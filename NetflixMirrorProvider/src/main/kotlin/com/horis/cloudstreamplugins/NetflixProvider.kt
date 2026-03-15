@@ -26,14 +26,13 @@ class NetflixProvider : MainAPI() {
         TvType.AsianDrama
     )
     override var lang = "en"
-    override var mainUrl = "https://net52.cc"
-    private val oldUrl = "https://net22.cc"
+    override var mainUrl = "https://net22.cc"
+    private var newUrl = "https://net52.cc"
     override var name = "Netflix"
     override val hasMainPage = true
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
-
 
     companion object {
         private var cookie_value: String = ""
@@ -41,7 +40,7 @@ class NetflixProvider : MainAPI() {
 
     private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
-            cookie_value = bypass(mainUrl)
+            cookie_value = bypass(newUrl)
         }
         return mapOf (
             "t_hash_t" to cookie_value,
@@ -83,7 +82,7 @@ class NetflixProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val url = "$mainUrl/search.php?s=$query&t=${APIHolder.unixTime}"
+        val url = "$newUrl/search.php?s=$query&t=${APIHolder.unixTime}"
         val data = app.get(
             url,
             referer = "$mainUrl/tv/home",
@@ -209,11 +208,11 @@ class NetflixProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
 
-        val token = getVideoToken(mainUrl, oldUrl, id, getCookie())
+        val token = getVideoToken(mainUrl, newUrl, id, getCookie())
         val playlist = app.get(
-            "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
+            "$newUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,
-            referer = "$mainUrl/",
+            referer = "$newUrl/",
             cookies = getCookie()
         ).parsed<PlayList>()
 
@@ -223,10 +222,10 @@ class NetflixProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         it.label,
-                        mainUrl + it.file,
+                        newUrl + it.file,
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$newUrl/"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
@@ -245,7 +244,7 @@ class NetflixProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$mainUrl/"
+                            "Referer" to "$newUrl/"
                         )
                     }
                 )

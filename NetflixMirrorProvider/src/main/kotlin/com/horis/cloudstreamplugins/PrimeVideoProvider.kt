@@ -29,6 +29,7 @@ class PrimeVideoProvider : MainAPI() {
     )
     override var lang = "en"
     override var mainUrl = "https://net52.cc"
+    private var newUrl = "https://net52.cc"
     override var name = "PrimeVideo"
     override val hasMainPage = true
     private var cookie_value = ""
@@ -42,7 +43,7 @@ class PrimeVideoProvider : MainAPI() {
 
     private suspend fun getCookie(): Map<String, String> {
         if (cookie_value.isEmpty()) {
-            cookie_value = bypass(mainUrl)
+            cookie_value = bypass(newUrl)
         }
         return mapOf (
             "t_hash_t" to cookie_value,
@@ -204,9 +205,9 @@ class PrimeVideoProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
         val playlist = app.get(
-            "$mainUrl/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
+            "$newUrl/pv/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}",
             headers,
-            referer = "$mainUrl/home",
+            referer = "$newUrl/home",
             cookies = getCookie()
         ).parsed<PlayList>()
 
@@ -216,10 +217,10 @@ class PrimeVideoProvider : MainAPI() {
                     newExtractorLink(
                         name,
                         name,
-                        "${mainUrl}${it.file}",
+                        "${newUrl}${it.file}",
                         type = ExtractorLinkType.M3U8
                     ) {
-                        this.referer = "$mainUrl/"
+                        this.referer = "$newUrl/"
                         this.headers = mapOf(
                             "User-Agent" to "Mozilla/5.0 (Android) ExoPlayer",
                             "Accept" to "*/*",
@@ -239,7 +240,7 @@ class PrimeVideoProvider : MainAPI() {
                         httpsify(track.file.toString().replace("\\", "")),
                     ) {
                         this.headers = mapOf(
-                            "Referer" to "$mainUrl/"
+                            "Referer" to "$newUrl/"
                         )
                     }
                 )

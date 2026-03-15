@@ -2210,19 +2210,21 @@ object CineStreamExtractors : CineStreamProvider() {
         ignoreYear: Boolean = false,
         requiresToken: Boolean = false
     ) {
-        if (netflix2API.isEmpty()) return
+        if (netflixAPI.isEmpty()) return
         val nfCookie = NFBypass(netflix2API)
         val cookies = mapOf("t_hash_t" to nfCookie, "ott" to ottCode, "hd" to "on")
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
 
+        val searchAPI = if(serviceName == "Netflix" || serviceName == "PrimeVideo") netflix2API else netflixAPI
+
         // 1. Search
-        val searchUrl = "$netflix2API$urlPrefix/search.php?s=$title&t=${APIHolder.unixTime}"
+        val searchUrl = "$searchAPI$urlPrefix/search.php?s=$title&t=${APIHolder.unixTime}"
         val searchData = app.get(searchUrl, headers = headers, cookies = cookies).parsedSafe<NfSearchData>()
         val netflixId = searchData?.searchResult?.firstOrNull { it.t.equals("${title?.trim()}", true) }?.id ?: return
 
         // 2. Get Metadata (Post)
-        val postUrl = "$netflix2API$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
-        val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflix2API/")
+        val postUrl = "$netflixAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
+        val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/")
             .parsedSafe<NetflixResponse>().let { media ->
                 // Year check logic
                 if (!ignoreYear && year != null && media?.year.toString() != year.toString()) return@let null to null
@@ -2236,8 +2238,8 @@ object CineStreamExtractors : CineStreamProvider() {
 
                     // Loop for episodes
                     while (episodeId == null && page < 10) {
-                        val epUrl = "$netflix2API$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
-                        val data = app.get(epUrl, headers = headers, cookies = cookies, referer = "$netflix2API/").parsedSafe<NetflixResponse>()
+                        val epUrl = "$netflixAPI$urlPrefix/episodes.php?s=$seasonId&series=$netflixId&t=${APIHolder.unixTime}&page=$page"
+                        val data = app.get(epUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/").parsedSafe<NetflixResponse>()
                         episodeId = data?.episodes?.find { it.ep == "$epPrefix$episode" }?.id
                         if ((data?.nextPageShow ?: 0) != 1) break
                         page++
@@ -2251,7 +2253,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // 3. Get Playlist
         // Handle Token for Netflix
         val tokenParam = if (requiresToken) {
-            "&h=${getNfVideoToken(netflix2API, netflixAPI, finalId, cookies)}"
+            "&h=${getNfVideoToken(netflixAPI, netflix2API, finalId, cookies)}"
         } else ""
 
         val playlistUrl = "$netflix2API$urlPrefix/playlist.php?id=$finalId&t=$nfTitle&tm=${APIHolder.unixTime}$tokenParam"
@@ -4536,6 +4538,18 @@ object CineStreamExtractors : CineStreamProvider() {
         } catch (e: Exception) {
             Log.w("Vidsrc", "Failed to extract server: VidPlay", e)
         }
+
+        try {
+            servers["UpCloud"]?.let { hash ->
+                val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
+                val dataObject = data.optJSONObject("data") ?: return@let
+                val iframeUrl = dataObject.optString("source")
+                getUpcloudIframe(iframeUrl, vidsrcCCAPI, callback)
+            }
+        } catch (e: Exception) {
+            Log.w("Vidsrc", "Failed to extract server: UpCloud", e)
+        }
+
     }
 
 }
