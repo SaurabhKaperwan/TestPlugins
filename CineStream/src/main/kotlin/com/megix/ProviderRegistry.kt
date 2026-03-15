@@ -2,7 +2,16 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.megix.CineStreamProvider.*
+
+import com.megix.CineStreamProvider.Companion.CASTLE_API
+import com.megix.CineStreamProvider.Companion.CINE_API
+import com.megix.CineStreamProvider.Companion.animeWorldAPI
+import com.megix.CineStreamProvider.Companion.notorrentAPI
+import com.megix.CineStreamProvider.Companion.showboxToken
+import com.megix.CineStreamProvider.Companion.streamvixAPI
+import com.megix.CineStreamProvider.Companion.torrentioAPI
+import com.megix.CineStreamProvider.Companion.torrentsdbAPI
+import com.megix.CineStreamProvider.Companion.webStreamrAPI
 
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
