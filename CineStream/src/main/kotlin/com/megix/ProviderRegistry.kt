@@ -2,7 +2,7 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.megix.CineStreamProvider.Companion.*
+import com.megix.CineStreamProvider.*
 
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
