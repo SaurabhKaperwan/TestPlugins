@@ -2251,7 +2251,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // 3. Get Playlist
         // Handle Token for Netflix
         val tokenParam = if (requiresToken) {
-            "&h=${getNfVideoToken(netflix2API, finalId, cookies)}"
+            "&h=${getNfVideoToken(netflix2API, netflixAPI, finalId, cookies)}"
         } else ""
 
         val playlistUrl = "$netflix2API$urlPrefix/playlist.php?id=$finalId&t=$nfTitle&tm=${APIHolder.unixTime}$tokenParam"

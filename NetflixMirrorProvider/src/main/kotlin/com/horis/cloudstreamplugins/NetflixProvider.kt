@@ -27,11 +27,13 @@ class NetflixProvider : MainAPI() {
     )
     override var lang = "en"
     override var mainUrl = "https://net52.cc"
+    private val oldUrl = "https://net22.cc"
     override var name = "Netflix"
     override val hasMainPage = true
     private val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest"
     )
+
 
     companion object {
         private var cookie_value: String = ""
@@ -207,7 +209,7 @@ class NetflixProvider : MainAPI() {
     ): Boolean {
         val (title, id) = parseJson<LoadData>(data)
 
-        val token = getVideoToken(mainUrl, id, getCookie())
+        val token = getVideoToken(mainUrl, oldUrl, id, getCookie())
         val playlist = app.get(
             "$mainUrl/playlist.php?id=$id&t=$title&tm=${APIHolder.unixTime}&h=$token",
             headers,

@@ -114,13 +114,13 @@ suspend fun bypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun getVideoToken(mainUrl: String, id: String, cookies: Map<String, String>): String {
+suspend fun getVideoToken(mainUrl: String, oldUrl: String, id: String, cookies: Map<String, String>): String {
     val requestBody = FormBody.Builder().add("id", id).build()
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
-    val json = app.post("$mainUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
+    val json = app.post("$oldUrl/play.php", cookies = cookies, requestBody = requestBody, headers = headers).text
     val h = JSONObject(json).getString("h")
 
     val headers2 = mapOf(

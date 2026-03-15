@@ -414,14 +414,14 @@ suspend fun NFBypass(mainUrl: String): String {
     return newCookie
 }
 
-suspend fun getNfVideoToken(mainUrl: String, id: String, cookies: Map<String, String>): String {
+suspend fun getNfVideoToken(mainUrl: String, oldUrl: String, id: String, cookies: Map<String, String>): String {
     val headers = mapOf(
         "X-Requested-With" to "XMLHttpRequest",
         "Referer" to "$mainUrl/",
     )
 
     val json = app.post(
-        "$mainUrl/play.php",
+        "$oldUrl/play.php",
         headers = headers,
         cookies = cookies,
         data = mapOf("id" to id)
