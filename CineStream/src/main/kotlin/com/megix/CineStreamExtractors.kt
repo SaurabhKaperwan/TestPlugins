@@ -4544,7 +4544,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
                 val dataObject = data.optJSONObject("data") ?: return@let
                 val iframeUrl = dataObject.optString("source")
-                getUpcloudIframe(iframeUrl, vidsrcCCAPI, callback)
+                getUpcloud(iframeUrl, vidsrcCCAPI, callback)
             }
         } catch (e: Exception) {
             Log.w("Vidsrc", "Failed to extract server: UpCloud", e)
