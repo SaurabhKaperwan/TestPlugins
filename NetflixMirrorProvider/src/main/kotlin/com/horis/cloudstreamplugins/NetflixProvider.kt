@@ -100,7 +100,7 @@ class NetflixProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         val id = parseJson<Id>(url).id
         val data = app.get(
-            "$mainUrl/post.php?id=$id&t=${APIHolder.unixTime}",
+            "$newUrl/post.php?id=$id&t=${APIHolder.unixTime}",
             headers,
             referer = "$mainUrl/tv/home",
             cookies = getCookie()

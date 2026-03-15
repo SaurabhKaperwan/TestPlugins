@@ -2223,7 +2223,7 @@ object CineStreamExtractors : CineStreamProvider() {
         val netflixId = searchData?.searchResult?.firstOrNull { it.t.equals("${title?.trim()}", true) }?.id ?: return
 
         // 2. Get Metadata (Post)
-        val postUrl = "$netflixAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
+        val postUrl = "$searchAPI$urlPrefix/post.php?id=$netflixId&t=${APIHolder.unixTime}"
         val (nfTitle, finalId) = app.get(postUrl, headers = headers, cookies = cookies, referer = "$netflixAPI/")
             .parsedSafe<NetflixResponse>().let { media ->
                 // Year check logic
