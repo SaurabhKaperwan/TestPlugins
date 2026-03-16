@@ -4417,15 +4417,6 @@ object CineStreamExtractors : CineStreamProvider() {
                 val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
                 val dataObject = data.optJSONObject("data") ?: return@let
                 val iframeUrl = dataObject.optString("source")
-
-                callback.invoke(
-                    newExtractorLink(
-                        "VidsrcCC",
-                        "VidsrcCC",
-                        iframeUrl,
-                    )
-                )
-
                 getUpcloud(iframeUrl, vidsrcCCAPI, callback)
             }
         } catch (e: Exception) {
@@ -4488,15 +4479,6 @@ object CineStreamExtractors : CineStreamProvider() {
             servers.toList().safeAmap { source ->
                 val iframeUrl = app.get("$watch32API/ajax/episode/sources/${source.attr("data-id")}")
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
-
-                callback.invoke(
-                    newExtractorLink(
-                        "Watch32",
-                        "Watch32",
-                        iframeUrl,
-                    )
-                )
-
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
         } else {
@@ -4505,15 +4487,6 @@ object CineStreamExtractors : CineStreamProvider() {
             servers.safeAmap { ep ->
                 val iframeUrl = app.get("$watch32API/ajax/episode/sources/${ep.attr("data-id")}")
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
-
-                callback.invoke(
-                    newExtractorLink(
-                        "Watch32",
-                        "Watch32",
-                        iframeUrl,
-                    )
-                )
-
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
         }

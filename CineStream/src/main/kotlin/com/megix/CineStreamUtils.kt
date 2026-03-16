@@ -40,6 +40,7 @@ import org.jsoup.nodes.Document
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.UUID
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
@@ -931,13 +932,17 @@ fun createMouseData(durationMs: Long, phase: Int = 1): Map<String, Any> {
     )
 }
 
+fun generateRandomFingerprint(): String {
+    return UUID.randomUUID().toString().replace("-", "")
+}
+
 suspend fun openAndTrackProtectorSocket(
-    socketUrl: String, baseUrl: String, cookies: Map<String, String>, bindToken: String, userAgent: String, durationMs: Long
+    socketUrl: String, baseUrl: String, cookies: Map<String, String>, bindToken: String, durationMs: Long
 ): Unit = suspendCancellableCoroutine { cont ->
     val cookieHeader = cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
     val request = Request.Builder()
         .url(socketUrl)
-        .header("User-Agent", userAgent)
+        .header("User-Agent", USER_AGENT)
         .header("Cookie", cookieHeader)
         .header("Origin", baseUrl)
         .build()
@@ -1007,13 +1012,12 @@ suspend fun openAndTrackProtectorSocket(
 
 suspend fun bypassXDM(url: String): String? {
 
-    val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
-    val fingerprint = "0123456789abcdef0123456789abcdef"
-    val visibleMs = 15_000L
-
     val link = app.get(url, allowRedirects = false).headers["location"] ?: return null
 
     if (link.contains("hubcloud")) return link
+
+    val fingerprint = generateRandomFingerprint()
+    val visibleMs = 15_000L
 
     val uri = URI(link)
     val baseUrl = "${uri.scheme}://${uri.host}"
@@ -1028,7 +1032,7 @@ suspend fun bypassXDM(url: String): String? {
     return try {
         val sessionResponse = app.post(
             "$baseUrl/api/session",
-            headers = mapOf("User-Agent" to userAgent, "Referer" to link, "Origin" to baseUrl),
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link, "Origin" to baseUrl),
             json = mapOf("code" to id, "fingerprint" to fingerprint, "mouseData" to createMouseData(2500, 1))
         )
         sessionCookies = sessionCookies + sessionResponse.cookies
@@ -1037,26 +1041,26 @@ suspend fun bypassXDM(url: String): String? {
         val sessionId = sessionData.optString("sessionId").ifEmpty { return null }
         val sessionToken = sessionData.optString("token").ifEmpty { return null }
 
-        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, sessionToken, userAgent, visibleMs)
+        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, sessionToken, visibleMs)
 
         val step2Url = "$baseUrl/r/${URLEncoder.encode(id, "UTF-8")}?step=2&sid=${URLEncoder.encode(sessionId, "UTF-8")}"
-        val step2Response = app.get(step2Url, headers = mapOf("User-Agent" to userAgent, "Referer" to link), cookies = sessionCookies)
+        val step2Response = app.get(step2Url, headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link), cookies = sessionCookies)
         sessionCookies = sessionCookies + step2Response.cookies
 
         val rebindResponse = app.post(
             "$baseUrl/api/session/rebind",
-            headers = mapOf("User-Agent" to userAgent, "Referer" to step2Url, "Origin" to baseUrl),
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
             cookies = sessionCookies,
             json = mapOf("fingerprint" to fingerprint)
         )
         sessionCookies = sessionCookies + rebindResponse.cookies
         val rebindToken = JSONObject(rebindResponse.text).optString("token").ifEmpty { return null }
 
-        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, rebindToken, userAgent, visibleMs)
+        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, rebindToken, visibleMs)
 
         val completeResponse = app.post(
             "$baseUrl/api/session/complete",
-            headers = mapOf("User-Agent" to userAgent, "Referer" to step2Url, "Origin" to baseUrl),
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
             cookies = sessionCookies,
             json = mapOf(
                 "fingerprint" to fingerprint,
@@ -1070,7 +1074,7 @@ suspend fun bypassXDM(url: String): String? {
         val goUrl = "$baseUrl/go/${URLEncoder.encode(sessionId, "UTF-8")}?t=${URLEncoder.encode(completeToken, "UTF-8")}"
         val goResponse = app.get(
             goUrl,
-            headers = mapOf("User-Agent" to userAgent, "Referer" to step2Url),
+            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url),
             cookies = sessionCookies,
             allowRedirects = false
         )
