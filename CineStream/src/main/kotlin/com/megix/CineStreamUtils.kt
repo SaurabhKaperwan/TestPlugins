@@ -995,7 +995,7 @@ suspend fun openAndTrackProtectorSocket(
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = finish(null)
     }
 
-    val webSocket = app.client.newWebSocket(request, listener)
+    val webSocket = OkHttpClient().newWebSocket(request, listener)
 
     cont.invokeOnCancellation {
         finished = true
