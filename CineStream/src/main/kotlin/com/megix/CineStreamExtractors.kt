@@ -37,11 +37,80 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
-// import com.megix.ApiConstants.*
-
 // import javax.crypto.Cipher
 // import javax.crypto.spec.IvParameterSpec
 // import javax.crypto.spec.SecretKeySpec
+
+import com.megix.ApiConstants.AllanimeAPI
+import com.megix.ApiConstants.CC_COOKIE
+import com.megix.ApiConstants.MostraguardaAPI
+import com.megix.ApiConstants.PrimeSrcApi
+import com.megix.ApiConstants.WYZIESubsAPI
+import com.megix.ApiConstants.XDmoviesAPI
+import com.megix.ApiConstants.YflixAPI
+import com.megix.ApiConstants.akwamAPI
+import com.megix.ApiConstants.allmovielandAPI
+import com.megix.ApiConstants.animekaiAPI
+import com.megix.ApiConstants.animepaheAPI
+import com.megix.ApiConstants.animetoshoAPI
+import com.megix.ApiConstants.animezAPI
+import com.megix.ApiConstants.aniversehdAPI
+import com.megix.ApiConstants.anizipAPI
+import com.megix.ApiConstants.anizoneAPI
+import com.megix.ApiConstants.asiaflixAPI
+import com.megix.ApiConstants.autoembedAPI
+import com.megix.ApiConstants.bollyflixAPI
+import com.megix.ApiConstants.bollywoodAPI
+import com.megix.ApiConstants.bollywoodBaseAPI
+import com.megix.ApiConstants.cinemaOSApi
+import com.megix.ApiConstants.cinemacityAPI
+import com.megix.ApiConstants.dahmerMoviesAPI
+import com.megix.ApiConstants.dramafullAPI
+import com.megix.ApiConstants.femBoxAPI
+import com.megix.ApiConstants.flixIndiaAPI
+import com.megix.ApiConstants.fourkhdhubAPI
+import com.megix.ApiConstants.gojoBaseAPI
+import com.megix.ApiConstants.hdmovie2API
+import com.megix.ApiConstants.hexaAPI
+import com.megix.ApiConstants.hianimeAPI
+import com.megix.ApiConstants.hindMoviezAPI
+import com.megix.ApiConstants.kissKhAPI
+import com.megix.ApiConstants.levidiaAPI
+import com.megix.ApiConstants.malsyncAPI
+import com.megix.ApiConstants.mappleAPI
+import com.megix.ApiConstants.movies4uAPI
+import com.megix.ApiConstants.moviesdriveAPI
+import com.megix.ApiConstants.moviesmodAPI
+import com.megix.ApiConstants.multiDecryptAPI
+import com.megix.ApiConstants.multiEmbededApi
+import com.megix.ApiConstants.multimoviesAPI
+import com.megix.ApiConstants.netflix2API
+import com.megix.ApiConstants.netflixAPI
+import com.megix.ApiConstants.projectfreetvAPI
+import com.megix.ApiConstants.protonmoviesAPI
+import com.megix.ApiConstants.rogmoviesAPI
+import com.megix.ApiConstants.rtallyAPI
+import com.megix.ApiConstants.skymoviesAPI
+import com.megix.ApiConstants.sudatchiAPI
+import com.megix.ApiConstants.tokyoInsiderAPI
+import com.megix.ApiConstants.toonStreamAPI
+import com.megix.ApiConstants.topmoviesAPI
+import com.megix.ApiConstants.twoembedAPI
+import com.megix.ApiConstants.uhdmoviesAPI
+import com.megix.ApiConstants.vegamoviesAPI
+import com.megix.ApiConstants.vidSrcApi
+import com.megix.ApiConstants.vidSrcHindiApi
+import com.megix.ApiConstants.videasyAPI
+import com.megix.ApiConstants.vidfastProApi
+import com.megix.ApiConstants.vidlinkAPI
+import com.megix.ApiConstants.vidsrcCCAPI
+import com.megix.ApiConstants.vidstackAPI
+import com.megix.ApiConstants.vidstackBaseAPI
+import com.megix.ApiConstants.vidzeeApi
+import com.megix.ApiConstants.watch32API
+import com.megix.ApiConstants.xpassAPI
+// import com.megix.ApiConstants.xprimeAPI
+// import com.megix.ApiConstants.xprimeBaseAPI
 
 object CineStreamExtractors {
 
@@ -3050,7 +3119,7 @@ object CineStreamExtractors {
             episode,
             subtitleCallback,
             callback,
-            MoviesmodAPI
+            moviesmodAPI
         )
     }
 
