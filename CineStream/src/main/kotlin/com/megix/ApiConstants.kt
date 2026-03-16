@@ -11,11 +11,9 @@ object ApiConstants {
     const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
     const val WYZIESubsAPI = "https://sub.wyzie.ru"
     const val MostraguardaAPI = "https://mostraguarda.stream"
-    const val CONSUMET_API = BuildConfig.CONSUMET_API
     const val CC_COOKIE = BuildConfig.CC_COOKIE
     const val CINE_API = BuildConfig.CINE_API
     const val CASTLE_API = BuildConfig.CASTLE_API
-    const val HDMOVIELOVER_API = BuildConfig.HDMOVIELOVER_API
     const val animepaheAPI = "https://animepahe.si"
     const val allmovielandAPI = "https://allmovieland.io"
     const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"

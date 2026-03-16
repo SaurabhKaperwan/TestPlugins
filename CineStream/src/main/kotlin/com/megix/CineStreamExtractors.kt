@@ -37,7 +37,7 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
-import com.megix.ApiConstants.*
+// import com.megix.ApiConstants.*
 
 // import javax.crypto.Cipher
 // import javax.crypto.spec.IvParameterSpec
@@ -2735,7 +2735,7 @@ object CineStreamExtractors {
                         loadCustomExtractor(
                             "Animepahe(VLC) [$type]",
                             href,
-                            mainUrl,
+                            "",
                             subtitleCallback,
                             callback,
                             getQualityFromName(quality)
@@ -3253,7 +3253,7 @@ object CineStreamExtractors {
                             val host = fixedLink.getHost()
 
                             loadCustomExtractor(
-                                "Allanime [$host]  [${lang.uppercase()}]",
+                                "Allanime [$host]  [${i.uppercase()}]",
                                 fixedLink,
                                 "",
                                 subtitleCallback,
