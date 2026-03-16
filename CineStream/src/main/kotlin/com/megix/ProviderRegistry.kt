@@ -33,13 +33,13 @@ object ProviderRegistry {
         // ── Torrents ──────────────────────────────────────────────
         ProviderDef(
             key = "p_torrentio", displayName = "🧲 Torrentio", isTorrent = true,
-            executeStandard = { res, _, cb -> invokeStremioTorrents("Torrentio", ApiConstants.torrentioAPI, res.imdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeStremioTorrents("Torrentio", ApiConstants.torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, cb) }
+            executeStandard = { res, _, cb -> invokeStremioTorrents("Torrentio", torrentioAPI, res.imdbId, res.season, res.episode, cb) },
+            executeAnime = { res, _, cb -> invokeStremioTorrents("Torrentio", torrentioAPI, "kitsu:${res.kitsuId}", res.season, res.episode, cb) }
         ),
         ProviderDef(
             key = "p_torrentsdb", displayName = "🧲 TorrentsDB", isTorrent = true,
-            executeStandard = { res, _, cb -> invokeStremioTorrents("TorrentsDB", ApiConstants.torrentsdbAPI, res.imdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeStremioTorrents("TorrentsDB", ApiConstants.torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, cb) }
+            executeStandard = { res, _, cb -> invokeStremioTorrents("TorrentsDB", torrentsdbAPI, res.imdbId, res.season, res.episode, cb) },
+            executeAnime = { res, _, cb -> invokeStremioTorrents("TorrentsDB", torrentsdbAPI, "kitsu:${res.kitsuId}", res.season, res.episode, cb) }
         ),
         ProviderDef(
             key = "p_animetosho", displayName = "🧲 AnimeTosho", isTorrent = true,
@@ -49,28 +49,28 @@ object ProviderRegistry {
         // ── Stremio Addons & Subtitles ────────────────────────────
         ProviderDef(
             key = "p_webstreamr", displayName = "WebStreamr",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("WebStreamr", ApiConstants.webStreamrAPI, res.imdbId, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeStremioStreams("WebStreamr", webStreamrAPI, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_streamvix", displayName = "Streamvix",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Streamvix", ApiConstants.streamvixAPI, res.imdbId, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeStremioStreams("Streamvix", streamvixAPI, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_notorrent", displayName = "NoTorrent",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("NoTorrent", ApiConstants.notorrentAPI, res.imdbId, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeStremioStreams("NoTorrent", notorrentAPI, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_castle", displayName = "Castle",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Castle", ApiConstants.CASTLE_API, res.imdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> if (res.imdbSeason == null || res.imdbSeason == 1) invokeStremioStreams("Castle", ApiConstants.CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> if (res.imdbSeason == null || res.imdbSeason == 1) invokeStremioStreams("Castle", CASTLE_API, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_cine", displayName = "Cine",
-            executeStandard = { res, subCb, cb -> invokeStremioStreams("Cine", ApiConstants.CINE_API, res.imdbId, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeStremioStreams("Cine", CINE_API, res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_animeworld", displayName = "AnimeWorld",
-            executeAnime = { res, subCb, cb -> invokeStremioStreams("Anime World Multi Audio 🌐", ApiConstants.animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeStremioStreams("Anime World Multi Audio 🌐", animeWorldAPI, res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_wyziesubs", displayName = "WYZIESubs",
