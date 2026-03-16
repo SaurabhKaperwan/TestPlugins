@@ -37,11 +37,13 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
+import com.megix.ApiConstants.*
+
 // import javax.crypto.Cipher
 // import javax.crypto.spec.IvParameterSpec
 // import javax.crypto.spec.SecretKeySpec
 
-object CineStreamExtractors : CineStreamProvider() {
+object CineStreamExtractors {
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
@@ -50,7 +52,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
                 suspend { this.action(res, subtitleCallback, callback) }
             } ?: stremioMap[key]
@@ -66,7 +68,7 @@ object CineStreamExtractors : CineStreamProvider() {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
                 suspend { this.action(res, subtitleCallback, callback) }
             } ?: stremioMap[key]
@@ -95,7 +97,7 @@ object CineStreamExtractors : CineStreamProvider() {
         // Package the API results for the registry
         val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
 
-        val executionList = activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
                 suspend { this.action(malData, subtitleCallback, callback) }
             }
@@ -131,9 +133,9 @@ object CineStreamExtractors : CineStreamProvider() {
         callback: (ExtractorLink) -> Unit
     ) {
         val url = if(season == null) {
-            "$femBoxAPI/movie/$tmdbId?ui=$showboxToken"
+            "$femBoxAPI/movie/$tmdbId?ui=${Settings.getShowboxToken() ?: return}"
         } else {
-            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=$showboxToken"
+            "$femBoxAPI/tv/$tmdbId/$season/$episode?ui=${Settings.getShowboxToken() ?: return}"
         }
 
         val response = app.get(url).parsedSafe<ShowboxResponse>() ?: return
@@ -4252,7 +4254,7 @@ object CineStreamExtractors : CineStreamProvider() {
                 INFER_TYPE
             }
 
-            if(s.url.contains("video-downloads.googleusercontent") && allowDownloadLinks == false) return@forEach
+            if(s.url.contains("video-downloads.googleusercontent") && Settings.allowDownloadLinks == false) return@forEach
 
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers

@@ -2,16 +2,7 @@ package com.megix
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-
-import com.megix.CineStreamProvider.Companion.CASTLE_API
-import com.megix.CineStreamProvider.Companion.CINE_API
-import com.megix.CineStreamProvider.Companion.animeWorldAPI
-import com.megix.CineStreamProvider.Companion.notorrentAPI
-import com.megix.CineStreamProvider.Companion.showboxToken
-import com.megix.CineStreamProvider.Companion.streamvixAPI
-import com.megix.CineStreamProvider.Companion.torrentioAPI
-import com.megix.CineStreamProvider.Companion.torrentsdbAPI
-import com.megix.CineStreamProvider.Companion.webStreamrAPI
+import com.megix.ApiConstants.*
 
 /** Container for data fetched during MALSync requests */
 data class MalSyncData(
@@ -96,8 +87,12 @@ object ProviderRegistry {
         // ── Direct HTTP Providers ─────────────────────────────────
         ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
-            executeStandard = { res, subCb, cb -> if (showboxToken != null) invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> if (showboxToken != null) invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+            executeStandard = { res, subCb, cb ->
+                invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb)
+            },
+            executeAnime = { res, subCb, cb ->
+                invokeShowbox(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb)
+            }
         ),
         ProviderDef(
             key = "p_vidflix", displayName = "Vidflix",
@@ -328,7 +323,6 @@ object ProviderRegistry {
         // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
         // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
         // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
-        // { invokeStremioStreams("Hdmovielover", HDMOVIELOVER_API, res.imdbId, res.season, res.episode, subtitleCallback, callback) },
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
         ProviderDef(
