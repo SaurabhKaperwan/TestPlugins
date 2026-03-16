@@ -1,21 +1,29 @@
 package com.megix
 
+// Cloudstream Core, Utils, & Logging
+import com.lagradost.api.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
+
+// Cloudstream Static Helpers (AppUtils & LoadResponse)
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import org.json.JSONObject
-import com.lagradost.api.Log
+import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
+
+// Coroutines
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
+
+// JSON Parsing
+import org.json.JSONObject
+
 import com.megix.CineStreamExtractors.invokeAllSources
 import com.megix.CineStreamExtractors.invokeAllAnimeSources
 import com.megix.CineStreamExtractors.invokeAnimes

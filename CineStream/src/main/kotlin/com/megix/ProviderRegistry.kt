@@ -221,7 +221,7 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> if (res.isBollywood) invokeTopMovies(res.imdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_moviesmod", displayName = "Moviessmod",
+            key = "p_moviesmod", displayName = "Moviesmod",
             executeStandard = { res, subCb, cb -> if (!res.isBollywood) invokeMoviesmod(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeMoviesmod(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),

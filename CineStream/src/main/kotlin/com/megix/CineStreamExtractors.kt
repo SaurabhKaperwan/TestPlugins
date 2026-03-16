@@ -1,41 +1,45 @@
 package com.megix
 
+// Android
 import android.os.Build
-import androidx.annotation.RequiresApi
+import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
+
+// Cloudstream Core & Utils
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
-import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.fasterxml.jackson.annotation.JsonProperty
-import org.jsoup.Jsoup
-import com.lagradost.cloudstream3.runAllAsync
 import com.lagradost.cloudstream3.mvvm.safeApiCall
+import com.lagradost.cloudstream3.network.CloudflareKiller
+import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 
-import org.json.JSONObject
+// Gson & Jackson
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.reflect.TypeToken
+
+// Org JSON & Jsoup
 import org.json.JSONArray
+import org.json.JSONObject
+import org.jsoup.Jsoup
 
+// Java Security, IO, & Encoding
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
+
+// Java Net
 import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-import com.lagradost.cloudstream3.utils.JsUnpacker
-import com.lagradost.cloudstream3.USER_AGENT
 
-import com.google.gson.Gson
-import com.google.gson.JsonParser
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.reflect.TypeToken
-
-import com.lagradost.cloudstream3.network.CloudflareKiller
-import android.util.Base64
 // import javax.crypto.Cipher
 // import javax.crypto.spec.IvParameterSpec
 // import javax.crypto.spec.SecretKeySpec
-import kotlin.toString
-import java.security.SecureRandom
-import java.io.IOException
 
 object CineStreamExtractors : CineStreamProvider() {
 
@@ -4413,6 +4417,15 @@ object CineStreamExtractors : CineStreamProvider() {
                 val data = JSONObject(app.get("$vidsrcCCAPI/api/source/$hash", headers = headers).text)
                 val dataObject = data.optJSONObject("data") ?: return@let
                 val iframeUrl = dataObject.optString("source")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "VidsrcCC",
+                        "VidsrcCC",
+                        iframeUrl,
+                    )
+                )
+
                 getUpcloud(iframeUrl, vidsrcCCAPI, callback)
             }
         } catch (e: Exception) {
@@ -4475,6 +4488,15 @@ object CineStreamExtractors : CineStreamProvider() {
             servers.toList().safeAmap { source ->
                 val iframeUrl = app.get("$watch32API/ajax/episode/sources/${source.attr("data-id")}")
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Watch32",
+                        "Watch32",
+                        iframeUrl,
+                    )
+                )
+
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
         } else {
@@ -4483,6 +4505,15 @@ object CineStreamExtractors : CineStreamProvider() {
             servers.safeAmap { ep ->
                 val iframeUrl = app.get("$watch32API/ajax/episode/sources/${ep.attr("data-id")}")
                     .parsedSafe<Watch32>()?.link ?: return@safeAmap
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Watch32",
+                        "Watch32",
+                        iframeUrl,
+                    )
+                )
+
                 loadCustomExtractor("Watch32", iframeUrl, "", subtitleCallback, callback)
             }
         }

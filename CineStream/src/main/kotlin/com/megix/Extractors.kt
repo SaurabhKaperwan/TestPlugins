@@ -1,24 +1,30 @@
 package com.megix
 
+// Cloudstream Core, Network, Utils, & Logging
+import com.lagradost.api.Log
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.network.WebViewResolver
+import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.getAndUnpack
+
+// Network (OkHttp & Java Net)
+import java.net.URI
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
+
+// JSON Parsing (Gson, Jackson, Org)
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
-import com.fasterxml.jackson.annotation.JsonProperty
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import com.lagradost.cloudstream3.utils.M3u8Helper
-import com.lagradost.cloudstream3.utils.getAndUnpack
-import java.net.URI
-import com.lagradost.api.Log
+
+// Java IO
+import java.io.IOException
 
 import com.megix.CineStreamProvider.Companion.allowDownloadLinks
 
