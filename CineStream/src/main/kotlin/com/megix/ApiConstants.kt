@@ -11,21 +11,19 @@ object ApiConstants {
     // ── 1. Static APIs ──────────────────────────────────────────
     const val malsyncAPI = "https://api.malsync.moe"
     const val tokyoInsiderAPI = "https://www.tokyoinsider.com"
-    const val WYZIESubsAPI = "https://sub.wyzie.ru"
+    const val WYZIESubsAPI = "https://sub.wyzie.io"
     const val MostraguardaAPI = "https://mostraguarda.stream"
     const val CC_COOKIE = BuildConfig.CC_COOKIE
     const val CINE_API = BuildConfig.CINE_API
     const val CASTLE_API = BuildConfig.CASTLE_API
     const val animepaheAPI = "https://animepahe.si"
-    const val allmovielandAPI = "https://allmovieland.io"
+    const val allmovielandAPI = "https://allmovieland.you"
     const val torrentioAPI = "https://torrentio.strem.fun/sort=seeders"
     const val anizoneAPI = "https://anizone.to"
     const val AllanimeAPI = "https://api.allanime.day/api"
     const val PrimeSrcApi = "https://primesrc.me"
     const val asiaflixAPI = "https://asiaflix.net"
     const val twoembedAPI = "https://2embed.cc"
-    // const val xprimeBaseAPI = "https://xprime.today"
-    // const val xprimeAPI = "https://backend.xprime.today"
     const val sudatchiAPI = "https://sudatchi.com"
     const val aniversehdAPI = "https://aniversehd.com"
     const val animezAPI = "https://animeyy.com"
@@ -36,7 +34,7 @@ object ApiConstants {
     const val vidSrcApi = "https://api.rgshows.ru"
     const val vidSrcHindiApi = "https://hindi.rgshows.ru"
     const val dahmerMoviesAPI = "https://a.111477.xyz"
-    const val hexaAPI = "https://themoviedb.hexa.su"
+    const val hexaAPI = "https://theemoviedb.hexa.su"
     const val videasyAPI = "https://api.videasy.net"
     const val vidlinkAPI = "https://vidlink.pro"
     const val multiDecryptAPI = "https://enc-dec.app/api"
@@ -64,6 +62,8 @@ object ApiConstants {
     const val vidsrcCCAPI = "https://vidsrc.cc"
     const val autoembedAPI = "https://player2.autoembed.cc"
     const val watch32API = "https://watch32.sx"
+    const val kuudereAPI = "https://kuudere.to"
+    const val vidrockAPI = "https://vidrock.net"
     const val torrentsdbAPI = "https://torrentsdb.com/eyJsaW1pdCI6IjMiLCJkZWJyaWRvcHRpb25zIjpbIm5vZG93bmxvYWRsaW5rcyJdfQ=="
 
     // ── 2. Private Background Logic ──────────────────────────────

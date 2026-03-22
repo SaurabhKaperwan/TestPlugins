@@ -94,6 +94,11 @@ object ProviderRegistry {
 
         // ── Direct HTTP Providers ─────────────────────────────────
         ProviderDef(
+            key = "p_xdmovies", displayName = "XDMovies",
+            executeStandard = { res, subCb, cb -> invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokeXDmovies(res.imdbTitle, res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
+        ),
+        ProviderDef(
             key = "p_showbox", displayName = "ShowBox",
             executeStandard = { res, subCb, cb ->
                 invokeShowbox(res.tmdbId, res.season, res.episode, subCb, cb)
@@ -105,6 +110,10 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_vidflix", displayName = "Vidflix",
             executeStandard = { res, _, cb -> invokeVidflix(res.tmdbId, res.season, res.episode, cb) }
+        ),
+        ProviderDef(
+            key = "p_vidrock", displayName = "Vidrock",
+            executeStandard = { res, _, cb -> invokeVidrock(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
             key = "p_moviebox", displayName = "Moviebox",
@@ -141,7 +150,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_xpass", displayName = "Xpass",
-            executeStandard = { res, _, cb -> invokeXpass(res.tmdbId, res.season, res.episode, cb) }
+            executeStandard = { res, subCb, cb -> invokeXpass(res.tmdbId, res.season, res.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_playsrc", displayName = "Playsrc",
@@ -254,11 +263,6 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invoke4khdhub(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
-            key = "p_xdmovies", displayName = "XDMovies",
-            executeStandard = { res, subCb, cb -> invokeXDmovies(res.title, res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeXDmovies(res.imdbTitle, res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_primesrc", displayName = "PrimeSrc",
             executeStandard = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokePrimeSrc(res.imdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
@@ -325,12 +329,7 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
 
-        // { invokeTripleOneMovies(res.tmdbId, res.season, res.episode, callback, subtitleCallback) },
-        // { invokeVidPlus(res.tmdbId,res.imdbId,res.title,res.season,res.episode, res.year,callback,subtitleCallback) },
         // { invokeMultiEmbeded(res.tmdbId, res.season,res.episode, callback, subtitleCallback) },
-        // { invokePrimebox(res.title, res.year, res.season, res.episode, subtitleCallback, callback) },
-        // { invokePrimenet(res.tmdbId, res.season, res.episode, callback) },
-        // { invokeMp4Moviez(res.title, res.season, res.episode, res.year, callback, subtitleCallback) },
 
         // ── Asian Drama & Anime Specific (Including MALSync logic) ─
         ProviderDef(
@@ -377,6 +376,10 @@ object ProviderRegistry {
             key = "p_anizone", displayName = "Anizone",
             executeAnime = { res, subCb, cb -> invokeAnizone(res.originalTitle ?: res.title, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnizone(data.title, data.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_kuudere", displayName = "Kuudere",
+            executeAnime = { res, subCb, cb -> invokeKuudere(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
         ),
         ProviderDef(
             key = "p_animes", displayName = "Animes",

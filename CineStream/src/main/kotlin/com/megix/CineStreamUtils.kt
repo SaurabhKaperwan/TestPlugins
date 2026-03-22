@@ -59,6 +59,9 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
+import com.lagradost.cloudstream3.extractors.VidHidePro
+import com.lagradost.cloudstream3.extractors.StreamWishExtractor
+
 class SpecOption(searchTerms: List<String>, val label: String) {
     constructor(term: String, label: String) : this(listOf(term), label)
 
@@ -550,20 +553,19 @@ fun getKisskhTitle(str: String?): String? {
     return str?.replace(Regex("[^a-zA-Z\\d]"), "-")
 }
 
-suspend fun <A, B> Iterable<A>.safeAmap(f: suspend (A) -> B?): List<B> = safeAmap(5, f)
-
-suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> B?): List<B> = supervisorScope {
+suspend fun <A, B> Iterable<A>.safeAmap(
+    concurrency: Int = 5,
+    f: suspend (A) -> B?
+): List<B> = supervisorScope {
     val semaphore = Semaphore(concurrency)
-    val deferreds = mutableListOf<Deferred<B?>>()
-
-    for (item in this@safeAmap) {
-        semaphore.acquire()
-        deferreds += async(Dispatchers.IO) {
+    map { item ->
+        async<B?>(Dispatchers.IO) {
+            semaphore.acquire()
             try {
                 f(item)
             } catch (e: CancellationException) {
                 if (!this@supervisorScope.isActive) throw e
-                Log.w("safeAmap", "Item cancelled locally (e.g., timeout): ${e.message}")
+                Log.w("safeAmap", "Item cancelled locally: ${e.message}")
                 null
             } catch (e: Throwable) {
                 Log.e("safeAmap", "Item failed: ${e.message}")
@@ -572,9 +574,7 @@ suspend fun <A, B> Iterable<A>.safeAmap(concurrency: Int = 5, f: suspend (A) -> 
                 semaphore.release()
             }
         }
-    }
-
-    deferreds.awaitAll().filterNotNull()
+    }.awaitAll().filterNotNull()
 }
 
 suspend fun runLimitedAsync(
@@ -582,12 +582,9 @@ suspend fun runLimitedAsync(
     vararg tasks: suspend () -> Unit
 ) = supervisorScope {
     val semaphore = Semaphore(concurrency)
-    val deferreds = mutableListOf<Deferred<Unit>>()
-
-    for (task in tasks) {
-        semaphore.acquire()
-
-        deferreds += async(Dispatchers.IO) {
+    tasks.map { task ->
+        async<Unit>(Dispatchers.IO) {
+            semaphore.acquire()
             try {
                 task()
             } catch (e: CancellationException) {
@@ -599,9 +596,7 @@ suspend fun runLimitedAsync(
                 semaphore.release()
             }
         }
-    }
-
-    deferreds.awaitAll()
+    }.awaitAll()
 }
 
 fun getEpisodeSlug(
@@ -784,6 +779,7 @@ suspend fun loadSourceNameExtractor(
         url.contains("fastdlserver.") -> fastdlserver().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("linksmod.") -> Linksmod().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("hubdrive.") -> Hubdrive().getUrl(url, referer, subtitleCallback, processLink)
+        url.contains("gofile.") -> Gofile().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("driveleech.") || url.contains("driveseed.") -> Driveleech().getUrl(url, referer, subtitleCallback, processLink)
         url.contains("howblogs.") -> Howblogs().getUrl(url, referer, subtitleCallback, processLink)
         else -> loadExtractor(url, referer, subtitleCallback, processLink)
@@ -797,9 +793,10 @@ suspend fun loadCustomExtractor(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit,
     quality: Int? = null,
+    serverName: String = "",
 ) = supervisorScope {
 
-    loadExtractor(url, referer, subtitleCallback) { link ->
+    val processLink: (ExtractorLink) -> Unit = { link ->
         launch(Dispatchers.IO) {
             val newLink = newExtractorLink(
                 name ?: link.source,
@@ -815,6 +812,12 @@ suspend fun loadCustomExtractor(
 
             callback(newLink)
         }
+    }
+
+    when {
+        serverName.contains("Vidhide", true) -> VidHidePro().getUrl(url, referer, subtitleCallback, processLink)
+        serverName.contains("Streamwish", true) -> StreamWishExtractor().getUrl(url, referer, subtitleCallback, processLink)
+        else -> loadExtractor(url, referer, subtitleCallback, processLink)
     }
 }
 
@@ -858,32 +861,6 @@ fun formatSize(bytes: Long): String {
         else -> String.format("%.2f KB", bytes / kb)
     }
 }
-
-//Xprime
-// suspend fun multiDecrypt(text : String, source: String) : String? {
-//     val headers = mapOf(
-//         "Content-Type" to "application/json",
-//         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-//         "Accept" to "application/json",
-//         "Accept-Language" to "en-US,en;q=0.9'",
-//     )
-
-//     val jsonBody = mapOf(
-//         "text" to text
-//     )
-
-//     val response = app.post(
-//         "https://enc-dec.app/api/$source",
-//         headers = headers,
-//         json = jsonBody
-//     )
-
-//     if(response.isSuccessful) {
-//         val json = response.text
-//         return JSONObject(json).getString("result")
-//     }
-//     return null
-// }
 
 suspend fun bypassHrefli(url: String): String? {
     fun Document.getFormUrl(): String {
@@ -1005,7 +982,7 @@ suspend fun openAndTrackProtectorSocket(
     cont.invokeOnCancellation {
         finished = true
         intervalJob?.cancel()
-        timeoutJob?.cancel()
+        timeoutJob.cancel()
         webSocket.cancel()
     }
 }
@@ -1421,29 +1398,6 @@ fun decodeMeta(document: Document): Document? {
     return null
 }
 
-// fun evpKDF(password: ByteArray, salt: ByteArray, keySize: Int, ivSize: Int): Pair<ByteArray, ByteArray> {
-//     val totalSize = keySize + ivSize
-//     val derived = ByteArray(totalSize)
-//     var block: ByteArray? = null
-//     var offset = 0
-
-//     while (offset < totalSize) {
-//         val hasher = MessageDigest.getInstance("MD5")
-//         if (block != null) hasher.update(block)
-//         hasher.update(password)
-//         hasher.update(salt)
-//         block = hasher.digest()
-
-//         val len = Math.min(block.size, totalSize - offset)
-//         System.arraycopy(block, 0, derived, offset, len)
-//         offset += len
-//     }
-
-//     val key = derived.copyOfRange(0, keySize)
-//     val iv = derived.copyOfRange(keySize, totalSize)
-//     return Pair(key, iv)
-// }
-
 //Allanime
 fun decrypthex(inputStr: String): String {
     val hexString = if (inputStr.startsWith("-")) {
@@ -1485,15 +1439,31 @@ fun fixSourceUrls(url: String, source: String?): String? {
     }
 }
 
-fun getGojoId(jsonString: String, aniId: Int): String? {
+fun getGojoId(jsonString: String, title: String): String? {
+
     val results = JSONObject(jsonString).getJSONArray("results")
 
-    for (i in 0 until results.length()) {
+    for( i in 0 until results.length() ) {
         val item = results.getJSONObject(i)
-        if (item.optInt("anilist_id") == aniId) {
+
+        val titleObject = item.optJSONObject("title") ?: continue
+
+        val englishTitle = titleObject.optString("english", "")
+        val romajiTitle = titleObject.optString("romaji", "")
+
+        if (englishTitle.equals(title, ignoreCase = true) ||
+            romajiTitle.equals(title, ignoreCase = true)) {
             return item.getString("id")
         }
     }
+
+    // for (i in 0 until results.length()) {
+    //     val item = results.getJSONObject(i)
+    //     if (item.optInt("anilist_id") == aniId) {
+    //         return item.getString("id")
+    //     }
+    // }
+
     return null
 }
 
@@ -1620,24 +1590,6 @@ suspend fun getRedirectLinks(url: String): String {
     }
 }
 
-// fun generateHashedString(): String {
-//     val s = "a8f7e9c2d4b6a1f3e8c9d2t4a7f6e9c2d4z6a1f3e8c9d2b4a7f5e9c2d4b6a1f3"
-//     val a = "2"
-//     val algorithm = "HmacSHA512"
-//     val keySpec = SecretKeySpec(s.toByteArray(StandardCharsets.UTF_8), algorithm)
-//     val mac = Mac.getInstance(algorithm)
-//     mac.init(keySpec)
-
-//     val input = "crypto_rotation_v${a}_seed_2025"
-//     val hmacBytes = mac.doFinal(input.toByteArray(StandardCharsets.UTF_8))
-//     val hex = hmacBytes.joinToString("") { "%02x".format(it) }
-
-//     val repeated = hex.repeat(3)
-//     val result = repeated.substring(0, max(s.length, 128))
-
-//     return result
-// }
-
 fun cinemaOSGenerateHash(tmdbId: Int?, imdbId: String?, season: Int?, episode: Int?): String {
     val primary = "a7f3b9c2e8d4f1a6b5c9e2d7f4a8b3c6e1d9f7a4b2c8e5d3f9a6b4c1e7d2f8a5"
     val secondary = "d3f8a5b2c9e6d1f7a4b8c5e2d9f3a6b1c7e4d8f2a9b5c3e7d4f1a8b6c2e9d5f3"
@@ -1661,34 +1613,19 @@ private fun calculateHmacSha256(data: String, key: String): String {
     return bytes.joinToString("") { "%02x".format(it) }
 }
 
-// Helper function to convert byte array to hex string
-// fun bytesToHex(bytes: ByteArray): String {
-//     val hexChars = CharArray(bytes.size * 2)
-//     for (i in bytes.indices) {
-//         val v = bytes[i].toInt() and 0xFF
-//         hexChars[i * 2] = "0123456789abcdef"[v ushr 4]
-//         hexChars[i * 2 + 1] = "0123456789abcdef"[v and 0x0F]
-//     }
-//     return String(hexChars)
-// }
-
 fun cinemaOSDecryptResponse(e: CinemaOSReponseData?): String? {
+    if (e == null) return null
 
-    if (e?.encrypted.isNullOrEmpty() || e?.cin.isNullOrEmpty() || e?.mao.isNullOrEmpty() || e?.salt.isNullOrEmpty()) {
+    if (e.encrypted.isEmpty() || e.cin.isEmpty() || e.mao.isEmpty() || e.salt.isEmpty()) {
         return null
     }
 
-    val encrypted = e!!.encrypted!!
-    val cin = e.cin!!
-    val mao = e.mao!!
-    val salt = e.salt!!
-
     val passwordStr = "a1b2c3d4e4f6477658455678901477567890abcdef1234567890abcdef123456"
 
-    val ivBytes = hexStringToByteArray(cin)
-    val authTagBytes = hexStringToByteArray(mao)
-    val encryptedBytes = hexStringToByteArray(encrypted)
-    val saltBytes = hexStringToByteArray(salt)
+    val ivBytes = hexStringToByteArray(e.cin)
+    val authTagBytes = hexStringToByteArray(e.mao)
+    val encryptedBytes = hexStringToByteArray(e.encrypted)
+    val saltBytes = hexStringToByteArray(e.salt)
 
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
     val spec = PBEKeySpec(passwordStr.toCharArray(), saltBytes, 100000, 256)
@@ -1720,7 +1657,6 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
         val key = keys.next()
         val source = sourcesObject.getJSONObject(key)
 
-        // Check if source has "qualities" object
         if (source.has("qualities")) {
             val qualities = source.getJSONObject("qualities")
             val qualityKeys = qualities.keys()
@@ -1735,12 +1671,11 @@ fun parseCinemaOSSources(jsonString: String): List<Map<String, String>> {
                 sourceMap["type"] = qualityObj.optString("type", "")
                 sourceMap["speed"] = source.optString("speed", "")
                 sourceMap["bitrate"] = source.optString("bitrate", "")
-                sourceMap["quality"] = qualityKey // Use the quality key (e.g., "480", "720")
+                sourceMap["quality"] = qualityKey
 
                 sourcesList.add(sourceMap)
             }
         } else {
-            // Regular source with direct URL
             val sourceMap = mutableMapOf<String, String>()
             sourceMap["server"] = source.optString("server", key)
             sourceMap["url"] = source.optString("url", "")
@@ -1823,111 +1758,30 @@ suspend fun getUpcloud(
     }
 }
 
-/** Encodes input using Base64 with custom character mapping. */
-// fun customEncode(input: String): String {
-//     val src = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-//     val dst = "Ckbl5ym-WLAev9dTuhpgK8PHtSGa2EBDnjMZR_Y0Xx7co1qrfFNJOQ6iUs4zIVw3"
-//     val transMap = src.zip(dst).toMap()
-//     val base64 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//         Base64.getEncoder().encodeToString(input.toByteArray())
-//             .replace("+", "-")
-//             .replace("/", "_")
-//             .replace("=", "")
-//     } else {
-//         android.util.Base64.encodeToString(input.toByteArray(), android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
-//     }
-//     return base64.map { char -> transMap[char] ?: char }.joinToString("")
-// }
+fun getVidrockUrlEncode(itemId: String): String {
+    val passphrase = "x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9"
+    val keyBytes = passphrase.toByteArray(Charsets.UTF_8)
+    val ivBytes = keyBytes.copyOfRange(0, 16)
+    val secretKey = SecretKeySpec(keyBytes, "AES")
+    val ivSpec = IvParameterSpec(ivBytes)
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
+    val encryptedBytes = cipher.doFinal(itemId.toByteArray(Charsets.UTF_8))
+    val base64Encoded = android.util.Base64.encodeToString(encryptedBytes, android.util.Base64.NO_WRAP)
+    val urlEncoded = URLEncoder.encode(base64Encoded, "UTF-8").replace("%2F", "/")
+    return urlEncoded
+}
 
-/** Extracts data using regex pattern */
-//  fun extractData(pattern: String, input: String): String {
-//     val regex = Regex(pattern)
-//     val match = regex.find(input)
-//     return match?.groups?.get(1)?.value ?: throw Exception("Pattern not found: $pattern")
-// }
+//Xpass
 
-/** Performs AES encryption */
-//  fun aesEncrypt(data: String): String {
-//     val aesKey = hexStringToByteArray("ecc34a66edea3dcd48c8733812365f5caf7d28865993ae5fdc4a08436736a998")
-//     val aesIv = hexStringToByteArray("4b47db0a764158dff36db37d27fdfcea")
-
-//     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-//     cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(aesKey, "AES"), IvParameterSpec(aesIv))
-
-//     val encryptedData = cipher.doFinal(data.toByteArray())
-//     return bytesToHex(encryptedData)
-// }
-
-/** Performs XOR operation */
-//  fun xorOperation(input: String): String {
-//     val xorKey = hexStringToByteArray("fafd3f")
-//     val result = StringBuilder()
-
-//     for (i in input.indices) {
-//         val char = input[i]
-//         val xorByte = xorKey[i % xorKey.size].toInt()
-//         result.append((char.code xor xorByte).toChar())
-//     }
-
-//     return result.toString()
-// }
-
-// fun parseServers(jsonString: String): List<TripleOneMoviesServer> {
-//     val servers = mutableListOf<TripleOneMoviesServer>()
-//     try {
-//         val jsonArray = JSONArray(jsonString)
-//         for (i in 0 until jsonArray.length()) {
-//             val jsonObject = jsonArray.getJSONObject(i)
-//             val server = TripleOneMoviesServer(
-//                 name = jsonObject.getString("name"),
-//                 description = jsonObject.getString("description"),
-//                 image = jsonObject.getString("image"),
-//                 data = jsonObject.getString("data")
-//             )
-//             servers.add(server)
-//         }
-//     } catch (e: Exception) {
-//         Log.e("salman731", "Manual parsing failed: ${e.message}")
-//     }
-//     return servers
-// }
-
-/**
- * PBKDF2 key derivation using Bouncy Castle
- */
-// fun derivePbkdf2Key(password: String, salt: ByteArray, iterations: Int, keyLength: Int): ByteArray {
-//    val generator = PKCS5S2ParametersGenerator(SHA256Digest())
-//    generator.init(password.toByteArray(Charsets.UTF_8), salt, iterations)
-//    return (generator.generateDerivedParameters(keyLength * 8) as KeyParameter).key
-//}
-
-// fun derivePbkdf2Key(
-//     password: String,
-//     salt: ByteArray,
-//     iterations: Int,
-//     keyLength: Int
-// ): ByteArray {
-//     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-//     val spec: KeySpec = PBEKeySpec(password.toCharArray(), salt, iterations, keyLength * 8)
-//     return factory.generateSecret(spec).encoded
-// }
-
-/**
- * Remove PKCS7 padding
- */
-// fun unpadData(data: ByteArray): ByteArray {
-//     val padding = data[data.size - 1].toInt() and 0xFF
-//     if (padding < 1 || padding > data.size) {
-//         return data
-//     }
-//     return data.copyOf(data.size - padding)
-// }
-
-// fun hasHost(url: String): Boolean {
-//     return try {
-//         val host = URL(url).host
-//         !host.isNullOrEmpty()
-//     } catch (e: Exception) {
-//         false
-//     }
-// }
+fun extractXpassBackups(html: String): List<Pair<String, String>> {
+    val raw = Regex("""var backups=(\[.*?]);""", RegexOption.DOT_MATCHES_ALL)
+        .find(html)?.groupValues?.get(1) ?: return emptyList()
+    val array = JSONArray(raw)
+    return (0 until array.length()).mapNotNull { i ->
+        val obj  = array.getJSONObject(i)
+        val name = obj.optString("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        val url  = obj.optString("url").takeIf  { it.isNotBlank() } ?: return@mapNotNull null
+        Pair(name, url)
+    }
+}
