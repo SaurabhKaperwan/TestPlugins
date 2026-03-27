@@ -9,8 +9,6 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.*
-import com.megix.CineStreamExtractors
-import com.megix.CineStreamProvider
 import com.megix.settings.SettingsTheme.dp
 
 /**
@@ -78,11 +76,6 @@ internal object SettingsDialog {
 
         // Providers card (delegated)
         layout.addView(SettingsProviders.buildCard(context, pending) { commit -> commitOrder = commit })
-
-        // Diagnostics backend card
-        layout.addView(buildCollapsibleCard(context, "🛠️  Plugin Diagnostics", accentA = Color.parseColor("#F59E0B"), accentB = Color.parseColor("#EAB308")) {
-            addView(buildDiagnosticsRow(context))
-        })
 
         // Stremio addons card
         layout.addView(buildStremioAddonsCard(context) { commit -> commitAddons = commit })
@@ -251,74 +244,6 @@ internal object SettingsDialog {
             addView(SettingsWidgets.dangerBtn(context, "Clear") {
                 Settings.clearCookie()
                 Toast.makeText(context, "🍪 Cookies cleared!", Toast.LENGTH_SHORT).show()
-            })
-        }
-    }
-
-    // =========================================================
-    //  DIAGNOSTICS ROW
-    // =========================================================
-
-    private fun buildDiagnosticsRow(context: Context): View {
-        val theme = SettingsTheme
-
-        val providerStatus = Settings.getProviderStatusSummary()
-        val cacheStats = CineStreamProvider.getCacheStats()
-        val healthData = CineStreamExtractors.getAllProviderHealth().entries.joinToString("\n") { entry ->
-            val state = when {
-                entry.value.isHealthy -> "OK"
-                else -> "WARN"
-            }
-            "${entry.key}: $state (S=${entry.value.successCount}, F=${entry.value.failureCount})"
-        }.ifBlank { "No providers have executed yet." }
-
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(16.dp(context), 12.dp(context), 16.dp(context), 14.dp(context))
-            setBackgroundColor(Color.parseColor("#1F2937"))
-
-            addView(TextView(context).apply {
-                text = providerStatus
-                setTextColor(theme.TEXT_PRIMARY)
-                textSize = 14f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-            })
-            addView(TextView(context).apply {
-                text = cacheStats
-                setTextColor(theme.TEXT_SECONDARY)
-                textSize = 12f
-                setPadding(0, 4.dp(context), 0, 4.dp(context))
-            })
-            addView(TextView(context).apply {
-                text = healthData
-                setTextColor(theme.TEXT_SECONDARY)
-                textSize = 11f
-                setLineSpacing(0f, 1.2f)
-            })
-
-            addView(SettingsWidgets.dangerBtn(context, "Clear Cache") {
-                CineStreamProvider.clearCache()
-                Toast.makeText(context, "Cache cleared", Toast.LENGTH_SHORT).show()
-            })
-
-            addView(SettingsWidgets.pillBtn(context, "Copy debug JSON",
-                theme.TEXT_PRIMARY,
-                Color.parseColor("#2563EB"),
-                Color.parseColor("#1D4ED8")) {
-                val healthJson = CineStreamExtractors.getAllProviderHealth().entries.joinToString(",\n") { entry ->
-                    "\"${entry.key}\": {\"success\": ${entry.value.successCount}, \"failure\": ${entry.value.failureCount}, \"healthy\": ${entry.value.isHealthy}}"
-                }
-                val dump = """{
-  \"providerStatus\": \"$providerStatus\",
-  \"cacheStats\": \"$cacheStats\",
-  \"health\": {
-$healthJson
-  }
-}""".trimIndent()
-
-                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("CineStream diagnostics", dump))
-                Toast.makeText(context, "Diagnostics JSON copied to clipboard", Toast.LENGTH_SHORT).show()
             })
         }
     }

@@ -43,29 +43,12 @@ import com.megix.settings.Settings
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.Semaphore
-import kotlin.math.pow
 
 object CineStreamExtractors {
 
     private val cfKiller by lazy { CloudflareKiller() }
     private val globalGson by lazy { Gson() }
     private val cfMutex = Mutex()
-    
-    // ── 1. Parallel Request Throttling 🔄
-    private val requestSemaphore = Semaphore(8) // Max 8 concurrent requests
-    
-    // ── 5. Provider Health Checks 🏥
-    data class ProviderHealth(
-        val name: String,
-        var successCount: Int = 0,
-        var failureCount: Int = 0,
-        var lastChecked: Long = 0,
-        var isHealthy: Boolean = true
-    )
-    
-    private val providerHealthMap = mutableMapOf<String, ProviderHealth>()
-    private val healthMutex = Mutex()
 
     // ── ApiConstants ─────────────────────────────────────
     // ── Static ────────────────────────────────────
@@ -142,116 +125,6 @@ object CineStreamExtractors {
     private val topmoviesAPI     get() = ApiConstants.topmoviesAPI
     private val uhdmoviesAPI     get() = ApiConstants.uhdmoviesAPI
     private val vegamoviesAPI    get() = ApiConstants.vegamoviesAPI
-
-    // ──────────────────────────────────────────────────────────
-    // HELPER FUNCTIONS: Throttling, Error Handling, Health Checks
-    // ──────────────────────────────────────────────────────────
-    
-    /**
-     * 3. Better Error Handling - Wraps scraper calls with context-aware error handling
-     */
-    suspend fun <T> safeInvoke(
-        providerName: String,
-        block: suspend () -> T?
-    ): T? {
-        return try {
-            block()
-        } catch (e: Exception) {
-            Log.e("CineStream", "Error in $providerName: ${e.message}")
-            trackProviderFailure(providerName)
-            null
-        }
-    }
-    
-    /**
-     * 7. Request Retry Logic - Exponential backoff for transient failures
-     */
-    suspend fun <T> retryWithBackoff(
-        maxAttempts: Int = 3,
-        providerName: String = "Unknown",
-        block: suspend () -> T?
-    ): T? {
-        repeat(maxAttempts - 1) { attempt ->
-            try {
-                return block()
-            } catch (e: Exception) {
-                val delayMs = (2.0.pow(attempt)).toLong() * 1000
-                Log.w("CineStream", "$providerName attempt ${attempt + 1} failed, retrying in ${delayMs}ms")
-                kotlinx.coroutines.delay(delayMs)
-            }
-        }
-        return try {
-            block()
-        } catch (e: Exception) {
-            Log.e("CineStream", "$providerName failed after $maxAttempts attempts")
-            trackProviderFailure(providerName)
-            null
-        }
-    }
-    
-    /**
-     * Throttled request to prevent overwhelming servers
-     */
-    suspend fun <T> throttledRequest(
-        providerName: String,
-        block: suspend () -> T?
-    ): T? {
-        requestSemaphore.acquire()
-        return try {
-            retryWithBackoff(providerName = providerName) { 
-                trackProviderStart(providerName)
-                block()?.also { 
-                    trackProviderSuccess(providerName)
-                }
-            }
-        } finally {
-            requestSemaphore.release()
-        }
-    }
-    
-    /**
-     * Track provider performance metrics
-     */
-    private suspend fun trackProviderStart(providerName: String) {
-        healthMutex.withLock {
-            providerHealthMap.getOrPut(providerName) { 
-                ProviderHealth(providerName, lastChecked = System.currentTimeMillis()) 
-            }
-        }
-    }
-    
-    private suspend fun trackProviderSuccess(providerName: String) {
-        healthMutex.withLock {
-            providerHealthMap[providerName]?.apply {
-                successCount++
-                lastChecked = System.currentTimeMillis()
-            }
-        }
-    }
-    
-    private suspend fun trackProviderFailure(providerName: String) {
-        healthMutex.withLock {
-            providerHealthMap[providerName]?.apply {
-                failureCount++
-                lastChecked = System.currentTimeMillis()
-                isHealthy = successCount > failureCount
-            }
-        }
-    }
-    
-    /**
-     * Get provider health status
-     */
-    fun getProviderHealth(providerName: String): ProviderHealth? {
-        return providerHealthMap[providerName]
-    }
-    
-    /**
-     * Get all provider health statistics
-     */
-    fun getAllProviderHealth(): Map<String, ProviderHealth> {
-        return providerHealthMap.toMap()
-    }
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,

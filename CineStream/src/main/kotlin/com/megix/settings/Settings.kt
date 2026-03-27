@@ -1,7 +1,6 @@
 package com.megix.settings
 
 import android.content.Context
-import android.util.Log
 import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
 import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
 import com.megix.ProviderRegistry
@@ -194,45 +193,4 @@ object Settings {
     // ── Entry point ──────────────────────────────────────────
     fun showSettingsDialog(context: Context, onSave: () -> Unit) =
         SettingsDialog.show(context, onSave)
-    
-    // ──────────────────────────────────────────────────────────
-    // 8. SETTINGS VALIDATION - Ensure at least one provider enabled
-    // ──────────────────────────────────────────────────────────
-    
-    /**
-     * Validates that at least one content provider is enabled.
-     * If all providers are disabled, re-enables the first one.
-     */
-    fun validateProviderSettings() {
-        val mainProviders = listOf(
-            PROVIDER_CINESTREAM,
-            PROVIDER_SIMKL,
-            PROVIDER_TMDB
-        )
-        
-        val enabledCount = mainProviders.count { getKey<Boolean>(it) ?: true }
-        
-        if (enabledCount == 0) {
-            Log.w("CineStream", "No providers enabled! Re-enabling $PROVIDER_CINESTREAM")
-            setKey(PROVIDER_CINESTREAM, true)
-        } else {
-            Log.i("CineStream", "Provider validation: $enabledCount/${mainProviders.size} providers enabled")
-        }
-    }
-    
-    /**
-     * Get provider enabled status summary
-     */
-    fun getProviderStatusSummary(): String {
-        val cinestream = getKey<Boolean>(PROVIDER_CINESTREAM) ?: true
-        val simkl = getKey<Boolean>(PROVIDER_SIMKL) ?: true
-        val tmdb = getKey<Boolean>(PROVIDER_TMDB) ?: true
-        
-        return buildString {
-            append("Providers: ")
-            if (cinestream) append("✓CineStream ") else append("✗CineStream ")
-            if (simkl) append("✓Simkl ") else append("✗Simkl ")
-            if (tmdb) append("✓TMDB") else append("✗TMDB")
-        }
-    }
 }

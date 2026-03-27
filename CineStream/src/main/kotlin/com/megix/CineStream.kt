@@ -18,9 +18,6 @@ open class CineStream: Plugin() {
         // Seed seen-providers on every load so reinstalls/updates
         // don't treat existing providers as new
         Settings.initSeenProviders()
-        
-        // 8. Settings Validation - Ensure at least one provider is enabled
-        Settings.validateProviderSettings()
 
         if (getKey<Boolean>(Settings.PROVIDER_CINESTREAM) ?: true) {
             registerMainAPI(CineStreamProvider())

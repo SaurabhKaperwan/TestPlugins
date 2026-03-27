@@ -1779,27 +1779,3 @@ fun extractXpassBackups(html: String): List<Pair<String, String>> {
         Pair(name, url)
     }
 }
-
-// ──────────────────────────────────────────────────────────
-// 10. LOGGING & TELEMETRY - Track provider performance
-// ──────────────────────────────────────────────────────────
-
-/**
- * Tracks the execution time of provider operations for performance monitoring
- */
-suspend fun <T> trackProviderPerformance(
-    providerName: String,
-    block: suspend () -> T?
-): T? {
-    val startTime = System.currentTimeMillis()
-    return try {
-        block()?.also {
-            val duration = System.currentTimeMillis() - startTime
-            Log.i("CineStream", "Provider [$providerName]: ${duration}ms")
-        }
-    } catch (e: Exception) {
-        val duration = System.currentTimeMillis() - startTime
-        Log.e("CineStream", "Provider [$providerName] failed after ${duration}ms: ${e.message}")
-        null
-    }
-}

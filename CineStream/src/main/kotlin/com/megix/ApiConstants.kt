@@ -76,28 +76,6 @@ object ApiConstants {
             Log.e("CineStream", "Error loading dynamic API URLs: ${it.message}")
             JSONObject()
         }
-        
-        // ── 2. API Validation & Fallbacks ✅
-        validateApiConfiguration()
-    }
-    
-    /**
-     * Validates API configuration and logs warnings for missing APIs.
-     * Provides graceful degradation when APIs are unavailable.
-     */
-    private fun validateApiConfiguration() {
-        val requiredApis = mapOf(
-            "CINE_API" to CINE_API,
-            "CASTLE_API" to CASTLE_API
-        )
-        
-        requiredApis.forEach { (name, value) ->
-            if (value.isNullOrBlank()) {
-                Log.w("CineStream", "$name not configured, disabling related providers")
-            }
-        }
-        
-        Log.i("CineStream", "API validation complete - ${requiredApis.count { it.value.isNotBlank() }}/${requiredApis.size} APIs configured")
     }
 
     private fun api(key: String) = _apiConfig?.optString(key).orEmpty()
