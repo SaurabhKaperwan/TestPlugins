@@ -1,4 +1,4 @@
-package com.megix
+package com.megix.settings
 
 import android.app.AlertDialog
 import android.content.ClipData
@@ -9,7 +9,7 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.*
-import com.megix.SettingsTheme.dp
+import com.megix.settings.SettingsTheme.dp
 
 /**
  * Assembles the full Settings AlertDialog and every collapsible card inside it.

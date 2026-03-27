@@ -1,4 +1,4 @@
-package com.megix
+package com.megix.settings
 
 import android.content.Context
 import android.graphics.Color

@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
+import com.lagradost.nicehttp.NiceResponse
 
 // Gson & Jackson
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -37,78 +38,220 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 
-import com.megix.ApiConstants.AllanimeAPI
-import com.megix.ApiConstants.CC_COOKIE
-import com.megix.ApiConstants.MostraguardaAPI
-import com.megix.ApiConstants.PrimeSrcApi
-import com.megix.ApiConstants.WYZIESubsAPI
-import com.megix.ApiConstants.XDmoviesAPI
-import com.megix.ApiConstants.YflixAPI
-import com.megix.ApiConstants.akwamAPI
-import com.megix.ApiConstants.allmovielandAPI
-import com.megix.ApiConstants.animekaiAPI
-import com.megix.ApiConstants.animepaheAPI
-import com.megix.ApiConstants.animetoshoAPI
-import com.megix.ApiConstants.animezAPI
-import com.megix.ApiConstants.aniversehdAPI
-import com.megix.ApiConstants.anizipAPI
-import com.megix.ApiConstants.anizoneAPI
-import com.megix.ApiConstants.asiaflixAPI
-import com.megix.ApiConstants.autoembedAPI
-import com.megix.ApiConstants.bollyflixAPI
-import com.megix.ApiConstants.bollywoodAPI
-import com.megix.ApiConstants.bollywoodBaseAPI
-import com.megix.ApiConstants.cinemaOSApi
-import com.megix.ApiConstants.cinemacityAPI
-import com.megix.ApiConstants.dahmerMoviesAPI
-import com.megix.ApiConstants.dramafullAPI
-import com.megix.ApiConstants.femBoxAPI
-import com.megix.ApiConstants.flixIndiaAPI
-import com.megix.ApiConstants.fourkhdhubAPI
-import com.megix.ApiConstants.gojoBaseAPI
-import com.megix.ApiConstants.hdmovie2API
-import com.megix.ApiConstants.hexaAPI
-import com.megix.ApiConstants.hianimeAPI
-import com.megix.ApiConstants.hindMoviezAPI
-import com.megix.ApiConstants.kissKhAPI
-import com.megix.ApiConstants.levidiaAPI
-import com.megix.ApiConstants.malsyncAPI
-import com.megix.ApiConstants.mappleAPI
-import com.megix.ApiConstants.movies4uAPI
-import com.megix.ApiConstants.moviesdriveAPI
-import com.megix.ApiConstants.moviesmodAPI
-import com.megix.ApiConstants.multiDecryptAPI
-import com.megix.ApiConstants.multiEmbededApi
-import com.megix.ApiConstants.multimoviesAPI
-import com.megix.ApiConstants.netflix2API
-import com.megix.ApiConstants.netflixAPI
-import com.megix.ApiConstants.projectfreetvAPI
-import com.megix.ApiConstants.protonmoviesAPI
-import com.megix.ApiConstants.rogmoviesAPI
-import com.megix.ApiConstants.rtallyAPI
-import com.megix.ApiConstants.skymoviesAPI
-import com.megix.ApiConstants.sudatchiAPI
-import com.megix.ApiConstants.tokyoInsiderAPI
-import com.megix.ApiConstants.toonStreamAPI
-import com.megix.ApiConstants.topmoviesAPI
-import com.megix.ApiConstants.twoembedAPI
-import com.megix.ApiConstants.uhdmoviesAPI
-import com.megix.ApiConstants.vegamoviesAPI
-import com.megix.ApiConstants.vidSrcApi
-import com.megix.ApiConstants.vidSrcHindiApi
-import com.megix.ApiConstants.videasyAPI
-import com.megix.ApiConstants.vidfastProApi
-import com.megix.ApiConstants.vidlinkAPI
-import com.megix.ApiConstants.vidsrcCCAPI
-import com.megix.ApiConstants.vidstackAPI
-import com.megix.ApiConstants.vidstackBaseAPI
-import com.megix.ApiConstants.vidzeeApi
-import com.megix.ApiConstants.watch32API
-import com.megix.ApiConstants.xpassAPI
-import com.megix.ApiConstants.kuudereAPI
-import com.megix.ApiConstants.vidrockAPI
+import com.megix.ApiConstants
+import com.megix.settings.Settings
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.Semaphore
+import kotlin.math.pow
 
 object CineStreamExtractors {
+
+    private val cfKiller by lazy { CloudflareKiller() }
+    private val globalGson by lazy { Gson() }
+    private val cfMutex = Mutex()
+    
+    // ── 1. Parallel Request Throttling 🔄
+    private val requestSemaphore = Semaphore(8) // Max 8 concurrent requests
+    
+    // ── 5. Provider Health Checks 🏥
+    data class ProviderHealth(
+        val name: String,
+        var successCount: Int = 0,
+        var failureCount: Int = 0,
+        var lastChecked: Long = 0,
+        var isHealthy: Boolean = true
+    )
+    
+    private val providerHealthMap = mutableMapOf<String, ProviderHealth>()
+    private val healthMutex = Mutex()
+
+    // ── ApiConstants ─────────────────────────────────────
+    // ── Static ────────────────────────────────────
+    private val AllanimeAPI      = ApiConstants.AllanimeAPI
+    private val CC_COOKIE        = ApiConstants.CC_COOKIE
+    private val MostraguardaAPI  = ApiConstants.MostraguardaAPI
+    private val PrimeSrcApi      = ApiConstants.PrimeSrcApi
+    private val WYZIESubsAPI     = ApiConstants.WYZIESubsAPI
+    private val YflixAPI         = ApiConstants.YflixAPI
+    private val akwamAPI         = ApiConstants.akwamAPI
+    private val allmovielandAPI  = ApiConstants.allmovielandAPI
+    private val animepaheAPI     = ApiConstants.animepaheAPI
+    private val animetoshoAPI    = ApiConstants.animetoshoAPI
+    private val animezAPI        = ApiConstants.animezAPI
+    private val aniversehdAPI    = ApiConstants.aniversehdAPI
+    private val anizipAPI        = ApiConstants.anizipAPI
+    private val anizoneAPI       = ApiConstants.anizoneAPI
+    private val asiaflixAPI      = ApiConstants.asiaflixAPI
+    private val autoembedAPI     = ApiConstants.autoembedAPI
+    private val bollywoodAPI     = ApiConstants.bollywoodAPI
+    private val bollywoodBaseAPI = ApiConstants.bollywoodBaseAPI
+    private val cinemaOSApi      = ApiConstants.cinemaOSApi
+    private val cinemacityAPI    = ApiConstants.cinemacityAPI
+    private val dahmerMoviesAPI  = ApiConstants.dahmerMoviesAPI
+    private val dramafullAPI     = ApiConstants.dramafullAPI
+    private val femBoxAPI        = ApiConstants.femBoxAPI
+    private val flixIndiaAPI     = ApiConstants.flixIndiaAPI
+    private val hexaAPI          = ApiConstants.hexaAPI
+    private val kissKhAPI        = ApiConstants.kissKhAPI
+    private val levidiaAPI       = ApiConstants.levidiaAPI
+    private val malsyncAPI       = ApiConstants.malsyncAPI
+    private val mappleAPI        = ApiConstants.mappleAPI
+    private val multiDecryptAPI  = ApiConstants.multiDecryptAPI
+    private val multiEmbededApi  = ApiConstants.multiEmbededApi
+    private val projectfreetvAPI = ApiConstants.projectfreetvAPI
+    private val sudatchiAPI      = ApiConstants.sudatchiAPI
+    private val tokyoInsiderAPI  = ApiConstants.tokyoInsiderAPI
+    private val twoembedAPI      = ApiConstants.twoembedAPI
+    private val vidSrcApi        = ApiConstants.vidSrcApi
+    private val vidSrcHindiApi   = ApiConstants.vidSrcHindiApi
+    private val videasyAPI       = ApiConstants.videasyAPI
+    private val vidfastProApi    = ApiConstants.vidfastProApi
+    private val vidlinkAPI       = ApiConstants.vidlinkAPI
+    private val vidsrcCCAPI      = ApiConstants.vidsrcCCAPI
+    private val vidstackAPI      = ApiConstants.vidstackAPI
+    private val vidstackBaseAPI  = ApiConstants.vidstackBaseAPI
+    private val vidzeeApi        = ApiConstants.vidzeeApi
+    private val watch32API       = ApiConstants.watch32API
+    private val xpassAPI         = ApiConstants.xpassAPI
+    private val kuudereAPI       = ApiConstants.kuudereAPI
+    private val vidrockAPI       = ApiConstants.vidrockAPI
+
+    // ── Dynamic ─────────────────────────────────
+    private val XDmoviesAPI      get() = ApiConstants.XDmoviesAPI
+    private val animekaiAPI      get() = ApiConstants.animekaiAPI
+    private val bollyflixAPI     get() = ApiConstants.bollyflixAPI
+    private val fourkhdhubAPI    get() = ApiConstants.fourkhdhubAPI
+    private val gojoBaseAPI      get() = ApiConstants.gojoBaseAPI
+    private val hdmovie2API      get() = ApiConstants.hdmovie2API
+    private val hianimeAPI       get() = ApiConstants.hianimeAPI
+    private val kaidoAPI         get() = ApiConstants.kaidoAPI
+    private val hindMoviezAPI    get() = ApiConstants.hindMoviezAPI
+    private val movies4uAPI      get() = ApiConstants.movies4uAPI
+    private val moviesdriveAPI   get() = ApiConstants.moviesdriveAPI
+    private val moviesmodAPI     get() = ApiConstants.moviesmodAPI
+    private val multimoviesAPI   get() = ApiConstants.multimoviesAPI
+    private val netflix2API      get() = ApiConstants.netflix2API
+    private val netflixAPI       get() = ApiConstants.netflixAPI
+    private val protonmoviesAPI  get() = ApiConstants.protonmoviesAPI
+    private val rogmoviesAPI     get() = ApiConstants.rogmoviesAPI
+    private val rtallyAPI        get() = ApiConstants.rtallyAPI
+    private val skymoviesAPI     get() = ApiConstants.skymoviesAPI
+    private val toonStreamAPI    get() = ApiConstants.toonStreamAPI
+    private val topmoviesAPI     get() = ApiConstants.topmoviesAPI
+    private val uhdmoviesAPI     get() = ApiConstants.uhdmoviesAPI
+    private val vegamoviesAPI    get() = ApiConstants.vegamoviesAPI
+
+    // ──────────────────────────────────────────────────────────
+    // HELPER FUNCTIONS: Throttling, Error Handling, Health Checks
+    // ──────────────────────────────────────────────────────────
+    
+    /**
+     * 3. Better Error Handling - Wraps scraper calls with context-aware error handling
+     */
+    suspend fun <T> safeInvoke(
+        providerName: String,
+        block: suspend () -> T?
+    ): T? {
+        return try {
+            block()
+        } catch (e: Exception) {
+            Log.e("CineStream", "Error in $providerName: ${e.message}")
+            trackProviderFailure(providerName)
+            null
+        }
+    }
+    
+    /**
+     * 7. Request Retry Logic - Exponential backoff for transient failures
+     */
+    suspend fun <T> retryWithBackoff(
+        maxAttempts: Int = 3,
+        providerName: String = "Unknown",
+        block: suspend () -> T?
+    ): T? {
+        repeat(maxAttempts - 1) { attempt ->
+            try {
+                return block()
+            } catch (e: Exception) {
+                val delayMs = (2.0.pow(attempt)).toLong() * 1000
+                Log.w("CineStream", "$providerName attempt ${attempt + 1} failed, retrying in ${delayMs}ms")
+                kotlinx.coroutines.delay(delayMs)
+            }
+        }
+        return try {
+            block()
+        } catch (e: Exception) {
+            Log.e("CineStream", "$providerName failed after $maxAttempts attempts")
+            trackProviderFailure(providerName)
+            null
+        }
+    }
+    
+    /**
+     * Throttled request to prevent overwhelming servers
+     */
+    suspend fun <T> throttledRequest(
+        providerName: String,
+        block: suspend () -> T?
+    ): T? {
+        requestSemaphore.acquire()
+        return try {
+            retryWithBackoff(providerName = providerName) { 
+                trackProviderStart(providerName)
+                block()?.also { 
+                    trackProviderSuccess(providerName)
+                }
+            }
+        } finally {
+            requestSemaphore.release()
+        }
+    }
+    
+    /**
+     * Track provider performance metrics
+     */
+    private suspend fun trackProviderStart(providerName: String) {
+        healthMutex.withLock {
+            providerHealthMap.getOrPut(providerName) { 
+                ProviderHealth(providerName, lastChecked = System.currentTimeMillis()) 
+            }
+        }
+    }
+    
+    private suspend fun trackProviderSuccess(providerName: String) {
+        healthMutex.withLock {
+            providerHealthMap[providerName]?.apply {
+                successCount++
+                lastChecked = System.currentTimeMillis()
+            }
+        }
+    }
+    
+    private suspend fun trackProviderFailure(providerName: String) {
+        healthMutex.withLock {
+            providerHealthMap[providerName]?.apply {
+                failureCount++
+                lastChecked = System.currentTimeMillis()
+                isHealthy = successCount > failureCount
+            }
+        }
+    }
+    
+    /**
+     * Get provider health status
+     */
+    fun getProviderHealth(providerName: String): ProviderHealth? {
+        return providerHealthMap[providerName]
+    }
+    
+    /**
+     * Get all provider health statistics
+     */
+    fun getAllProviderHealth(): Map<String, ProviderHealth> {
+        return providerHealthMap.toMap()
+    }
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
@@ -153,6 +296,8 @@ object CineStreamExtractors {
     ) {
         val mal_response = app.get("$malsyncAPI/mal/anime/${malId ?: return}").parsedSafe<MALSyncResponses>()
 
+        Log.d("Malsync", "mal_response: $mal_response")
+
         val title = mal_response?.title
         val malsync = mal_response?.sites
         val zorotitle = malsync?.zoro?.firstNotNullOf { it.value["title"] }?.replace(":", " ")
@@ -161,6 +306,8 @@ object CineStreamExtractors {
 
         // Package the API results for the registry
         val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
+
+        Log.d("Malsync", "malData: $malData")
 
         val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
@@ -187,6 +334,28 @@ object CineStreamExtractors {
                     Settings.AddonType.HTTPS, Settings.AddonType.DEBRID -> invokeStreamioStreamsGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback, callback)
                 }
             }
+        }
+    }
+
+    private fun isCloudflarePage(response: NiceResponse): Boolean {
+        val server = response.headers["Server"] ?: ""
+        return server.contains("cloudflare", true) && response.code in listOf(403, 503)
+    }
+
+    suspend fun cfGet(url: String, headers: Map<String, String> = emptyMap()): NiceResponse {
+        val response = app.get(url, headers = headers)
+        return if (isCloudflarePage(response)) {
+            cfMutex.withLock {
+                val retryResponse = app.get(url, headers = headers, interceptor = cfKiller)
+                if (isCloudflarePage(retryResponse)) {
+                    cfKiller.savedCookies.clear()
+                    app.get(url, headers = headers, interceptor = cfKiller)
+                } else {
+                    retryResponse
+                }
+            }
+        } else {
+            response
         }
     }
 
@@ -1052,7 +1221,9 @@ object CineStreamExtractors {
             val encryptedEmbed = JSONObject(embedRespStr).getString("result")
             if (encryptedEmbed.isEmpty()) return@safeAmap
             val embed_url = decrypt(encryptedEmbed)
-            loadExtractor(embed_url, "Yflix", subtitleCallback, callback)
+
+            Log.d("Yflix", "embed_url: $embed_url")
+            MegaUp().getUrl(embed_url, "Yflix", subtitleCallback, callback)
         }
     }
 
@@ -1065,7 +1236,7 @@ object CineStreamExtractors {
         val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
                 else "$api/stream/${if (isMovie) "movie/$imdbId" else "series/$imdbId:$season:$episode"}.json"
 
-        Gson().fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.title ?: ""
             val name = s.name ?: title
 
@@ -1418,8 +1589,7 @@ object CineStreamExtractors {
         }
 
         val epJson = app.get(epUrl, headers = headers).text
-        val gson = Gson()
-        val data = gson.fromJson(epJson, VidlinkResponse::class.java)
+        val data = globalGson.fromJson(epJson, VidlinkResponse::class.java)
         val m3u8 = data.stream.playlist
 
         M3u8Helper.generateM3u8(
@@ -1452,14 +1622,7 @@ object CineStreamExtractors {
 
         val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
         val url = XDmoviesAPI + matched.path
-
-        val response = app.get(url).let {
-            if (
-                it.text.contains("Just a moment", true)
-            ) app.get(url, interceptor = CloudflareKiller())
-            else it
-        }
-
+        val response = cfGet(url)
         val document = response.document
 
         if(season == null) {
@@ -1488,6 +1651,8 @@ object CineStreamExtractors {
                 if(!link.contains("hubcloud")) {
                     link = bypassXDM(link) ?: return@safeAmap
                 }
+
+                Log.d("XDM", "link: $link")
 
                 loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
             }
@@ -1562,7 +1727,6 @@ object CineStreamExtractors {
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
     ) {
-        val gson = Gson()
         val subsUrls = listOf(
             "https://opensubtitles.stremio.homes/en|hi|de|ar|tr|es|ta|te|ru|ko/ai-translated=true|from=all|auto-adjustment=true",
             """https://subsense.nepiraw.com/n0tcjfba-{"languages":["en","hi","ta","es","ar"],"maxSubtitles":10}"""
@@ -1577,7 +1741,7 @@ object CineStreamExtractors {
                 }
 
                 val json = app.get(url).text
-                val subtitleResponse = gson.fromJson(json, StremioSubtitleResponse::class.java)
+                val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
                 subtitleResponse.subtitles.forEach {
                     val lang = it.lang ?: it.lang_code
@@ -2571,9 +2735,8 @@ object CineStreamExtractors {
         val json = app.get("$anizipAPI/mappings?$type=$id").text
         val epId = getEpAnizipId(json, episode ?: 1) ?: return
         val json2 = app.get("$animetoshoAPI/json?eid=$epId").text
-        val gson = Gson()
         val listType = object : TypeToken<List<Animetosho>>() {}.type
-        val items: List<Animetosho> = gson.fromJson(json2, listType)
+        val items: List<Animetosho> = globalGson.fromJson(json2, listType)
         // val filtered = items.filter { (it.seeders ?: 0) > 25 }
         // val sorted = filtered.sortedByDescending { it.seeders ?: -1 }
 
@@ -2622,9 +2785,14 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
     ) {
-        var res1 = app.get("""$bollyflixAPI/search/${id ?: return} ${season ?: ""}""", interceptor = CloudflareKiller()).document
+        val query = buildString {
+            append("$bollyflixAPI/search/${id ?: return}")
+            if (season != null) append(" $season")
+        }
+
+        val res1 = cfGet(query).document
         val url = res1.selectFirst("div > article > a")?.attr("href") ?: return
-        val res = app.get(url, interceptor = CloudflareKiller()).document
+        val res = cfGet(url).document
         val hTag = if (season == null) "h5" else "h4"
         val sTag = if (season == null) "" else "Season $season"
         val entries =
@@ -3146,6 +3314,59 @@ object CineStreamExtractors {
         )
     }
 
+    suspend fun invokeKaido(
+        url: String? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        Log.d("Kaido", "url: $url")
+
+        val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
+        val hiId = url?.substringAfterLast("/") ?: return
+        val id = hiId.substringAfterLast("-")
+
+        Log.d("Kaido", "id: $id")
+
+        val epId = app.get(
+            "$kaidoAPI/ajax/episode/list/$id",
+            headers = headers
+        ).parsedSafe<HianimeResponses>()?.html?.let {
+            Jsoup.parse(it)
+        }?.select("div.ss-list a")
+            ?.find { it.attr("data-number") == "${episode ?: 1}" }
+            ?.attr("data-id") ?: return
+
+        Log.d("Kaido", "epId: $epId")
+
+        val servers = app.get(
+            "$kaidoAPI/ajax/episode/servers?episodeId=$epId",
+            headers = headers
+        ).parsedSafe<HianimeResponses>()?.html?.let{
+            Jsoup.parse(it)
+        }?.select("div.item.server-item")
+            ?.map {
+                Triple(
+                    it.text(),
+                    it.attr("data-id"),
+                    it.attr("data-type")
+                )
+            } ?: return
+
+        Log.d("Kaido", "servers: $servers")
+
+        servers.safeAmap { (label, serverId, type) ->
+            val embedUrl = app.get(
+                "$kaidoAPI/ajax/episode/sources?id=$serverId",
+                headers = headers
+            ).parsedSafe<HianimeEpisodeServers>()?.link ?: return@safeAmap
+
+            Log.d("Kaido", "embedUrl: $embedUrl")
+
+            loadCustomExtractor("Kaido[${type.uppercase()}]", embedUrl, "", subtitleCallback, callback)
+        }
+    }
+
     suspend fun invokeHianime(
         url: String? = null,
         episode: Int? = null,
@@ -3474,7 +3695,7 @@ object CineStreamExtractors {
 
     //     val streamingUrl = app.get(url, allowRedirects = false, headers = headers).let { response ->
     //         if (response.text.contains("Just a moment", ignoreCase = true)) {
-    //             app.get(url, allowRedirects = false, interceptor = CloudflareKiller(), headers = headers).headers["Location"]
+    //             app.get(url, allowRedirects = false, headers = headers).headers["Location"]
     //         } else {
     //             response.headers["Location"]
     //         }
@@ -3921,7 +4142,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        Gson().fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -3974,7 +4195,7 @@ object CineStreamExtractors {
         }
 
         val json = app.get(url, timeout = 1000L).text
-        val subtitleResponse = Gson().fromJson(json, StremioSubtitleResponse::class.java)
+        val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
             val lang = it.lang ?: it.lang_code
