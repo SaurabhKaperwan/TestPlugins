@@ -15,8 +15,8 @@ import com.lagradost.nicehttp.NiceResponse
 // Coroutines
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
+// import kotlin.coroutines.resume
+// import kotlin.coroutines.resumeWithException
 
 // Network
 import java.net.*
@@ -40,7 +40,6 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 // Security & Crypto
-import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
@@ -499,6 +498,33 @@ fun String?.createSlug(): String? {
         ?.lowercase()
 }
 
+class CallbackTracker(
+    private val providerName: String,
+    private val originalCallback: (ExtractorLink) -> Unit,
+    private val originalSubtitleCallback: (SubtitleFile) -> Unit
+) {
+    var callCount = 0
+        private set
+
+    val callback: (ExtractorLink) -> Unit = { link ->
+        callCount++
+        originalCallback(link)
+    }
+
+    val subtitleCallback: (SubtitleFile) -> Unit = { sub ->
+        callCount++
+        originalSubtitleCallback(sub)
+    }
+
+    fun finalize() {
+        if (callCount > 0) {
+            Settings.incrementProviderSuccess(providerName)
+        } else {
+            Settings.incrementProviderFailure(providerName)
+        }
+    }
+}
+
 suspend fun extractMdrive(url: String): List<String> {
     val doc = app.get(url).document
     return doc.select("a")
@@ -890,172 +916,172 @@ suspend fun bypassHrefli(url: String): String? {
 
 //XDM
 
-fun createMouseData(durationMs: Long, phase: Int = 1): Map<String, Any> {
-    val duration = maxOf(1000L, durationMs)
-    val steps = maxOf(6L, duration / 1000L).toInt()
-    return mapOf(
-        "eventCount" to (12 + (steps * 2) + phase),
-        "moveCount" to (8 + steps + phase),
-        "clickCount" to minOf(3, phase + 1),
-        "totalDistance" to (180 + (steps * 90)),
-        "hasMovement" to true,
-        "duration" to duration
-    )
-}
+// fun createMouseData(durationMs: Long, phase: Int = 1): Map<String, Any> {
+//     val duration = maxOf(1000L, durationMs)
+//     val steps = maxOf(6L, duration / 1000L).toInt()
+//     return mapOf(
+//         "eventCount" to (12 + (steps * 2) + phase),
+//         "moveCount" to (8 + steps + phase),
+//         "clickCount" to minOf(3, phase + 1),
+//         "totalDistance" to (180 + (steps * 90)),
+//         "hasMovement" to true,
+//         "duration" to duration
+//     )
+// }
 
-fun generateRandomFingerprint(): String {
-    return UUID.randomUUID().toString().replace("-", "")
-}
+// fun generateRandomFingerprint(): String {
+//     return UUID.randomUUID().toString().replace("-", "")
+// }
 
-suspend fun openAndTrackProtectorSocket(
-    socketUrl: String, baseUrl: String, cookies: Map<String, String>, bindToken: String, durationMs: Long
-): Unit = suspendCancellableCoroutine { cont ->
-    val cookieHeader = cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
-    val request = Request.Builder()
-        .url(socketUrl)
-        .header("User-Agent", USER_AGENT)
-        .header("Cookie", cookieHeader)
-        .header("Origin", baseUrl)
-        .build()
+// suspend fun openAndTrackProtectorSocket(
+//     socketUrl: String, baseUrl: String, cookies: Map<String, String>, bindToken: String, durationMs: Long
+// ): Unit = suspendCancellableCoroutine { cont ->
+//     val cookieHeader = cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
+//     val request = Request.Builder()
+//         .url(socketUrl)
+//         .header("User-Agent", USER_AGENT)
+//         .header("Cookie", cookieHeader)
+//         .header("Origin", baseUrl)
+//         .build()
 
-    val scope = CoroutineScope(Dispatchers.IO)
-    var startedAt = 0L
-    var intervalJob: Job? = null
-    var timeoutJob: Job? = null
-    var finished = false
+//     val scope = CoroutineScope(Dispatchers.IO)
+//     var startedAt = 0L
+//     var intervalJob: Job? = null
+//     var timeoutJob: Job? = null
+//     var finished = false
 
-    val finish = { error: Exception? ->
-        if (!finished) {
-            finished = true
-            intervalJob?.cancel()
-            timeoutJob?.cancel()
-            if (error != null && cont.isActive) cont.resumeWithException(error)
-            else if (cont.isActive) cont.resume(Unit)
-        }
-    }
+//     val finish = { error: Exception? ->
+//         if (!finished) {
+//             finished = true
+//             intervalJob?.cancel()
+//             timeoutJob?.cancel()
+//             if (error != null && cont.isActive) cont.resumeWithException(error)
+//             else if (cont.isActive) cont.resume(Unit)
+//         }
+//     }
 
-    timeoutJob = scope.launch {
-        delay(maxOf(30_000L, durationMs + 10_000L))
-        finish(Exception("WebSocket timeout"))
-    }
+//     timeoutJob = scope.launch {
+//         delay(maxOf(30_000L, durationMs + 10_000L))
+//         finish(Exception("WebSocket timeout"))
+//     }
 
-    val listener = object : WebSocketListener() {
-        override fun onMessage(webSocket: WebSocket, text: String) {
-            when {
-                text.startsWith("0") -> webSocket.send("40")
-                text == "2" -> webSocket.send("3")
-                text.startsWith("40") && startedAt == 0L -> {
-                    startedAt = System.currentTimeMillis()
-                    webSocket.send("""42["bind","$bindToken"]""")
-                    webSocket.send("""42["visibility","visible"]""")
+//     val listener = object : WebSocketListener() {
+//         override fun onMessage(webSocket: WebSocket, text: String) {
+//             when {
+//                 text.startsWith("0") -> webSocket.send("40")
+//                 text == "2" -> webSocket.send("3")
+//                 text.startsWith("40") && startedAt == 0L -> {
+//                     startedAt = System.currentTimeMillis()
+//                     webSocket.send("""42["bind","$bindToken"]""")
+//                     webSocket.send("""42["visibility","visible"]""")
 
-                    intervalJob = scope.launch {
-                        while (isActive) {
-                            delay(1000)
-                            val elapsed = maxOf(1000L, System.currentTimeMillis() - startedAt)
-                            webSocket.send("""42["heartbeat"]""")
-                            webSocket.send("""42["visibility","visible"]""")
-                            webSocket.send("""42["mouseActivity",${JSONObject(createMouseData(elapsed, 2))}]""")
-                        }
-                    }
+//                     intervalJob = scope.launch {
+//                         while (isActive) {
+//                             delay(1000)
+//                             val elapsed = maxOf(1000L, System.currentTimeMillis() - startedAt)
+//                             webSocket.send("""42["heartbeat"]""")
+//                             webSocket.send("""42["visibility","visible"]""")
+//                             webSocket.send("""42["mouseActivity",${JSONObject(createMouseData(elapsed, 2))}]""")
+//                         }
+//                     }
 
-                    scope.launch {
-                        delay(durationMs)
-                        finish(null)
-                        webSocket.close(1000, "Done")
-                    }
-                }
-            }
-        }
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = finish(Exception(t))
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = finish(null)
-    }
+//                     scope.launch {
+//                         delay(durationMs)
+//                         finish(null)
+//                         webSocket.close(1000, "Done")
+//                     }
+//                 }
+//             }
+//         }
+//         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = finish(Exception(t))
+//         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = finish(null)
+//     }
 
-    val webSocket = OkHttpClient().newWebSocket(request, listener)
+//     val webSocket = OkHttpClient().newWebSocket(request, listener)
 
-    cont.invokeOnCancellation {
-        finished = true
-        intervalJob?.cancel()
-        timeoutJob.cancel()
-        webSocket.cancel()
-    }
-}
+//     cont.invokeOnCancellation {
+//         finished = true
+//         intervalJob?.cancel()
+//         timeoutJob.cancel()
+//         webSocket.cancel()
+//     }
+// }
 
-suspend fun bypassXDM(url: String): String? {
-
-    val link = app.get(url, allowRedirects = false).headers["location"] ?: return null
-
-    if (link.contains("hubcloud")) return link
-
-    val fingerprint = generateRandomFingerprint()
-    val visibleMs = 15_000L
-
-    val uri = URI(link)
-    val baseUrl = "${uri.scheme}://${uri.host}"
-    val socketUrl = "${if (uri.scheme == "https") "wss" else "ws"}://${uri.host}/socket.io/?EIO=4&transport=websocket"
-
-    val id = link.substringAfter("/r/").substringBefore("?").substringBefore("/")
-
-    if (id.isEmpty() || id == link) return null
-
-    var sessionCookies = mapOf<String, String>()
-
-    return try {
-        val sessionResponse = app.post(
-            "$baseUrl/api/session",
-            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link, "Origin" to baseUrl),
-            json = mapOf("code" to id, "fingerprint" to fingerprint, "mouseData" to createMouseData(2500, 1))
-        )
-        sessionCookies = sessionCookies + sessionResponse.cookies
-
-        val sessionData = JSONObject(sessionResponse.text)
-        val sessionId = sessionData.optString("sessionId").ifEmpty { return null }
-        val sessionToken = sessionData.optString("token").ifEmpty { return null }
-
-        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, sessionToken, visibleMs)
-
-        val step2Url = "$baseUrl/r/${URLEncoder.encode(id, "UTF-8")}?step=2&sid=${URLEncoder.encode(sessionId, "UTF-8")}"
-        val step2Response = app.get(step2Url, headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link), cookies = sessionCookies)
-        sessionCookies = sessionCookies + step2Response.cookies
-
-        val rebindResponse = app.post(
-            "$baseUrl/api/session/rebind",
-            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
-            cookies = sessionCookies,
-            json = mapOf("fingerprint" to fingerprint)
-        )
-        sessionCookies = sessionCookies + rebindResponse.cookies
-        val rebindToken = JSONObject(rebindResponse.text).optString("token").ifEmpty { return null }
-
-        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, rebindToken, visibleMs)
-
-        val completeResponse = app.post(
-            "$baseUrl/api/session/complete",
-            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
-            cookies = sessionCookies,
-            json = mapOf(
-                "fingerprint" to fingerprint,
-                "mouseData" to createMouseData((visibleMs * 2) + 2500, 3),
-                "honeypot" to ""
-            )
-        )
-        sessionCookies = sessionCookies + completeResponse.cookies
-        val completeToken = JSONObject(completeResponse.text).optString("token").ifEmpty { return null }
-
-        val goUrl = "$baseUrl/go/${URLEncoder.encode(sessionId, "UTF-8")}?t=${URLEncoder.encode(completeToken, "UTF-8")}"
-        val goResponse = app.get(
-            goUrl,
-            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url),
-            cookies = sessionCookies,
-            allowRedirects = false
-        )
-
-        goResponse.headers["location"] ?: goResponse.headers["Location"]
-    } catch (e: Exception) {
-        println("Failed to bypass XDM: ${e.message}")
-        null
-    }
-}
+//suspend fun bypassXDM(url: String): String? {
+//
+//    val link = app.get(url, allowRedirects = false).headers["location"] ?: return null
+//
+//    if (link.contains("hubcloud")) return link
+//
+//    val fingerprint = generateRandomFingerprint()
+//    val visibleMs = 15_000L
+//
+//    val uri = URI(link)
+//    val baseUrl = "${uri.scheme}://${uri.host}"
+//    val socketUrl = "${if (uri.scheme == "https") "wss" else "ws"}://${uri.host}/socket.io/?EIO=4&transport=websocket"
+//
+//    val id = link.substringAfter("/r/").substringBefore("?").substringBefore("/")
+//
+//    if (id.isEmpty() || id == link) return null
+//
+//    var sessionCookies = mapOf<String, String>()
+//
+//    return try {
+//        val sessionResponse = app.post(
+//            "$baseUrl/api/session",
+//            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link, "Origin" to baseUrl),
+//            json = mapOf("code" to id, "fingerprint" to fingerprint, "mouseData" to createMouseData(2500, 1))
+//        )
+//        sessionCookies = sessionCookies + sessionResponse.cookies
+//
+//        val sessionData = JSONObject(sessionResponse.text)
+//        val sessionId = sessionData.optString("sessionId").ifEmpty { return null }
+//        val sessionToken = sessionData.optString("token").ifEmpty { return null }
+//
+//        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, sessionToken, visibleMs)
+//
+//        val step2Url = "$baseUrl/r/${URLEncoder.encode(id, "UTF-8")}?step=2&sid=${URLEncoder.encode(sessionId, "UTF-8")}"
+//        val step2Response = app.get(step2Url, headers = mapOf("User-Agent" to USER_AGENT, "Referer" to link), cookies = sessionCookies)
+//        sessionCookies = sessionCookies + step2Response.cookies
+//
+//        val rebindResponse = app.post(
+//            "$baseUrl/api/session/rebind",
+//            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
+//            cookies = sessionCookies,
+//            json = mapOf("fingerprint" to fingerprint)
+//        )
+//        sessionCookies = sessionCookies + rebindResponse.cookies
+//        val rebindToken = JSONObject(rebindResponse.text).optString("token").ifEmpty { return null }
+//
+//        openAndTrackProtectorSocket(socketUrl, baseUrl, sessionCookies, rebindToken, visibleMs)
+//
+//        val completeResponse = app.post(
+//            "$baseUrl/api/session/complete",
+//            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url, "Origin" to baseUrl),
+//            cookies = sessionCookies,
+//            json = mapOf(
+//                "fingerprint" to fingerprint,
+//                "mouseData" to createMouseData((visibleMs * 2) + 2500, 3),
+//                "honeypot" to ""
+//            )
+//        )
+//        sessionCookies = sessionCookies + completeResponse.cookies
+//        val completeToken = JSONObject(completeResponse.text).optString("token").ifEmpty { return null }
+//
+//        val goUrl = "$baseUrl/go/${URLEncoder.encode(sessionId, "UTF-8")}?t=${URLEncoder.encode(completeToken, "UTF-8")}"
+//        val goResponse = app.get(
+//            goUrl,
+//            headers = mapOf("User-Agent" to USER_AGENT, "Referer" to step2Url),
+//            cookies = sessionCookies,
+//            allowRedirects = false
+//        )
+//
+//        goResponse.headers["location"] ?: goResponse.headers["Location"]
+//    } catch (e: Exception) {
+//        println("Failed to bypass XDM: ${e.message}")
+//        null
+//    }
+//}
 
 suspend fun getAniListInfo(animeId: Int): AnimeInfo? {
     val query = """
