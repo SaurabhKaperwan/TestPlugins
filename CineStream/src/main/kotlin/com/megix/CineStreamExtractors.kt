@@ -1434,66 +1434,66 @@ object CineStreamExtractors {
         ).forEach(callback)
     }
 
-    suspend fun invokeXDmovies(
-        title: String? = null,
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to "$XDmoviesAPI/",
-            "x-requested-with" to "XMLHttpRequest",
-            "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
-        )
+    // suspend fun invokeXDmovies(
+    //     title: String? = null,
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     subtitleCallback: (SubtitleFile) -> Unit,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     val headers = mapOf(
+    //         "User-Agent" to USER_AGENT,
+    //         "Referer" to "$XDmoviesAPI/",
+    //         "x-requested-with" to "XMLHttpRequest",
+    //         "x-auth-token" to "7297skkihkajwnsgaklakshuwd"
+    //     )
 
-        val searchData = app.get(
-            "$XDmoviesAPI/php/search_api.php?query=$title&fuzzy=true",
-            headers = headers
-        ).parsedSafe<XDMoviesSearchResponse>() ?: return
+    //     val searchData = app.get(
+    //         "$XDmoviesAPI/php/search_api.php?query=$title&fuzzy=true",
+    //         headers = headers
+    //     ).parsedSafe<XDMoviesSearchResponse>() ?: return
 
-        val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
-        val url = XDmoviesAPI + matched.path
-        val response = cfGet(url)
-        val document = response.document
+    //     val matched = searchData.firstOrNull { it.tmdb_id == tmdbId } ?: return
+    //     val url = XDmoviesAPI + matched.path
+    //     val response = cfGet(url)
+    //     val document = response.document
 
-        if(season == null) {
-            document.select("div.download-item a").safeAmap { source ->
-                var link = source.attr("href")
-                if(!link.contains("hubcloud")) {
-                    return@safeAmap
-                    // link = bypassXDM(link) ?: return@safeAmap
-                }
+    //     if(season == null) {
+    //         document.select("div.download-item a").safeAmap { source ->
+    //             var link = source.attr("href")
+    //             if(!link.contains("hubcloud")) {
+    //                 return@safeAmap
+    //                 // link = bypassXDM(link) ?: return@safeAmap
+    //             }
 
-                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
-            }
-        } else {
-            val epRegex = Regex(
-                "S${season.toString().padStart(2, '0')}E${
-                    episode.toString().padStart(2, '0')
-                }", RegexOption.IGNORE_CASE
-            )
+    //             loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+    //         }
+    //     } else {
+    //         val epRegex = Regex(
+    //             "S${season.toString().padStart(2, '0')}E${
+    //                 episode.toString().padStart(2, '0')
+    //             }", RegexOption.IGNORE_CASE
+    //         )
 
-            val episodeCards = document.select("div.episode-card").filter { card ->
-                epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
-            }
+    //         val episodeCards = document.select("div.episode-card").filter { card ->
+    //             epRegex.containsMatchIn(card.selectFirst(".episode-title")?.text().orEmpty())
+    //         }
 
-            episodeCards.safeAmap { episodeCard ->
-                var link = episodeCard.selectFirst("a")?.attr("href") ?: return@safeAmap
+    //         episodeCards.safeAmap { episodeCard ->
+    //             var link = episodeCard.selectFirst("a")?.attr("href") ?: return@safeAmap
 
-                if(!link.contains("hubcloud")) {
-                    return@safeAmap
-                    //link = bypassXDM(link) ?: return@safeAmap
-                }
+    //             if(!link.contains("hubcloud")) {
+    //                 return@safeAmap
+    //                 //link = bypassXDM(link) ?: return@safeAmap
+    //             }
 
-                Log.d("XDM", "link: $link")
+    //             Log.d("XDM", "link: $link")
 
-                loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
-            }
-        }
-    }
+    //             loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
+    //         }
+    //     }
+    // }
 
     suspend fun invokeToonstream(
         title: String? = null,
