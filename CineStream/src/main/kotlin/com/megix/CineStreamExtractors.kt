@@ -157,7 +157,8 @@ object CineStreamExtractors {
     ): Map<String, suspend () -> Unit> {
         return Settings.getStremioAddons().associate { addon ->
             val key = Settings.stremioAddonKey(addon.name)
-            val tracker = CallbackTracker(key, callback, subtitleCallback)
+            val shouldTrack = key !in Settings.TORRENT_KEYS && !Settings.isStremioTorrent(key)
+            val tracker = if (shouldTrack) CallbackTracker(key, callback, subtitleCallback) else null
             val trackedCallback = tracker?.callback ?: callback
             val trackedSubtitleCallback = tracker?.subtitleCallback ?: subtitleCallback
             

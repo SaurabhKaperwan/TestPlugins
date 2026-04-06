@@ -111,12 +111,13 @@ object Settings {
             ?.split(",")?.filter { it.isNotBlank() }
             ?: return allKnown
 
-        val validSaved = saved.filter { it in allKnown }
+        // Preserve order, but remove accidental duplicates.
+        val validSaved = saved.filter { it in allKnown }.distinct()
         return validSaved + (allKnown - validSaved.toSet())
     }
 
     fun saveOrder(order: List<String>) =
-        setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
+        setKey(PROVIDER_ORDER_KEY, order.distinct().joinToString(","))
 
     // ── Stremio addon helpers ────────────────────────────────
 
