@@ -56,7 +56,7 @@ object CineStreamExtractors {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
-        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
                 suspend { createTrackedAction(key, subtitleCallback, callback) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
             } ?: stremioMap[key]?.let { action ->
@@ -74,7 +74,7 @@ object CineStreamExtractors {
     ) {
         val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
-        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
                 suspend { createTrackedAction(key, subtitleCallback, callback) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
             } ?: stremioMap[key]?.let { action ->
@@ -118,7 +118,7 @@ object CineStreamExtractors {
 
         Log.d("Malsync", "malData: $malData")
 
-        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
                 suspend { this.action(malData, subtitleCallback, callback) }
             }
