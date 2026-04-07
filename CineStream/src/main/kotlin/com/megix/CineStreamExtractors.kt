@@ -32,6 +32,7 @@ import org.jsoup.Jsoup
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
+import java.util.concurrent.ConcurrentHashMap
 
 // Java Net
 import java.net.URI
@@ -48,23 +49,42 @@ object CineStreamExtractors {
     private val cfKiller by lazy { CloudflareKiller() }
     private val globalGson by lazy { Gson() }
     private val cfMutex = Mutex()
+    private val requestProviderHistory = ConcurrentHashMap<String, MutableSet<String>>()
+
+    private fun buildRequestId(res: AllLoadLinksData): String {
+        return listOf(
+            res.imdbId ?: "",
+            res.tmdbId?.toString() ?: "",
+            res.anilistId?.toString() ?: "",
+            res.malId?.toString() ?: "",
+            res.title ?: "",
+            res.season?.toString() ?: "",
+            res.episode?.toString() ?: ""
+        ).joinToString("|")
+    }
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
+        val requestId = buildRequestId(res)
+        val processedKeys = requestProviderHistory.computeIfAbsent(requestId) { ConcurrentHashMap.newKeySet() }
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback, processedKeys)
 
         val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
-                suspend { createTrackedAction(key, subtitleCallback, callback) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
+                suspend { createTrackedAction(key, subtitleCallback, callback, processedKeys) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
             } ?: stremioMap[key]?.let { action ->
                 suspend { action() }
             }
         }
 
-        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
+        try {
+            runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
+        } finally {
+            requestProviderHistory.remove(requestId, processedKeys)
+        }
     }
 
     suspend fun invokeAllAnimeSources(
@@ -72,17 +92,23 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
+        val requestId = buildRequestId(res)
+        val processedKeys = requestProviderHistory.computeIfAbsent(requestId) { ConcurrentHashMap.newKeySet() }
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback, processedKeys)
 
         val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
-                suspend { createTrackedAction(key, subtitleCallback, callback) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
+                suspend { createTrackedAction(key, subtitleCallback, callback, processedKeys) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
             } ?: stremioMap[key]?.let { action ->
                 suspend { action() }
             }
         }
 
-        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
+        try {
+            runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
+        } finally {
+            requestProviderHistory.remove(requestId, processedKeys)
+        }
     }
 
     suspend fun invokeAnimes(
@@ -131,20 +157,20 @@ object CineStreamExtractors {
         key: String,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit,
+        processedKeys: MutableSet<String>,
         action: suspend (trackedSubtitleCallback: (SubtitleFile) -> Unit, trackedCallback: (ExtractorLink) -> Unit) -> Unit
     ) {
         if (key in Settings.TORRENT_KEYS || Settings.isStremioTorrent(key)) {
-            // Don't track torrent providers
             action(subtitleCallback, callback)
             return
         }
-        
-        val tracker = CallbackTracker(key, callback, subtitleCallback)
+
+        val alreadyProcessed = !processedKeys.add(key)
+        val tracker = if (alreadyProcessed) null else CallbackTracker(key, callback, subtitleCallback)
         try {
-            // Pass the tracker's wrapped callbacks to the action
-            action(tracker.subtitleCallback, tracker.callback)
+            action(tracker?.subtitleCallback ?: subtitleCallback, tracker?.callback ?: callback)
         } finally {
-            tracker.finalize()
+            tracker?.finalize()
         }
     }
 
@@ -153,11 +179,13 @@ object CineStreamExtractors {
         season: Int?,
         episode: Int?,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit,
+        processedKeys: MutableSet<String>
     ): Map<String, suspend () -> Unit> {
         return Settings.getStremioAddons().associate { addon ->
             val key = Settings.stremioAddonKey(addon.name)
-            val shouldTrack = key !in Settings.TORRENT_KEYS && !Settings.isStremioTorrent(key)
+            val alreadyProcessed = !processedKeys.add(key)
+            val shouldTrack = !alreadyProcessed && key !in Settings.TORRENT_KEYS && !Settings.isStremioTorrent(key)
             val tracker = if (shouldTrack) CallbackTracker(key, callback, subtitleCallback) else null
             val trackedCallback = tracker?.callback ?: callback
             val trackedSubtitleCallback = tracker?.subtitleCallback ?: subtitleCallback
@@ -2978,7 +3006,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val url = app.get("$uhdmoviesAPI/search/$title $year").document
+        val url =  cfGet("$uhdmoviesAPI/search/$title $year").document
             .select("article div.entry-image a").attr("href")
         val doc = app.get(url).document
 

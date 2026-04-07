@@ -830,7 +830,7 @@ internal object SettingsDialog {
         content.addView(SettingsWidgets.divider(context))
 
         // Provider stats
-        val providerKeys = Settings.activeProviderOrder.filter { key ->
+        val providerKeys = Settings.activeProviderOrder.distinct().filter { key ->
             !Settings.TORRENT_KEYS.contains(key) && !Settings.isStremioTorrent(key)
         }
 
