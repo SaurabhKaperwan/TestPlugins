@@ -112,7 +112,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_allmovieland", displayName = "Allmovieland",
             executeStandard = { res, _, cb -> invokeAllmovieland(res.imdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeAllmovieland(res.imdbId, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
             key = "p_madplaycdn", displayName = "MadplayCDN",
@@ -121,7 +120,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_hexa", displayName = "Hexa",
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, cb) }
         ),
         ProviderDef(
             key = "p_yflix", displayName = "Yflix",
@@ -154,7 +152,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_vidlink", displayName = "Vidlink",
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         // ProviderDef(
         //     key = "p_mapple", displayName = "Mapple",
@@ -181,6 +178,7 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_disney", displayName = "Hotstar",
             executeStandard = { res, subCb, cb -> invokeDisney(res.title, res.year, res.season, res.episode, subCb, cb) }
+            executeAnime = { res, subCb, cb -> invokeDisney(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_bollywood", displayName = "Gramcinema",
@@ -252,7 +250,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_levidia", displayName = "Levidia",
             executeStandard = { res, subCb, cb -> invokeLevidia(res.title, res.year, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeLevidia(res.imdbTitle, res.imdbYear, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_dahmermovies", displayName = "DahmerMovies",
@@ -304,7 +301,6 @@ object ProviderRegistry {
         ProviderDef(
             key = "p_watch32", displayName = "Watch32",
             executeStandard = { res, subCb, cb -> invokeWatch32(res.title, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeWatch32(res.imdbTitle, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         // ProviderDef(
         //     key = "p_multiembeded", displayName = "Multiembeded",
