@@ -3656,6 +3656,13 @@ object CineStreamExtractors {
     ) {
         val (seasonSlug, episodeSlug) = getEpisodeSlug(season, episode)
         val titleSlug = title?.replace(" ", ".")
+        val headers = mapOf(
+            "Origin" to bollywoodBaseAPI,
+            "Referer" to "$bollywoodBaseAPI/",
+            "User-Agent" to USER_AGENT,
+            "Authorization" to "Bearer $BOLLYWOOD_KEY"
+        )
+
         val url = if (season == null) {
             "$bollywoodAPI/files/search?q=${titleSlug}.${year}&page=1"
         } else {
@@ -3664,7 +3671,7 @@ object CineStreamExtractors {
 
         val response = app.get(
             url,
-            referer = bollywoodBaseAPI
+            headers = headers
         ).text
         val jsonObject = JsonParser.parseString(response).asJsonObject
 
@@ -3679,7 +3686,7 @@ object CineStreamExtractors {
                 val size = formatSize(item.get("file_size").asString.toLong())
                 val res = app.get(
                     "$bollywoodAPI/genLink?type=files&id=$fileId",
-                    referer = bollywoodBaseAPI
+                    headers = headers
                 ).text
 
                 val linkJson = JsonParser.parseString(res).asJsonObject
