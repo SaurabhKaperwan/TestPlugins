@@ -12,7 +12,8 @@ data class MalSyncData(
     val aniId: Int?,
     val episode: Int?,
     val year: Int?,
-    val origin: String
+    val origin: String,
+    val animepaheTitle: String?
 )
 
 /** * Defines a provider and its execution logic for Standard, Anime, and MALSync data.
@@ -122,11 +123,6 @@ object ProviderRegistry {
             executeStandard = { res, _, cb -> invokeMadplayCDN(res.tmdbId, res.season, res.episode, cb) }
         ),
         ProviderDef(
-            key = "p_vidfastpro", displayName = "VidFastPro",
-            executeStandard = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.season, res.episode, subCb, cb) },
-            executeAnime = { res, subCb, cb -> invokeVidFastPro(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
-        ),
-        ProviderDef(
             key = "p_hexa", displayName = "Hexa",
             executeStandard = { res, _, cb -> invokeHexa(res.tmdbId, res.season, res.episode, cb) },
             executeAnime = { res, _, cb -> invokeHexa(res.tmdbId, res.imdbSeason, res.imdbEpisode, cb) }
@@ -164,11 +160,10 @@ object ProviderRegistry {
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
-        ProviderDef(
-            key = "p_mapple", displayName = "Mapple",
-            executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
-            executeAnime = { res, _, cb -> invokeMapple(res.tmdbId, res.imdbSeason, res.imdbEpisode, cb) }
-        ),
+        // ProviderDef(
+        //     key = "p_mapple", displayName = "Mapple",
+        //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
+        // ),
         ProviderDef(
             key = "p_vidstack", displayName = "Vidstack",
             executeStandard = { res, subCb, cb -> invokeVidstack(res.imdbId, res.season, res.episode, subCb, cb) }
@@ -336,7 +331,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_kaido", displayName = "Kaido",
-            executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.episode, subCb, cb) }
+            executeMalSync = { data, subCb, cb -> invokeKaido(data.hianimeurl, data.animepaheTitle ?: data.title, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_animepahe", displayName = "AnimePahe",
@@ -371,7 +366,7 @@ object ProviderRegistry {
             executeAnime = { res, subCb, cb -> invokeKuudere(res.originalTitle ?: res.title, res.year, res.episode, subCb, cb) },
         ),
         ProviderDef(
-            key = "p_animes", displayName = "Animes",
+            key = "p_animes", displayName = "Animes*",
             executeAnime = { res, subCb, cb -> invokeAnimes(res.malId, res.anilistId, res.episode, res.year, "kitsu", subCb, cb) }
         ),
         ProviderDef(

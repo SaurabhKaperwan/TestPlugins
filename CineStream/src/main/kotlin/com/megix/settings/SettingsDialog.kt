@@ -80,9 +80,6 @@ internal object SettingsDialog {
         // Stremio addons card
         layout.addView(buildStremioAddonsCard(context) { commit -> commitAddons = commit })
 
-        // Provider stats card
-        layout.addView(buildProviderStatsCard(context, pending))
-
         // Credits card
         layout.addView(buildCreditsCard(context))
 
@@ -95,9 +92,9 @@ internal object SettingsDialog {
                     when {
                         key == Settings.SHOWBOX_TOKEN_KEY && value == null   -> Settings.clearShowboxToken()
                         key == Settings.SHOWBOX_TOKEN_KEY && value is String -> Settings.saveShowboxToken(value)
-                        value is Boolean                                     -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
-                        value is Int                                         -> com.lagradost.cloudstream3.AcraApplication.setKey(key, value)
-                        value == null                                        -> com.lagradost.cloudstream3.AcraApplication.setKey(key, null as String?)
+                        value is Boolean                                     -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
+                        value is Int                                         -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, value)
+                        value == null                                        -> com.lagradost.cloudstream3.CloudStreamApp.setKey(key, null as String?)
                     }
                 }
                 commitAddons(); commitOrder()
@@ -184,7 +181,7 @@ internal object SettingsDialog {
     ): View {
         val theme   = SettingsTheme
         val checked = pending[databaseKey] as? Boolean
-            ?: com.lagradost.cloudstream3.AcraApplication.getKey<Boolean>(databaseKey) ?: defaultState
+            ?: com.lagradost.cloudstream3.CloudStreamApp.getKey<Boolean>(databaseKey) ?: defaultState
 
         val sw = SettingsWidgets.styledSwitch(context, checked)
 
@@ -765,132 +762,6 @@ internal object SettingsDialog {
             addView(SettingsWidgets.accentBar(context, CREDIT_ACCENT, Color.parseColor("#0EA5E9")))
             addView(TextView(context).apply {
                 text = "🙏  Credits & Thanks"; textSize = 12f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(theme.TEXT_SECONDARY); letterSpacing = 0.08f
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            })
-            addView(chevron)
-
-            setOnClickListener {
-                expanded = !expanded; chevron.text = if (expanded) "▲" else "▼"
-                SettingsWidgets.animateExpand(content, expanded)
-            }
-        })
-
-        card.addView(content)
-        SettingsWidgets.fadeInSlide(card)
-        return card
-    }
-
-    // =========================================================
-    //  PROVIDER STATS CARD
-    // =========================================================
-
-    private fun buildProviderStatsCard(
-        context: Context,
-        pending: MutableMap<String, Any?>
-    ): View {
-        val theme = SettingsTheme
-        val STATS_ACCENT = Color.parseColor("#F59E0B")
-        val STATS_BG = Color.parseColor("#0A1420")
-        val STATS_BORDER = Color.parseColor("#1A3040")
-
-        val card = SettingsWidgets.cardContainer(context)
-        var expanded = false
-        val content = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, 8.dp(context))
-            visibility = View.GONE
-        }
-
-        // Reset days setting
-        val resetDaysInput = EditText(context).apply {
-            setText((pending[Settings.PROVIDER_STATS_RESET_DAYS] as? Int ?: Settings.getProviderStatsResetDays()).toString())
-            textSize = 13f; setTextColor(theme.TEXT_PRIMARY)
-            setPadding(12.dp(context), 8.dp(context), 12.dp(context), 8.dp(context))
-            background = GradientDrawable().apply {
-                cornerRadius = 8f.dp(context); setColor(Color.parseColor("#0F172A"))
-                setStroke(1, Color.parseColor("#334155"))
-            }
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            addTextChangedListener(simpleWatcher { text ->
-                val days = text.toIntOrNull() ?: 1
-                pending[Settings.PROVIDER_STATS_RESET_DAYS] = days
-            })
-        }
-
-        content.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-            addView(labelText(context, "Reset stats every (days)"))
-            addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
-            addView(resetDaysInput)
-        })
-        content.addView(SettingsWidgets.divider(context))
-
-        // Provider stats
-        val providerKeys = Settings.activeProviderOrder.distinct().filter { key ->
-            !Settings.TORRENT_KEYS.contains(key) && !Settings.isStremioTorrent(key)
-        }
-
-        val providerStatsTextViews = mutableListOf<TextView>()
-
-        if (providerKeys.isEmpty()) {
-            content.addView(TextView(context).apply {
-                text = "No active streaming or subtitle providers enabled yet"
-                textSize = 12f; setTextColor(theme.TEXT_SECONDARY)
-                setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
-            })
-        } else {
-            providerKeys.forEachIndexed { index, key ->
-                val stats = Settings.getProviderStats(key)
-                content.addView(LinearLayout(context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-                    addView(TextView(context).apply {
-                        text = Settings.providerDisplayName(key); textSize = 14f
-                        setTypeface(null, android.graphics.Typeface.BOLD)
-                        setTextColor(theme.TEXT_PRIMARY)
-                    })
-                    addView(TextView(context).apply {
-                        text = "✅ Worked: ${stats.successes} | ❌ Failed: ${stats.failures}"
-                        textSize = 12f; setTextColor(theme.TEXT_SECONDARY)
-                        setPadding(0, 4.dp(context), 0, 0)
-                        providerStatsTextViews.add(this)
-                    })
-                })
-                if (index != providerKeys.lastIndex) content.addView(SettingsWidgets.divider(context))
-            }
-        }
-
-        content.addView(SettingsWidgets.divider(context))
-        content.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 14.dp(context), 16.dp(context), 14.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-            addView(SettingsWidgets.dangerBtn(context, "Reset All Stats") {
-                providerKeys.forEach { Settings.resetProviderStats(it) }
-                Toast.makeText(context, "All provider stats reset", Toast.LENGTH_SHORT).show()
-                providerKeys.forEachIndexed { index, key ->
-                    val stats = Settings.getProviderStats(key)
-                    providerStatsTextViews.getOrNull(index)?.text = "✅ Worked: ${stats.successes} | ❌ Failed: ${stats.failures}"
-                }
-            })
-        })
-
-        val chevron = TextView(context).apply { text = "▼"; textSize = 11f; setTextColor(theme.TEXT_SECONDARY) }
-
-        card.addView(LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(20.dp(context), 16.dp(context), 16.dp(context), 16.dp(context))
-            gravity = Gravity.CENTER_VERTICAL
-            isClickable = true; isFocusable = true; isFocusableInTouchMode = false
-            background = theme.stateDrawable(context)
-
-            addView(SettingsWidgets.accentBar(context, STATS_ACCENT, Color.parseColor("#D97706")))
-            addView(TextView(context).apply {
-                text = "📊  Provider Stats"; textSize = 12f
                 setTypeface(null, android.graphics.Typeface.BOLD)
                 setTextColor(theme.TEXT_SECONDARY); letterSpacing = 0.08f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)

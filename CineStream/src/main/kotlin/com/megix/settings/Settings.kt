@@ -1,8 +1,8 @@
 package com.megix.settings
 
 import android.content.Context
-import com.lagradost.cloudstream3.AcraApplication.Companion.getKey
-import com.lagradost.cloudstream3.AcraApplication.Companion.setKey
+import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
+import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.megix.ProviderRegistry
 
 /**
@@ -20,7 +20,6 @@ object Settings {
     const val SHOWBOX_TOKEN_KEY        = "showbox_ui_token"
     const val STREMIO_ADDONS_KEY       = "stremio_addons"
     const val NEW_PROVIDER_DEFAULT_ON  = "new_provider_default_on"
-    const val PROVIDER_STATS_RESET_DAYS = "provider_stats_reset_days"
 
     private const val COOKIE_KEY         = "nf_cookie"
     private const val TIMESTAMP_KEY      = "nf_cookie_timestamp"
@@ -111,13 +110,12 @@ object Settings {
             ?.split(",")?.filter { it.isNotBlank() }
             ?: return allKnown
 
-        // Preserve order, but remove accidental duplicates.
-        val validSaved = saved.filter { it in allKnown }.distinct()
+        val validSaved = saved.filter { it in allKnown }
         return validSaved + (allKnown - validSaved.toSet())
     }
 
     fun saveOrder(order: List<String>) =
-        setKey(PROVIDER_ORDER_KEY, order.distinct().joinToString(","))
+        setKey(PROVIDER_ORDER_KEY, order.joinToString(","))
 
     // ── Stremio addon helpers ────────────────────────────────
 
@@ -191,68 +189,6 @@ object Settings {
     fun saveShowboxToken(token: String) = setKey(SHOWBOX_TOKEN_KEY, token.trim())
     fun getShowboxToken(): String?       = getKey<String>(SHOWBOX_TOKEN_KEY)?.takeIf { it.isNotBlank() }
     fun clearShowboxToken()              = setKey(SHOWBOX_TOKEN_KEY, null)
-
-    // ── Provider Stats ───────────────────────────────────────
-    data class ProviderStats(
-        val successes: Int = 0,
-        val failures: Int = 0,
-        val lastReset: Long = System.currentTimeMillis()
-    )
-
-    fun getProviderStats(providerName: String): ProviderStats {
-        val key = "provider_stats_$providerName"
-        val json = getKey<String>(key) ?: return ProviderStats()
-        return try {
-            val parts = json.split(",")
-            if (parts.size == 3) {
-                ProviderStats(
-                    successes = parts[0].toIntOrNull() ?: 0,
-                    failures = parts[1].toIntOrNull() ?: 0,
-                    lastReset = parts[2].toLongOrNull() ?: System.currentTimeMillis()
-                )
-            } else ProviderStats()
-        } catch (e: Exception) {
-            ProviderStats()
-        }
-    }
-
-    fun saveProviderStats(providerName: String, stats: ProviderStats) {
-        val key = "provider_stats_$providerName"
-        val json = "${stats.successes},${stats.failures},${stats.lastReset}"
-        setKey(key, json)
-    }
-
-    fun incrementProviderSuccess(providerName: String) {
-        val stats = getProviderStats(providerName)
-        val resetDays = getKey<Int>(PROVIDER_STATS_RESET_DAYS) ?: 1
-        val resetTime = resetDays * 24 * 60 * 60 * 1000L
-        val now = System.currentTimeMillis()
-        val newStats = if (now - stats.lastReset > resetTime) {
-            ProviderStats(successes = 1, failures = 0, lastReset = now)
-        } else {
-            stats.copy(successes = stats.successes + 1)
-        }
-        saveProviderStats(providerName, newStats)
-    }
-
-    fun incrementProviderFailure(providerName: String) {
-        val stats = getProviderStats(providerName)
-        val resetDays = getKey<Int>(PROVIDER_STATS_RESET_DAYS) ?: 1
-        val resetTime = resetDays * 24 * 60 * 60 * 1000L
-        val now = System.currentTimeMillis()
-        val newStats = if (now - stats.lastReset > resetTime) {
-            ProviderStats(successes = 0, failures = 1, lastReset = now)
-        } else {
-            stats.copy(failures = stats.failures + 1)
-        }
-        saveProviderStats(providerName, newStats)
-    }
-
-    fun resetProviderStats(providerName: String) {
-        saveProviderStats(providerName, ProviderStats(lastReset = System.currentTimeMillis()))
-    }
-
-    fun getProviderStatsResetDays(): Int = getKey<Int>(PROVIDER_STATS_RESET_DAYS) ?: 1
 
     // ── Entry point ──────────────────────────────────────────
     fun showSettingsDialog(context: Context, onSave: () -> Unit) =

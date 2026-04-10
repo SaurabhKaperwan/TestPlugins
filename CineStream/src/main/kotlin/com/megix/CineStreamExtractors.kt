@@ -32,7 +32,6 @@ import org.jsoup.Jsoup
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
-import java.util.concurrent.ConcurrentHashMap
 
 // Java Net
 import java.net.URI
@@ -44,47 +43,28 @@ import com.megix.settings.Settings
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
 object CineStreamExtractors {
 
     private val cfKiller by lazy { CloudflareKiller() }
     private val globalGson by lazy { Gson() }
     private val cfMutex = Mutex()
-    private val requestProviderHistory = ConcurrentHashMap<String, MutableSet<String>>()
-
-    private fun buildRequestId(res: AllLoadLinksData): String {
-        return listOf(
-            res.imdbId ?: "",
-            res.tmdbId?.toString() ?: "",
-            res.anilistId?.toString() ?: "",
-            res.malId?.toString() ?: "",
-            res.title ?: "",
-            res.season?.toString() ?: "",
-            res.episode?.toString() ?: ""
-        ).joinToString("|")
-    }
 
     suspend fun invokeAllSources(
         res: AllLoadLinksData,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val requestId = buildRequestId(res)
-        val processedKeys = requestProviderHistory.computeIfAbsent(requestId) { ConcurrentHashMap.newKeySet() }
-        val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback, processedKeys)
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.season, res.episode, subtitleCallback, callback)
 
-        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeStandard?.let { action ->
-                suspend { createTrackedAction(key, subtitleCallback, callback, processedKeys) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
-            } ?: stremioMap[key]?.let { action ->
-                suspend { action() }
-            }
+                suspend { this.action(res, subtitleCallback, callback) }
+            } ?: stremioMap[key]
         }
 
-        try {
-            runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
-        } finally {
-            requestProviderHistory.remove(requestId, processedKeys)
-        }
+        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
     suspend fun invokeAllAnimeSources(
@@ -92,23 +72,15 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val requestId = buildRequestId(res)
-        val processedKeys = requestProviderHistory.computeIfAbsent(requestId) { ConcurrentHashMap.newKeySet() }
-        val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback, processedKeys)
+        val stremioMap = getDynamicStremioMap(res.imdbId, res.imdbSeason, res.imdbEpisode, subtitleCallback, callback)
 
-        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeAnime?.let { action ->
-                suspend { createTrackedAction(key, subtitleCallback, callback, processedKeys) { trackedSub, trackedCb -> this.action(res, trackedSub, trackedCb) } }
-            } ?: stremioMap[key]?.let { action ->
-                suspend { action() }
-            }
+                suspend { this.action(res, subtitleCallback, callback) }
+            } ?: stremioMap[key]
         }
 
-        try {
-            runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
-        } finally {
-            requestProviderHistory.remove(requestId, processedKeys)
-        }
+        runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
     suspend fun invokeAnimes(
@@ -139,12 +111,16 @@ object CineStreamExtractors {
             (it as? Map<*, *>)?.get("url") as? String
         }
 
+        val animepaheTitle = malsync?.animepahe?.values?.firstNotNullOfOrNull {
+            (it as? Map<*, *>)?.get("title") as? String
+        }
+
         // Package the API results for the registry
-        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin)
+        val malData = MalSyncData(title, zorotitle, hianimeurl, animepaheUrl, aniId, episode, year, origin, animepaheTitle)
 
         Log.d("Malsync", "malData: $malData")
 
-        val executionList = Settings.activeProviderOrder.distinct().mapNotNull { key ->
+        val executionList = Settings.activeProviderOrder.mapNotNull { key ->
             ProviderRegistry.builtInProviders.find { it.key == key }?.executeMalSync?.let { action ->
                 suspend { this.action(malData, subtitleCallback, callback) }
             }
@@ -153,52 +129,20 @@ object CineStreamExtractors {
         runLimitedAsync(concurrency = Settings.getConcurrency(), *executionList.toTypedArray())
     }
 
-    private suspend fun createTrackedAction(
-        key: String,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        processedKeys: MutableSet<String>,
-        action: suspend (trackedSubtitleCallback: (SubtitleFile) -> Unit, trackedCallback: (ExtractorLink) -> Unit) -> Unit
-    ) {
-        if (key in Settings.TORRENT_KEYS || Settings.isStremioTorrent(key)) {
-            action(subtitleCallback, callback)
-            return
-        }
-
-        val alreadyProcessed = !processedKeys.add(key)
-        val tracker = if (alreadyProcessed) null else CallbackTracker(key, callback, subtitleCallback)
-        try {
-            action(tracker?.subtitleCallback ?: subtitleCallback, tracker?.callback ?: callback)
-        } finally {
-            tracker?.finalize()
-        }
-    }
-
     private fun getDynamicStremioMap(
         imdbId: String?,
         season: Int?,
         episode: Int?,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-        processedKeys: MutableSet<String>
+        callback: (ExtractorLink) -> Unit
     ): Map<String, suspend () -> Unit> {
         return Settings.getStremioAddons().associate { addon ->
             val key = Settings.stremioAddonKey(addon.name)
-            val alreadyProcessed = !processedKeys.add(key)
-            val shouldTrack = !alreadyProcessed && key !in Settings.TORRENT_KEYS && !Settings.isStremioTorrent(key)
-            val tracker = if (shouldTrack) CallbackTracker(key, callback, subtitleCallback) else null
-            val trackedCallback = tracker?.callback ?: callback
-            val trackedSubtitleCallback = tracker?.subtitleCallback ?: subtitleCallback
-            
             key to suspend {
-                try {
-                    when (addon.type) {
-                        Settings.AddonType.SUBTITLE -> invokeStremioSubtitlesGlobal(addon.name, addon.url, imdbId, season, episode, trackedSubtitleCallback)
-                        Settings.AddonType.TORRENT -> invokeStremioTorrentsGlobal(addon.name, addon.url, imdbId, season, episode, trackedCallback)
-                        Settings.AddonType.HTTPS, Settings.AddonType.DEBRID -> invokeStreamioStreamsGlobal(addon.name, addon.url, imdbId, season, episode, trackedSubtitleCallback, trackedCallback)
-                    }
-                } finally {
-                    tracker?.finalize()
+                when (addon.type) {
+                    Settings.AddonType.SUBTITLE -> invokeStremioSubtitlesGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback)
+                    Settings.AddonType.TORRENT -> invokeStremioTorrentsGlobal(addon.name, addon.url, imdbId, season, episode, callback)
+                    Settings.AddonType.HTTPS, Settings.AddonType.DEBRID -> invokeStreamioStreamsGlobal(addon.name, addon.url, imdbId, season, episode, subtitleCallback, callback)
                 }
             }
         }
@@ -1112,7 +1056,11 @@ object CineStreamExtractors {
 
             val type = if (sourceName.contains("Castle") || listOf("hls", "m3u8", "Vixsrc").any { (title + name).contains(it, true) }) ExtractorLinkType.M3U8 else INFER_TYPE
             val req = s.behaviorHints?.proxyHeaders?.request
-            val streamUrl = s.url
+            val streamUrl = if(sourceName.contains("Castle")){
+                s.url.toHttpUrlOrNull()?.queryParameter("url") ?: return@forEach
+            } else {
+                s.url
+            }
 
             val proxyReq = s.behaviorHints?.proxyHeaders?.request
             val stdHeaders = s.behaviorHints?.headers
@@ -1285,90 +1233,94 @@ object CineStreamExtractors {
         }
     }
 
-    suspend fun invokeMapple(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        if(tmdbId == null) return
-        var mediaType = ""
-        var tv_slug = ""
-        var url = ""
+    // suspend fun invokeMapple(
+    //     tmdbId: Int? = null,
+    //     season: Int? = null,
+    //     episode: Int? = null,
+    //     callback: (ExtractorLink) -> Unit
+    // ) {
+    //     if(tmdbId == null) return
+    //     var mediaType = ""
+    //     var tv_slug = ""
+    //     var url = ""
 
-        if(season == null) {
-          mediaType =  "movie"
-          url = "$mappleAPI/watch/movie/$tmdbId"
-        } else {
-            mediaType = "tv"
-            tv_slug = "$season-$episode"
-            url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
-        }
+    //     if(season == null) {
+    //       mediaType =  "movie"
+    //       url = "$mappleAPI/watch/movie/$tmdbId"
+    //     } else {
+    //         mediaType = "tv"
+    //         tv_slug = "$season-$episode"
+    //         url = "$mappleAPI/watch/tv/$tmdbId/$season-$episode"
+    //     }
 
-        val headers = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-            "Referer" to "$mappleAPI/",
-        )
+    //     val headers = mapOf(
+    //         "User-Agent" to USER_AGENT,
+    //         "Referer" to "$mappleAPI/",
+    //     )
 
-        val text = app.get(url, headers = headers).text
-        val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
-        val match = regex.find(text)
-        val token = match?.groupValues?.get(1) ?: return
+    //     val text = app.get(url, headers = headers).text
+    //     val regex = Regex("""window\.__REQUEST_TOKEN__\s*=\s*"([^"]+)\"""")
+    //     val match = regex.find(text)
+    //     val token = match?.groupValues?.get(1) ?: return
+    //     Log.d("Mapple", "token: $token")
 
-        val sources = listOf(
-            "mapple", "sakura", "oak", "willow",
-            "cherry", "pines", "magnolia", "sequoia"
-        )
+    //     val sources = listOf(
+    //         "mapple", "sakura", "oak", "willow",
+    //         "cherry", "pines", "magnolia", "sequoia"
+    //     )
 
-        sources.safeAmap { source ->
-            try {
-                val jsonBody = """
-                    {
-                        "data": {
-                            "mediaId": $tmdbId,
-                            "mediaType": "$mediaType",
-                            "tv_slug": "$tv_slug",
-                            "source": "$source"
-                        },
-                        "endpoint": "stream-encrypted"
-                    }
-                """.trimIndent()
+    //     sources.safeAmap { source ->
+    //         try {
+    //             val jsonBody = """
+    //                 {
+    //                     "data": {
+    //                         "mediaId": $tmdbId,
+    //                         "mediaType": "$mediaType",
+    //                         "tv_slug": "$tv_slug",
+    //                         "source": "$source"
+    //                     },
+    //                     "endpoint": "stream-encrypted"
+    //                 }
+    //             """.trimIndent()
 
-                val encryptResText = app.post(
-                    "$mappleAPI/api/encrypt",
-                    json = jsonBody,
-                    headers = headers
-                ).text
+    //             val encryptResText = app.post(
+    //                 "$mappleAPI/api/encrypt",
+    //                 json = jsonBody,
+    //                 headers = headers
+    //             ).text
 
-                val encryptRes = JSONObject(encryptResText)
-                val streamPath = encryptRes.getString("url")
-                val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
+    //             val encryptRes = JSONObject(encryptResText)
+    //             val streamPath = encryptRes.getString("url")
+    //             val finalUrl = "$mappleAPI$streamPath&requestToken=$token"
+    //             Log.d("Mapple", "finalUrl of $source: $finalUrl")
 
-                val streamsDataText = app.get(
-                    finalUrl,
-                    headers = headers
-                ).text
+    //             val streamsDataText = app.get(
+    //                 finalUrl,
+    //                 headers = headers
+    //             ).text
 
-                val streamsData = JSONObject(streamsDataText)
+    //             Log.d("Mapple", "streamsDataText of $source: $streamsDataText")
 
-                if (streamsData.optBoolean("success")) {
-                    val data = streamsData.getJSONObject("data")
-                    val streamUrl = data.optString("stream_url")
+    //             val streamsData = JSONObject(streamsDataText)
 
-                    if (streamUrl.isNotEmpty()) {
-                        M3u8Helper.generateM3u8(
-                            "Mapple [${source.uppercase()}]",
-                            streamUrl,
-                            "$mappleAPI/",
-                            headers = headers
-                        ).forEach(callback)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
+    //             if (streamsData.optBoolean("success")) {
+    //                 val data = streamsData.getJSONObject("data")
+    //                 val streamUrl = data.optString("stream_url")
+
+    //                 if (streamUrl.isNotEmpty()) {
+    //                     M3u8Helper.generateM3u8(
+    //                         "Mapple [${source.uppercase()}]",
+    //                         streamUrl,
+    //                         "$mappleAPI/",
+    //                         headers = headers
+    //                     ).forEach(callback)
+    //                 }
+    //             }
+    //         } catch (e: Exception) {
+    //             e.printStackTrace()
+    //         }
+    //     }
+    // }
 
     suspend fun invokeHexa(
         tmdbId: Int? = null,
@@ -1491,8 +1443,7 @@ object CineStreamExtractors {
     //         document.select("div.download-item a").safeAmap { source ->
     //             var link = source.attr("href")
     //             if(!link.contains("hubcloud")) {
-    //                 return@safeAmap
-    //                 // link = bypassXDM(link) ?: return@safeAmap
+    //                 link = bypassXDM(link) ?: return@safeAmap
     //             }
 
     //             loadSourceNameExtractor("XDmovies", link, "", subtitleCallback, callback)
@@ -1512,8 +1463,7 @@ object CineStreamExtractors {
     //             var link = episodeCard.selectFirst("a")?.attr("href") ?: return@safeAmap
 
     //             if(!link.contains("hubcloud")) {
-    //                 return@safeAmap
-    //                 //link = bypassXDM(link) ?: return@safeAmap
+    //                 link = bypassXDM(link) ?: return@safeAmap
     //             }
 
     //             Log.d("XDM", "link: $link")
@@ -3006,7 +2956,7 @@ object CineStreamExtractors {
         callback: (ExtractorLink) -> Unit,
         subtitleCallback: (SubtitleFile) -> Unit
     ) {
-        val url =  cfGet("$uhdmoviesAPI/search/$title $year").document
+        val url = cfGet("$uhdmoviesAPI/search/$title $year").document
             .select("article div.entry-image a").attr("href")
         val doc = app.get(url).document
 
@@ -3199,15 +3149,23 @@ object CineStreamExtractors {
 
     suspend fun invokeKaido(
         url: String? = null,
+        title: String? = null,
         episode: Int? = null,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
         Log.d("Kaido", "url: $url")
-
         val headers = mapOf("X-Requested-With" to "XMLHttpRequest")
-        val hiId = url?.substringAfterLast("/") ?: return
-        val id = hiId.substringAfterLast("-")
+
+        val id = if(url != null) {
+            url.substringAfterLast("/").substringAfterLast("-")
+        } else {
+            val encodedQuery = URLEncoder.encode(title ?: return, StandardCharsets.UTF_8.toString())
+            val document = app.get("$kaidoAPI/search?keyword=$encodedQuery&page=1").document
+            document.select("div.flw-item h3 a[title=\"$title\"]").attr("href").substringBefore("?").substringAfterLast("-")
+        }
+
+        if(id.isNullOrBlank()) return
 
         Log.d("Kaido", "id: $id")
 
@@ -3613,7 +3571,6 @@ object CineStreamExtractors {
         } catch (e: Exception) { }
     }
 
-    //Thanks to https://github.com/yogesh-hacker/MediaVanced
     suspend fun invokeVidzee(
         id: Int?,
         season: Int? = null,
@@ -3621,8 +3578,8 @@ object CineStreamExtractors {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ) {
-        val secret = "alookeparathewithlassi"
-        val defaultReferer = "https://core.vidzee.wtf/"
+        val secret = base64Decode("cGxlYXNlZG9udHNjcmFwZW1lc2F5d2FsbGFoaQ==")
+        val defaultReferer = "https://player.vidzee.wtf/"
 
         (1..13).toList().safeAmap { sr ->
             try {
@@ -3872,76 +3829,6 @@ object CineStreamExtractors {
                         )
                     }
                 }
-            }
-        }
-    }
-
-    suspend fun invokeVidFastPro(
-        tmdbId: Int? = null,
-        season: Int? = null,
-        episode: Int? = null,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit,
-    ) {
-        val url = if (season == null) "$vidfastProApi/movie/$tmdbId" else "$vidfastProApi/tv/$tmdbId/$season/$episode"
-
-        val headers = mapOf(
-            "User-Agent" to USER_AGENT,
-            "Referer" to "$vidfastProApi/",
-            "X-Requested-With" to "XMLHttpRequest",
-        )
-
-        val response = app.get(url, headers = headers).text
-        val encodedText = Regex("""\\"en\\":\\"(.*?)\\""").find(response)?.groupValues?.get(1) ?: return
-
-        val decApiUrl = "$multiDecryptAPI/enc-vidfast?text=$encodedText"
-        val decodedDataJson = app.get(decApiUrl).text
-        val decodedData = tryParseJson<EncDecResponse>(decodedDataJson)?.result ?: return
-
-        val serversUrl = decodedData.servers ?: return
-        val streamBaseUrl = decodedData.stream ?: return
-
-        val serversListJson = app.get(serversUrl, headers = headers).text
-        val serversList = tryParseJson<List<VidfastServer>>(serversListJson) ?: return
-
-        serversList.forEach { server ->
-            try {
-                val serverHash = server.data ?: return@forEach
-                val finalStreamUrl = "$streamBaseUrl/$serverHash"
-
-                val streamDataJson = app.get(finalStreamUrl, headers = headers).text
-                val streamData = tryParseJson<VidfastStreamResponse>(streamDataJson) ?: return@forEach
-
-                streamData.tracks?.forEach { track ->
-                    if (track.file != null && track.label != null) {
-                        subtitleCallback.invoke(
-                            newSubtitleFile(
-                                getLanguage(track.label) ?: track.label,
-                                track.file
-                            )
-                        )
-                    }
-                }
-
-                val fileUrl = streamData.url ?: return@forEach
-                val type = if (fileUrl.contains(".m3u8")) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
-
-                val is4k = streamData.is4kAvailable == true || server.description?.contains("4K", true) == true
-                val quality = if (is4k) Qualities.P2160.value else Qualities.P1080.value
-
-                callback.invoke(
-                    newExtractorLink(
-                        "Vidfast[${server.name}]",
-                        "Vidfast[${server.name}] ${server.description ?: ""}",
-                        fileUrl,
-                        type
-                    ) {
-                        this.headers = headers
-                        this.quality = quality
-                    }
-                )
-            } catch (e: Exception) {
-                Log.w("VidFastPro", "Failed to extract server: ${server.name}", e)
             }
         }
     }
