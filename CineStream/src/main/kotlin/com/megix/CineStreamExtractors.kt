@@ -2528,7 +2528,7 @@ object CineStreamExtractors {
 
         res?.streams?.forEach { stream ->
 
-            val title = stream.title ?: stream.name ?: ""
+            val title = stream.title ?: stream.description ?: stream.name ?: ""
             val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
             val match = regex.find(title)
             var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
