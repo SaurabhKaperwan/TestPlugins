@@ -177,7 +177,7 @@ object ProviderRegistry {
         ),
         ProviderDef(
             key = "p_disney", displayName = "Hotstar",
-            executeStandard = { res, subCb, cb -> invokeDisney(res.title, res.year, res.season, res.episode, subCb, cb) }
+            executeStandard = { res, subCb, cb -> invokeDisney(res.title, res.year, res.season, res.episode, subCb, cb) },
             executeAnime = { res, subCb, cb -> invokeDisney(res.imdbTitle, res.year, res.imdbSeason, res.imdbEpisode, subCb, cb) }
         ),
         ProviderDef(
