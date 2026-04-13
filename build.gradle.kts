@@ -94,6 +94,7 @@ subprojects {
         implementation("com.google.code.gson:gson:2.11.0")
         implementation("org.json:json:20231013")
         implementation("androidx.annotation:annotation:1.9.0")
+        implementation("androidx.browser:browser:1.8.0")
     }
 }
 
