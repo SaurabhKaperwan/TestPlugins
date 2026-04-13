@@ -153,6 +153,11 @@ object ProviderRegistry {
             key = "p_vidlink", displayName = "Vidlink",
             executeStandard = { res, subCb, cb -> invokeVidlink(res.tmdbId, res.season, res.episode, subCb, cb) },
         ),
+        ProviderDef(
+            key = "p_pulp", displayName = "Pulp",
+            executeStandard = { res, subCb, cb -> invokePulp(res.tmdbId, res.season, res.episode, subCb, cb) },
+            executeAnime = { res, subCb, cb -> invokePulp(res.tmdbId, res.imdbSeason, res.imdbEpisode, subCb, cb) },
+        ),
         // ProviderDef(
         //     key = "p_mapple", displayName = "Mapple",
         //     executeStandard = { res, _, cb -> invokeMapple(res.tmdbId, res.season, res.episode, cb) },
@@ -365,6 +370,11 @@ object ProviderRegistry {
             key = "p_gojo", displayName = "Animetsu",
             executeAnime = { res, subCb, cb -> invokeGojo(res.title, res.anilistId, res.episode, subCb, cb) },
             executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeGojo(data.title, data.aniId, data.episode, subCb, cb) }
+        ),
+        ProviderDef(
+            key = "p_animekizz", displayName = "Animekizz",
+            executeAnime = { res, subCb, cb -> invokeAnimekizz(res.title, res.anilistId, res.episode, subCb, cb) },
+            executeMalSync = { data, subCb, cb -> if (data.origin == "imdb") invokeAnimekizz(data.title, data.aniId, data.episode, subCb, cb) }
         ),
         ProviderDef(
             key = "p_sudatchi", displayName = "Sudatchi",

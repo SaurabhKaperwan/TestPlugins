@@ -15,6 +15,10 @@ buildscript {
         classpath("com.github.recloudstream:gradle:master-SNAPSHOT")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
     }
+
+    configurations["classpath"].resolutionStrategy {
+        force("com.github.vidstige:jadb:1.2.1")
+    }
 }
 
 allprojects {

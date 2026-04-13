@@ -1045,7 +1045,7 @@ object CineStreamExtractors {
         val url = if (sourceName == "Hdmovielover") "$api/${if (isMovie) "movie?imdbid=$imdbId" else "series?imdbid=$imdbId&s=$season&e=$episode"}"
                 else "$api/stream/${if (isMovie) "movie/$imdbId" else "series/$imdbId:$season:$episode"}.json"
 
-        globalGson.fromJson(app.get(url).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url, timeout = 50000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.title ?: ""
             val name = s.name ?: title
 
@@ -2529,10 +2529,11 @@ object CineStreamExtractors {
         res?.streams?.forEach { stream ->
 
             val title = stream.title ?: stream.description ?: stream.name ?: ""
-            val regex = """👤\s*(\d+).*?💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
-            val match = regex.find(title)
-            var seeders = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
-            val fileSize = match?.groupValues?.get(2) ?: ""
+            val seedersRegex = """[👤👥]\s*(\d+)""".toRegex()
+            val seeders = seedersRegex.find(title)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val sizeRegex = """💾\s*([0-9.]+\s*[A-Za-z]+)""".toRegex()
+            val fileSize = sizeRegex.find(title)?.groupValues?.get(1) ?: ""
+
             if (seeders < 25) return@forEach
 
             val magnet = buildMagnetString(stream)
@@ -3855,7 +3856,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        globalGson.fromJson(app.get(url, timeout = 1000L).text, StreamifyResponse::class.java).streams.forEach { s ->
+        globalGson.fromJson(app.get(url, timeout = 50000L).text, StreamifyResponse::class.java).streams.forEach { s ->
             val title = s.description ?: s.title ?: s.name ?: ""
 
             val type = if(s.url.contains(".m3u8") || s.url.contains("hls")) {
@@ -3907,7 +3908,7 @@ object CineStreamExtractors {
             "$api/subtitles/movie/$imdbId.json"
         }
 
-        val json = app.get(url, timeout = 1000L).text
+        val json = app.get(url, timeout = 50000L).text
         val subtitleResponse = globalGson.fromJson(json, StremioSubtitleResponse::class.java)
 
         subtitleResponse.subtitles.forEach {
@@ -3938,7 +3939,7 @@ object CineStreamExtractors {
             "$api/stream/series/$imdbId:$season:$episode.json"
         }
 
-        val res = app.get(url, timeout = 1000L).parsedSafe<TorrentioResponse>()
+        val res = app.get(url, timeout = 50000L).parsedSafe<TorrentioResponse>()
 
         res?.streams?.forEach { stream ->
 
@@ -4144,6 +4145,95 @@ object CineStreamExtractors {
         }
     }
 
+    suspend fun invokeAnimekizz(
+        title: String? = null,
+        aniId: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        if (aniId == null && title == null) return
+
+        val encodedTitle = URLEncoder.encode(title ?: "", StandardCharsets.UTF_8.toString())
+        val query = "${encodedTitle}-${aniId}:${episode ?: 1}"
+
+        val serversJson = try {
+            app.get(
+                "$animekizzAPI/api/v1/video/servers/$query",
+                referer = "$animekizzAPI/"
+            ).text
+        } catch (e: Exception) {
+            Log.e("Animekizz", "Failed to fetch servers for query=$query", e)
+            return
+        }
+
+        Log.d("Animekizz", "Servers JSON: $serversJson")
+
+        val serversArray = try {
+            JSONObject(serversJson).optJSONArray("servers") ?: return
+        } catch (e: Exception) {
+            Log.e("Animekizz", "Unable to parse servers response", e)
+            return
+        }
+
+        for (i in 0 until serversArray.length()) {
+            val serverObj = serversArray.optJSONObject(i) ?: continue
+            val id = serverObj.optString("id").takeIf { it.isNotBlank() } ?: continue
+            val name = serverObj.optString("name").uppercase()
+            val serverType = serverObj.optString("server_type").uppercase()
+
+            Log.d("Animekizz", "Processing server: id=$id, name=$name, type=$serverType")
+
+            val resolveJson = try {
+                app.post(
+                    "$animekizzAPI/api/v1/video/resolve",
+                    json = mapOf(
+                        "episode_id" to query,
+                        "server_id" to id,
+                    ),
+                    referer = "$animekizzAPI/"
+                ).text
+            } catch (e: Exception) {
+                Log.e("Animekizz", "Failed to resolve server $name ($id)", e)
+                continue
+            }
+
+            Log.d("Animekizz", "Resolve response for server $name: $resolveJson")
+
+            val sourcesArray = try {
+                JSONObject(resolveJson).optJSONArray("sources") ?: continue
+            } catch (e: Exception) {
+                Log.e("Animekizz", "Unable to parse resolve response for server $name", e)
+                continue
+            }
+
+            for (j in 0 until sourcesArray.length()) {
+                val sourceObj = sourcesArray.optJSONObject(j) ?: continue
+                var streamUrl = sourceObj.optString("url").takeIf { it.isNotBlank() } ?: continue
+                if(streamUrl.startsWith("/api/")) streamUrl = animekizzAPI + streamUrl
+                val quality = sourceObj.optString("quality", "Unknown")
+                val format = sourceObj.optString("format", "Unknown")
+
+                Log.d("Animekizz", "Adding link from server $name: url=$streamUrl, quality=$quality, format=$format")
+
+                callback.invoke(
+                    newExtractorLink(
+                        "Animekizz [$name] [$serverType]",
+                        "Animekizz [$name] [$serverType]",
+                        streamUrl,
+                        if (format.equals("hls", ignoreCase = true)) ExtractorLinkType.M3U8 else INFER_TYPE
+                    ) {
+                        this.quality = if(quality == "auto") Qualities.P1080.value else getIndexQuality(quality)
+                        this.headers = mapOf(
+                            "Referer" to "$animekizzAPI/",
+                            "Origin" to animekizzAPI
+                        )
+                    }
+                )
+            }
+        }
+    }
+
     suspend fun invokeVidrock(
         tmdbId: Int? = null,
         season: Int? = null,
@@ -4192,4 +4282,70 @@ object CineStreamExtractors {
             }
         }
     }
+
+    suspend fun invokePulp(
+        tmdbId: Int? = null,
+        season: Int? = null,
+        episode: Int? = null,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ) {
+        val url = if (season == null) {
+            "$pulpAPI/movies/$tmdbId?provider=02moviedownloader"
+        } else {
+            "$pulpAPI/tv/$tmdbId/seasons/$season/episodes/$episode?provider=02moviedownloader"
+        }
+
+        val json = app.get(url, timeout = 30000L, referer = "https://tv.pulp.watch/").text
+        Log.d("Pulp", "Response JSON: $json")
+        val response = tryParseJson<PulpResponse>(json) ?: return
+        Log.d("Pulp", "Parsed Response: $response")
+
+        response.sources?.forEach { source ->
+            val sourceUrl = source.url?.takeIf { it.isNotBlank() } ?: return@forEach
+            val qualityTag = source.quality.orEmpty().ifEmpty { "Unknown" }
+            val providerName = source.provider?.name.takeIf { !it.isNullOrBlank() }
+                ?: source.provider?.id.takeIf { !it.isNullOrBlank() }
+                ?: "Pulp"
+
+            val extractorLinkType = when {
+                sourceUrl.contains(".m3u8", true) -> ExtractorLinkType.M3U8
+                source.type.equals("hls", true) -> ExtractorLinkType.M3U8
+                source.type.equals("dash", true) -> ExtractorLinkType.DASH
+                source.type.equals("mp4", true) || source.type.equals("mkv", true) -> ExtractorLinkType.VIDEO
+                else -> INFER_TYPE
+            }
+
+            Log.d("Pulp", "Adding source: provider=$providerName, quality=$qualityTag, url=$sourceUrl, type=$extractorLinkType")
+
+            callback.invoke(
+                newExtractorLink(
+                    "Pulp [$providerName]",
+                    "Pulp [$providerName]",
+                    sourceUrl,
+                    type = extractorLinkType
+                ) {
+                    this.headers = source.headers.orEmpty().filterValues { it.isNotBlank() }
+                    this.quality = qualityTag.toIntOrNull() ?: Qualities.Unknown.value
+                }
+            )
+        }
+
+        response.subtitles?.forEach { subtitle ->
+            val subtitleUrl = subtitle.url?.takeIf { it.isNotBlank() } ?: return@forEach
+            val label = subtitle.label.takeIf { !it.isNullOrBlank() }
+                ?: subtitle.language.takeIf { !it.isNullOrBlank() }
+                ?: "Unknown"
+
+            Log.d("Pulp", "Adding subtitle: label=$label, url=$subtitleUrl")
+
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    getLanguage(label) ?: label,
+                    subtitleUrl
+                )
+            )
+        }
+    }
+
 }
